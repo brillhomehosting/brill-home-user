@@ -217,9 +217,9 @@ export default function BookingWidget({ room }: { room: Room }) {
 			}
 		});
 
-		let message = `DAT PHONG HOMESTAY\n\n`;
-		message += `Phong: ${room.name}\n\n`;
-		message += `Khung gio:\n`;
+		let message = `ĐẶT PHÒNG HOMESTAY\n\n`;
+		message += `Phòng: ${room.name}\n\n`;
+		message += `Khung giờ:\n`;
 
 		Object.entries(groupedByDate).forEach(([date, slots]) => {
 			message += `${date}:\n`;
@@ -228,7 +228,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 			});
 		});
 
-		message += `\nTong: ${totalAmount}k`;
+		message += `\nTổng: ${totalAmount}k`;
 
 		return message;
 	};

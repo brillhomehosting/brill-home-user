@@ -323,14 +323,14 @@ export default function AllRoomsBookingSection() {
 			groupedByDate[slot.date]!.push({ timeRange: slot.timeRange, price: slot.price });
 		});
 
-		let message = `DAT PHONG HOMESTAY\n\nPhong: ${selectedRoom.name}\n\nKhung gio:\n`;
+		let message = `ĐẶT PHÒNG HOMESTAY\n\nPhòng: ${selectedRoom.name}\n\nKhung giờ:\n`;
 		Object.entries(groupedByDate).forEach(([date, slots]) => {
 			message += `${date}:\n`;
 			slots.forEach(slot => {
 				message += `  - ${slot.timeRange} (${slot.price})\n`;
 			});
 		});
-		message += `\nTong: ${totalPrice}k`;
+		message += `\nTổng: ${totalPrice}k`;
 		return message;
 	};
 
