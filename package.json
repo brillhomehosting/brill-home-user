@@ -1,0 +1,45 @@
+{
+	"name": "homestay-project",
+	"version": "0.1.0",
+	"private": true,
+	"scripts": {
+		"dev": "next dev --turbopack",
+		"build": "next build",
+		"start": "next start",
+		"lint": "next lint"
+	},
+	"dependencies": {
+		"@heroicons/react": "^2.2.0",
+		"@hookform/resolvers": "^5.2.2",
+		"@mantine/carousel": "^7.17.0",
+		"@mantine/core": "^7.17.0",
+		"@mantine/hooks": "^7.17.0",
+		"@tanstack/react-query": "^5.66.0",
+		"classnames": "^2.5.1",
+		"embla-carousel-react": "^8.6.0",
+		"framer-motion": "^12.25.0",
+		"lucide-react": "^0.562.0",
+		"next": "^16.1.1",
+		"react": "^19.0.0",
+		"react-dom": "^19.0.0",
+		"react-hook-form": "^7.70.0",
+		"zod": "^4.3.5",
+		"zustand": "^5.0.3"
+	},
+	"devDependencies": {
+		"@eslint/eslintrc": "^3",
+		"@tailwindcss/postcss": "^4.1.18",
+		"@types/node": "^20",
+		"@types/react": "^19",
+		"@types/react-dom": "^19",
+		"autoprefixer": "^10.4.23",
+		"eslint": "^9",
+		"eslint-config-next": "^16.1.1",
+		"file-loader": "^6.2.0",
+		"postcss": "^8.5.6",
+		"postcss-preset-mantine": "^1.17.0",
+		"postcss-simple-vars": "^7.0.1",
+		"tailwindcss": "^4.1.18",
+		"typescript": "^5"
+	}
+}

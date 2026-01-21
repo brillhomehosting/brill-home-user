@@ -1,0 +1,499 @@
+{
+	"hero": {
+		"tagline": "\"SEOUL THU NHỎ\" DÀNH RIÊNG CHO CÁC CẶP ĐÔI",
+		"description": "Không gian nghỉ dưỡng riêng tư, nơi bạn tận hưởng khoảnh khắc bình yên.",
+		"video": {
+			"src": "https://res.cloudinary.com/dmdzku5og/video/upload/v1767973792/Untitled_video_-_Made_with_Clipchamp_nsjo0e.mp4",
+			"posterImage": "@/assets/hero-resort.jpg"
+		},
+		"buttons": {
+			"primary": {
+				"text": "Phòng xinh",
+				"color": "#D97D48"
+			},
+			"secondary": {
+				"text": "Đặt phòng",
+				"variant": "outline"
+			}
+		},
+		"socialMediaLabel": "Follow Us",
+		"socialLinks": ["Facebook", "Instagram", "Twitter"]
+	},
+
+	"rooms": {
+		"sectionLabel": "Concept Độc Bản",
+		"title": "Mỗi Phòng - Một Phong Cách",
+		"description": "Cinema, Vintage, Neon... Đa dạng concept để bạn chọn lựa.",
+		"items": [
+			{
+				"id": "1",
+				"name": "Cinema & Chill Suite",
+				"description": "Màn chiếu 100 inch, sofa Togo êm ái. Hoàn hảo cho Netflix & Chill.",
+				"capacity": 2,
+				"numberOfBeds": 1,
+				"area": 25,
+				"images": [
+					{
+						"id": "img1-1",
+						"url": "@/assets/phong1.jpg",
+						"isDeleted": false,
+						"createdAt": "",
+						"updatedAt": ""
+					},
+					{
+						"id": "img1-2",
+						"url": "@/assets/phong2.jpg",
+						"isDeleted": false,
+						"createdAt": "",
+						"updatedAt": ""
+					}
+				],
+				"isActive": true,
+				"amenities": [
+					{
+						"id": "am1",
+						"name": "Màn Chiếu 100 inch",
+						"icon": "projector",
+						"description": "",
+						"isDeleted": false,
+						"createdAt": "",
+						"updatedAt": ""
+					},
+					{
+						"id": "am2",
+						"name": "Sofa Togo",
+						"icon": "sofa",
+						"description": "",
+						"isDeleted": false,
+						"createdAt": "",
+						"updatedAt": ""
+					}
+				],
+				"hourlyRate": 55,
+				"overnightRate": 200,
+				"isDeleted": false,
+				"createdAt": "",
+				"updatedAt": ""
+			},
+			{
+				"id": "2",
+				"name": "Creamy Sunlight Studio",
+				"description": "Tông kem nhẹ nhàng, giếng trời đón nắng tự nhiên.",
+				"capacity": 2,
+				"numberOfBeds": 1,
+				"area": 22,
+				"images": [
+					{
+						"id": "img2-1",
+						"url": "@/assets/phong2.jpg",
+						"isDeleted": false,
+						"createdAt": "",
+						"updatedAt": ""
+					}
+				],
+				"isActive": true,
+				"amenities": [
+					{
+						"id": "am3",
+						"name": "Giếng Trời",
+						"icon": "sun",
+						"description": "",
+						"isDeleted": false,
+						"createdAt": "",
+						"updatedAt": ""
+					}
+				],
+				"hourlyRate": 60,
+				"overnightRate": 220,
+				"isDeleted": false,
+				"createdAt": "",
+				"updatedAt": ""
+			},
+			{
+				"id": "3",
+				"name": "Art Deco Chic",
+				"description": "Màu sắc táo bạo, cửa vòm và phòng tắm kính sang trọng.",
+				"capacity": 2,
+				"numberOfBeds": 1,
+				"area": 28,
+				"images": [
+					{
+						"id": "img3-1",
+						"url": "@/assets/phong3.jpg",
+						"isDeleted": false,
+						"createdAt": "",
+						"updatedAt": ""
+					}
+				],
+				"isActive": true,
+				"amenities": [
+					{
+						"id": "am4",
+						"name": "Phòng Tắm Vòm Kính",
+						"icon": "bath",
+						"description": "",
+						"isDeleted": false,
+						"createdAt": "",
+						"updatedAt": ""
+					}
+				],
+				"hourlyRate": 75,
+				"overnightRate": 280,
+				"isDeleted": false,
+				"createdAt": "",
+				"updatedAt": ""
+			},
+			{
+				"id": "4",
+				"name": "Vintage Vinyl Retreat",
+				"description": "Phong cách hoài cổ, đĩa than vintage và trần sao lung linh.",
+				"capacity": 2,
+				"numberOfBeds": 1,
+				"area": 24,
+				"images": [
+					{
+						"id": "img4-1",
+						"url": "@/assets/phong4.jpg",
+						"isDeleted": false,
+						"createdAt": "",
+						"updatedAt": ""
+					}
+				],
+				"isActive": true,
+				"amenities": [
+					{
+						"id": "am5",
+						"name": "Decor Đĩa Than",
+						"icon": "music",
+						"description": "",
+						"isDeleted": false,
+						"createdAt": "",
+						"updatedAt": ""
+					}
+				],
+				"hourlyRate": 65,
+				"overnightRate": 240,
+				"isDeleted": false,
+				"createdAt": "",
+				"updatedAt": ""
+			},
+			{
+				"id": "5",
+				"name": "Pink Neon Moon",
+				"description": "Tông hồng trẻ trung, đèn neon và trần mặt trăng.",
+				"capacity": 2,
+				"numberOfBeds": 1,
+				"area": 26,
+				"images": [
+					{
+						"id": "img5-1",
+						"url": "@/assets/phong5.jpg",
+						"isDeleted": false,
+						"createdAt": "",
+						"updatedAt": ""
+					}
+				],
+				"isActive": true,
+				"amenities": [
+					{
+						"id": "am6",
+						"name": "Đèn Neon Sign",
+						"icon": "lightbulb",
+						"description": "",
+						"isDeleted": false,
+						"createdAt": "",
+						"updatedAt": ""
+					}
+				],
+				"hourlyRate": 70,
+				"overnightRate": 260,
+				"isDeleted": false,
+				"createdAt": "",
+				"updatedAt": ""
+			},
+			{
+				"id": "6",
+				"name": "Modern Artistic Suite",
+				"description": "Không gian rộng rãi, hiện đại với điểm nhấn nghệ thuật.",
+				"capacity": 2,
+				"numberOfBeds": 1,
+				"area": 32,
+				"images": [
+					{
+						"id": "img6-1",
+						"url": "@/assets/phong3.jpg",
+						"isDeleted": false,
+						"createdAt": "",
+						"updatedAt": ""
+					}
+				],
+				"isActive": true,
+				"amenities": [
+					{
+						"id": "am7",
+						"name": "Smart Home",
+						"icon": "home",
+						"description": "",
+						"isDeleted": false,
+						"createdAt": "",
+						"updatedAt": ""
+					}
+				],
+				"hourlyRate": 80,
+				"overnightRate": 300,
+				"isDeleted": false,
+				"createdAt": "",
+				"updatedAt": ""
+			}
+		]
+	},
+
+	"amenities": {
+		"sectionLabel": "Tiện Nghi",
+		"title": "Đầy Đủ Tiện Nghi Hiện Đại",
+		"description": "Tất cả những gì bạn cần cho kỳ nghỉ hoàn hảo.",
+		"items": [
+			{
+				"icon": "AirVent",
+				"title": "Máy Lạnh",
+				"description": "Điều hòa mát lạnh 24/7."
+			},
+			{
+				"icon": "Droplets",
+				"title": "Nước Nóng Lạnh",
+				"description": "Sẵn sàng mọi lúc."
+			},
+			{
+				"icon": "Refrigerator",
+				"title": "Tủ Lạnh Mini",
+				"description": "Bảo quản đồ uống."
+			},
+			{
+				"icon": "Shirt",
+				"title": "Bàn Ủi Hơi Nước",
+				"description": "Quần áo phẳng phiu."
+			},
+			{
+				"icon": "PersonStanding",
+				"title": "Gương Toàn Thân",
+				"description": "Check outfit tự tin."
+			},
+			{
+				"icon": "MonitorPlay",
+				"title": "Máy Chiếu + Netflix",
+				"description": "Xem phim tại nhà."
+			},
+			{
+				"icon": "Wind",
+				"title": "Máy Sấy Tóc",
+				"description": "Sấy nhanh, gọn nhẹ."
+			},
+			{
+				"icon": "Gamepad2",
+				"title": "Game Console",
+				"description": "Giải trí cùng nhau."
+			}
+		]
+	},
+
+	"gallery": {
+		"sectionLabel": "Bộ Sưu Tập",
+		"title": "Góc Check-in Cực Chill",
+		"description": "Những không gian sống ảo không thể bỏ lỡ.",
+		"ctaButton": "Xem Thêm",
+		"items": [
+			{
+				"image": "@/assets/gallery-spa.jpg",
+				"title": "Spa & Chăm Sóc Sức Khỏe",
+				"span": "md:col-span-2 md:row-span-2"
+			},
+			{
+				"image": "@/assets/gallery-dining.jpg",
+				"title": "Không Gian Ăn Uống",
+				"span": ""
+			},
+			{
+				"image": "@/assets/gallery-hiking.jpg",
+				"title": "Lối Mòn Thiên Nhiên",
+				"span": ""
+			},
+			{
+				"image": "@/assets/gallery-yoga.jpg",
+				"title": "Yoga Buổi Sáng",
+				"span": "md:col-span-2"
+			},
+			{
+				"image": "@/assets/phong5.jpg",
+				"title": "View Ven Hồ",
+				"span": ""
+			},
+			{
+				"image": "@/assets/phong3.jpg",
+				"title": "Ánh Hoàng Hôn",
+				"span": ""
+			}
+		]
+	},
+
+	"testimonials": {
+		"sectionLabel": "Review",
+		"title": "Khách Hàng Nói Gì?",
+		"items": [
+			{
+				"id": 1,
+				"name": "Minh Anh",
+				"role": "Blogger",
+				"rating": 5,
+				"content": "Phòng đẹp, sạch sẽ. Concept độc đáo, ảnh chụp lên rất xịn!",
+				"avatar": "MA"
+			},
+			{
+				"id": 2,
+				"name": "Tuấn Kiệt",
+				"role": "Khách hàng",
+				"rating": 5,
+				"content": "Không gian riêng tư, yên tĩnh. Chắc chắn sẽ quay lại!",
+				"avatar": "TK"
+			},
+			{
+				"id": 3,
+				"name": "Thu Hương",
+				"role": "Nhiếp ảnh gia",
+				"rating": 5,
+				"content": "Góc nào cũng đẹp, chụp ảnh cả ngày không chán.",
+				"avatar": "TH"
+			}
+		]
+	},
+
+	"about": {
+		"sectionLabel": "Quầy Line",
+		"title": "Đồ Ăn Vặt Thỏa Thích",
+		"description": "Homestay cũng cung cấp một quầy Line với đầy đủ đồ ăn vặt cho các bạn thỏa sức lựa chọn nữa nè.",
+		"vision": {
+			"title": "Đa dạng lựa chọn",
+			"content": "Snack, bánh kẹo, nước uống... đủ cả!"
+		},
+		"mission": {
+			"title": "Tiện lợi",
+			"content": "Mua ngay tại homestay, không cần ra ngoài."
+		},
+		"ctaButton": "Xem Thêm",
+		"features": [
+			{
+				"icon": "TreePine",
+				"label": "7 Phòng",
+				"sublabel": "concept độc đáo"
+			},
+			{
+				"icon": "Leaf",
+				"label": "100%",
+				"sublabel": "riêng tư"
+			}
+		]
+	},
+
+	"faq": {
+		"sectionLabel": "FAQ",
+		"title": "Câu Hỏi Thường Gặp",
+		"description": "Thắc mắc khác? Liên hệ ngay qua Zalo!",
+		"items": [
+			{
+				"question": "Giờ nhận/trả phòng?",
+				"answer": "Nhận phòng: 14:00. Trả phòng: 12:00. Có thể linh động theo tình trạng phòng."
+			},
+			{
+				"question": "Địa chỉ ở đâu?",
+				"answer": "Đồng Tháp. Sau khi đặt phòng sẽ gửi link Google Maps chi tiết."
+			},
+			{
+				"question": "Có WiFi không?",
+				"answer": "Có, WiFi tốc độ cao miễn phí."
+			},
+			{
+				"question": "Có áp dụng theo giờ không?",
+				"answer": "Có! Bạn có thể đặt theo khung giờ linh hoạt."
+			},
+			{
+				"question": "Hủy phòng như thế nào?",
+				"answer": "Hoàn 100% nếu báo trước 24h. Liên hệ qua Zalo để được hỗ trợ."
+			}
+		]
+	},
+
+	"contact": {
+		"sectionLabel": "Liên Hệ",
+		"title": "Liên Hệ Đặt Phòng",
+		"description": "Inbox ngay để được tư vấn!",
+		"successMessage": "Đã gửi! Chúng tôi sẽ phản hồi sớm.",
+		"contactInfo": {
+			"title": "Thông tin liên hệ",
+			"phone": "093 929 38 04",
+			"email": "brillhomestay@gmail.com",
+			"address": "PG1-05 Vincom Cao Lãnh tỉnh Đồng Tháp, Cao Lãnh, Vietnam"
+		},
+		"form": {
+			"fields": [
+				{
+					"name": "name",
+					"label": "Họ và tên",
+					"placeholder": "Tên của bạn",
+					"required": true
+				},
+				{
+					"name": "email",
+					"label": "Email",
+					"type": "email",
+					"placeholder": "your@email.com",
+					"required": true
+				},
+				{
+					"name": "phone",
+					"label": "Số điện thoại (Tùy chọn)",
+					"placeholder": "+84 123 456 789",
+					"required": false
+				},
+				{
+					"name": "message",
+					"label": "Tin nhắn",
+					"placeholder": "Hãy cho chúng tôi biết về kỳ nghỉ mơ ước của bạn...",
+					"required": true
+				}
+			],
+			"submitButton": {
+				"text": "Gửi tin nhắn",
+				"loadingText": "Đang gửi..."
+			}
+		},
+		"validation": {
+			"name": {
+				"min": 2,
+				"max": 100,
+				"minMessage": "Tên phải có ít nhất 2 ký tự",
+				"maxMessage": "Tên không được quá 100 ký tự"
+			},
+			"email": {
+				"message": "Vui lòng nhập email hợp lệ"
+			},
+			"message": {
+				"min": 10,
+				"max": 1000,
+				"minMessage": "Tin nhắn phải có ít nhất 10 ký tự",
+				"maxMessage": "Tin nhắn không được quá 1000 ký tự"
+			}
+		}
+	},
+
+	"map": {
+		"sectionLabel": "Địa Chỉ",
+		"title": "Tìm Đường Đến Brill Home",
+		"description": "Vị trí thuận tiện tại Đồng Tháp.",
+		"embedUrl": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d982.5!2d105.6338318!3d10.4562323!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x310a659b0c8cfa81%3A0x1d375836c454d881!2sVincom%20Plaza%20Cao%20L%C3%A3nh!5e0!3m2!1svi!2s!4v1705043322271!5m2!1svi!2s",
+		"googleMapsLink": "https://www.google.com/maps/place/Vincom+Plaza+Cao+L%C3%A3nh/@10.4564219,105.6330978,18z/data=!4m14!1m7!3m6!1s0x310a659b0c8cfa81:0x1d375836c454d881!2sVincom+Plaza+Cao+L%C3%A3nh!8m2!3d10.4562323!4d105.6338318!16s%2Fg%2F11gmcck4xk!3m5!1s0x310a659b0c8cfa81:0x1d375836c454d881!8m2!3d10.4562323!4d105.6338318!16s%2Fg%2F11gmcck4xk?entry=ttu&g_ep=EgoyMDI2MDExMy4wIKXMDSoASAFQAw%3D%3D",
+		"locationCard": {
+			"name": "Brill Home Dong Thap",
+			"address": "PG1-05 Vincom Cao Lãnh tỉnh Đồng Tháp, Cao Lãnh, Vietnam",
+			"ctaButton": "Mở Google Maps"
+		}
+	}
+}

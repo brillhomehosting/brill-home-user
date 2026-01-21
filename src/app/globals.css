@@ -1,0 +1,141 @@
+@import "tailwindcss";
+
+:root {
+	--background: #f2ede4;
+	--foreground: #3e2c24;
+	--primary: #d97d48;
+	--secondary: #cdbba7;
+}
+
+[data-mantine-color-scheme="dark"] {
+	/* Keeping dark mode mapped for safety or future adjustment, 
+       but primarily defaulting these to the requested palette or a dark variant.
+       For now, I'll set a dark variant foundation so it's not broken. */
+	--background: #1a1512;
+	--foreground: #f2ede4;
+	--primary: #d97d48;
+	--secondary: #3e2c24;
+}
+
+/* * {
+	box-sizing: border-box;
+	padding: 0;
+	margin: 0;
+} */
+
+html,
+body {
+	max-width: 100vw;
+	overflow-x: hidden;
+}
+
+body {
+	color: var(--foreground);
+	background: var(--background);
+	min-height: 100vh;
+}
+
+a {
+	color: inherit;
+	text-decoration: none;
+}
+
+/* Blog Content Typography - Compact Style */
+
+.prose-content {
+	font-size: 1rem; /* Kích thước chuẩn 16px */
+	line-height: 1.6; /* Giảm từ 1.75 xuống 1.6 (vừa đủ thoáng nhưng không rời rạc) */
+	color: color-mix(in srgb, var(--foreground) 80%, transparent);
+	max-width: 90ch;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+/* --- HEADINGS (Thu gọn khoảng cách) --- */
+
+/* H1 thường là tiêu đề bài viết, nhưng nếu có trong bài thì style như sau */
+.prose-content h1 {
+	font-family: var(--font-serif), Georgia, serif;
+	font-size: 2.25rem;
+	font-weight: 700;
+	line-height: 1.2;
+	color: var(--foreground);
+	margin-top: 2rem;
+	margin-bottom: 1rem;
+}
+
+.prose-content h2 {
+	font-family: var(--font-serif), Georgia, serif;
+	font-size: 1.75rem; /* ~28px */
+	font-weight: 700;
+	line-height: 1.3;
+	color: var(--foreground);
+	/* Giảm mạnh margin */
+	margin-top: 2rem; /* Trước là 3.5rem -> Giảm còn 2rem */
+	margin-bottom: 0.75rem; /* Trước là 1.25rem -> Giảm còn 0.75rem */
+	letter-spacing: -0.015em;
+}
+
+.prose-content h3 {
+	font-family: var(--font-serif), Georgia, serif;
+	font-size: 1.35rem; /* ~22px */
+	font-weight: 600;
+	line-height: 1.4;
+	color: var(--foreground);
+	/* Giảm mạnh margin */
+	margin-top: 1.5rem; /* Trước là 2.5rem -> Giảm còn 1.5rem */
+	margin-bottom: 0.5rem; /* Sát với đoạn văn bên dưới hơn */
+}
+
+/* --- PARAGRAPHS & LISTS --- */
+.prose-content p {
+	margin-bottom: 1rem; /* Giảm từ 1.75rem xuống 1rem (chuẩn 16px) */
+}
+
+.prose-content ul,
+.prose-content ol {
+	padding-left: 1.25rem;
+	margin-bottom: 1rem; /* Đồng bộ với paragraph */
+}
+
+.prose-content ul li {
+	margin-bottom: 0.25rem; /* Các gạch đầu dòng nằm gần nhau hơn */
+	padding-left: 0.5rem;
+}
+
+/* Custom Bullet Point */
+.prose-content ul li::marker {
+	color: var(
+		--primary
+	); /* Dùng native marker cho gọn code nếu không cần custom icon */
+}
+
+/* --- BLOCKQUOTE --- */
+.prose-content blockquote {
+	font-family: var(--font-serif);
+	font-style: italic;
+	font-size: 1.1rem;
+	color: var(--foreground);
+	border-left: 3px solid var(--primary);
+	background: color-mix(in srgb, var(--primary) 5%, transparent);
+	padding: 1rem 1.5rem; /* Thu nhỏ padding */
+	margin: 1.5rem 0; /* Thu nhỏ margin */
+	border-radius: 0 0.5rem 0.5rem 0;
+}
+
+/* --- IMAGES --- */
+.prose-content img {
+	width: 100%;
+	height: auto;
+	border-radius: 0.5rem;
+	margin-top: 1.5rem;
+	margin-bottom: 0.5rem;
+}
+
+.prose-content figcaption {
+	text-align: center;
+	font-size: 0.85rem;
+	color: color-mix(in srgb, var(--foreground) 60%, transparent);
+	font-style: italic;
+	margin-bottom: 1.5rem;
+}
