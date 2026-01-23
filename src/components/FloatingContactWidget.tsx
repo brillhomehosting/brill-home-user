@@ -61,22 +61,6 @@ export default function FloatingContactWidget() {
 							<Image src={messengerIcon} alt="Messenger" width={36} height={36} />
 						</motion.button>
 
-						{/* Phone Button - Green */}
-						<motion.button
-							animate={{
-								...bounceAnimation,
-								transition: { ...bounceAnimation.transition, delay: 0.1 },
-							}}
-							onClick={handlePhoneClick}
-							className="w-14 h-14 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform cursor-pointer"
-							style={{
-								boxShadow: '0 4px 15px rgba(37, 211, 102, 0.4)',
-							}}
-							title="Gọi điện"
-						>
-							<Phone className="w-7 h-7" />
-						</motion.button>
-
 						{/* Zalo Button */}
 						<motion.button
 							animate={{
@@ -91,6 +75,22 @@ export default function FloatingContactWidget() {
 							title="Chat Zalo"
 						>
 							<Image src={zaloIcon} alt="Zalo" width={36} height={36} />
+						</motion.button>
+
+						{/* Phone Button - Green */}
+						<motion.button
+							animate={{
+								...bounceAnimation,
+								transition: { ...bounceAnimation.transition, delay: 0.1 },
+							}}
+							onClick={handlePhoneClick}
+							className="w-14 h-14 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform cursor-pointer"
+							style={{
+								boxShadow: '0 4px 15px rgba(37, 211, 102, 0.4)',
+							}}
+							title="Gọi điện"
+						>
+							<Phone className="w-7 h-7" />
 						</motion.button>
 					</motion.div>
 				)}

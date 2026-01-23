@@ -31,31 +31,31 @@ const ReadingProgress = () => {
 const getFullContent = (id: string): string => {
 	const contents: Record<string, string> = {
 		'line-store': `
-			<h2>Quầy Line - Đồ Ăn Vặt Ngay Tại Brill Home</h2>
-			<p>Bạn đang chill trong phòng, xem phim hay chơi game mà bỗng dưng thèm một gói snack? Đừng lo! Brill Home đã nghĩ đến điều đó rồi. Ngay tại homestay, chúng mình có một <strong>quầy Line</strong> với đầy đủ đồ ăn vặt cho các bạn thỏa sức lựa chọn!</p>
-			
-			<h2>Có Gì Tại Quầy Line?</h2>
-			
-			<h3>🍿 Snack & Bánh Kẹo</h3>
-			<p>Từ bim bim giòn rụm, bánh quy ngọt ngào đến kẹo dẻo đủ vị - tất cả đều có sẵn. Không cần phải chạy ra ngoài mua, cứ xuống quầy Line là có ngay!</p>
-			
-			<h3>🥤 Nước Uống</h3>
-			<p>Nước ngọt, nước suối, trà xanh... Đa dạng loại thức uống để bạn giải khát bất cứ lúc nào. Đặc biệt còn có cả cà phê và sữa cho những ai thích uống buổi sáng!</p>
-			
-			<h3>🍜 Mì Gói & Đồ Ăn Nhanh</h3>
-			<p>Đói đêm? Có mì gói các loại, cháo ăn liền và một số đồ ăn nhanh tiện lợi. Chỉ cần đun nước sôi là có bữa ăn nhẹ ngay!</p>
-			
-			<h2>Tại Sao Quầy Line Là Must-have?</h2>
+			<h2>Quầy Line – "Cứu Cánh" Cho Những Chiếc Bụng Đói Đêm Khuya 🍜</h2>
+			<p>Đang xem Netflix cuốn quá mà buồn miệng? Hay nửa đêm đói bụng mà lười order food app? Đừng lo nha, Brill Home đã chuẩn bị sẵn một <strong>Quầy Line "thần thánh"</strong> ngay tại homestay để cứu cánh cho bạn rồi đây!</p>
+
+			<h2>3 Bước "Chốt Đơn" Nhanh Gọn ⚡️</h2>
+			<p>Tại đây tụi mình hoạt động theo mô hình <strong>tự phục vụ (self-service)</strong> siêu thoải mái:</p>
 			
 			<ul>
-				<li><strong>Tiện lợi tối đa</strong> - Không cần ra ngoài, mua ngay tại homestay</li>
-				<li><strong>Giá cả hợp lý</strong> - Giá như ở cửa hàng tiện lợi, không "chặt chém"</li>
-				<li><strong>Mở 24/7</strong> - Thèm gì lúc nào cũng có thể mua được</li>
-				<li><strong>Đa dạng sản phẩm</strong> - Từ snack, nước uống đến mì gói đều có</li>
+				<li><strong>1. Chọn món</strong>: Lượn một vòng và nhặt những món bạn thích.</li>
+				<li><strong>2. Quét mã QR</strong>: Mở app ngân hàng và quét mã thanh toán được dán sẵn tại quầy.</li>
+				<li><strong>3. Thưởng thức</strong>: Ting ting xong là mang về phòng chill thôi!</li>
 			</ul>
+
+			<h2>Menu Có Gì? 🍿</h2>
+			<p>Tụi mình update đồ ăn thức uống liên tục để chiều lòng các bạn nè:</p>
+			<ul>
+				<li><strong>Team Ăn Vặt</strong>: Snack, bim bim, bánh tráng, kẹo dẻo... đủ loại.</li>
+				<li><strong>Team Khát Nước</strong>: Nước ngọt, trà xanh, nước suối, cà phê, sữa...</li>
+				<li><strong>Team Đói Bụng</strong>: Mì ly, phở gói, cháo ăn liền... (có sẵn ấm đun siêu tốc trong phòng nha).</li>
+			</ul>
+
+			<h2>Một Chút Lưu Ý Nhỏ 🫶</h2>
+			<p>Để giữ cho không gian chung luôn xinh đẹp và đầy đủ đồ cho người đến sau, Brill Home có lắp <strong>camera giám sát 24/7</strong> tại khu vực này.</p>
+			<p>Tụi mình tin là các bạn khách của Brill Home luôn văn minh và đáng yêu, nên hãy nhớ <strong>thanh toán trước khi lấy hàng</strong> nha!</p>
 			
-			<h2>Lời Kết</h2>
-			<p>Brill Home không chỉ là nơi nghỉ ngơi mà còn là nơi bạn được chăm sóc trọn vẹn. Quầy Line nhỏ xinh nhưng đáp ứng đầy đủ nhu cầu ăn vặt của bạn. <em>Đặt phòng ngay và trải nghiệm sự tiện lợi này nhé!</em></p>
+			<p><em>Chúc bạn có những phút giây chill thật vui và cái bụng thật no nê tại Brill Home! 💛</em></p>
 		`,
 		'1': `
 			<h2>Giới thiệu</h2>

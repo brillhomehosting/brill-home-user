@@ -117,10 +117,10 @@ export function ContactSection() {
 							Liên hệ
 						</span>
 						<h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-medium leading-snug md:leading-tight text-background mb-3 md:mb-4">
-							Kết nối với Brill Home
+							{contactData.title}
 						</h2>
-						<p className="text-background/80 leading-relaxed text-sm md:text-base mb-6 md:mb-8">
-							Inbox ngay để được tư vấn!
+						<p className="text-background/80 leading-relaxed text-sm md:text-base mb-6 md:mb-8 whitespace-pre-line">
+							{contactData.description}
 						</p>
 
 						{mutation.isSuccess && (

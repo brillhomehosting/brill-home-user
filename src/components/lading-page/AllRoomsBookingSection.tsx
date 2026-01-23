@@ -8,7 +8,7 @@ import { Card, Table } from '@mantine/core';
 import { motion } from 'framer-motion';
 import { CalendarClock, ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 // --- HELPER FUNCTIONS ---
 
@@ -352,6 +352,11 @@ export default function AllRoomsBookingSection() {
 		}
 	};
 
+	const sortedRooms = useMemo(() => {
+		if (!rooms) return [];
+		return [...rooms].sort((a, b) => a.name.localeCompare(b.name));
+	}, [rooms]);
+
 	return (
 		<section id="booking-table" className="py-12 md:py-20">
 			<div className="container mx-auto px-4 max-w-[1400px]">
@@ -412,7 +417,7 @@ export default function AllRoomsBookingSection() {
 						{isLoading ? (
 							<LoadingSkeleton />
 						) : (
-							<div className="max-h-[600px] overflow-auto scrollbar-thin scrollbar-thumb-stone-200 scrollbar-track-transparent">
+							<div className="max-h-[650px] overflow-auto scrollbar-thin scrollbar-thumb-stone-200 scrollbar-track-transparent">
 								<Table
 									striped
 									highlightOnHover
@@ -435,7 +440,7 @@ export default function AllRoomsBookingSection() {
 													</span>
 												</div>
 											</Table.Th>
-											{rooms?.map((room, roomIdx) => {
+											{sortedRooms?.map((room, roomIdx) => {
 												const timeSlots = roomTimeSlotsMap.get(room.id) || [];
 												// Alternating background for room groups
 												const roomBg = roomIdx % 2 === 0 ? '#F5F0E8' : '#FFFFFF';
@@ -447,10 +452,24 @@ export default function AllRoomsBookingSection() {
 														className="text-center p-0!"
 														style={{ backgroundColor: roomBg }}
 													>
-														<div className="py-3 px-2 border-b border-stone-200/60 flex justify-center">
-															<span className="text-sm font-bold text-stone-700 block text-center">
-																{room.name}
-															</span>
+														<div className="relative h-32 w-full border-b border-stone-200 overflow-hidden group">
+															{room.images?.[0]?.url && (
+																<>
+																	<Image
+																		src={room.images[0].url}
+																		alt={room.name}
+																		fill
+																		className="object-cover transition-transform duration-700 group-hover:scale-110"
+																		sizes="(max-width: 768px) 100vw, 200px"
+																	/>
+																	<div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors" />
+																</>
+															)}
+															<div className="absolute inset-0 flex items-center justify-center p-2 z-10">
+																<span className="text-white font-bold text-base md:text-lg text-center drop-shadow-md px-2 py-1 bg-black/20 rounded backdrop-blur-[2px]">
+																	{room.name}
+																</span>
+															</div>
 														</div>
 													</Table.Th>
 												);
@@ -459,7 +478,7 @@ export default function AllRoomsBookingSection() {
 
 										{/* Row 2: Header Time Slots */}
 										<Table.Tr>
-											{rooms?.map((room, roomIdx) => {
+											{sortedRooms?.map((room, roomIdx) => {
 												const timeSlots = roomTimeSlotsMap.get(room.id) || [];
 												const roomBg = roomIdx % 2 === 0 ? '#F5F0E8' : '#FFFFFF';
 
@@ -546,7 +565,7 @@ export default function AllRoomsBookingSection() {
 																	className="text-center p-2 align-middle"
 																	style={{ backgroundColor: cellBg }}
 																>
-																	<button
+																	<button	
 																		onClick={() => isActive && handleSlotClick(room.id, date, slot.id, dynamicPrice)}
 																		disabled={!isActive}
 																		className={`

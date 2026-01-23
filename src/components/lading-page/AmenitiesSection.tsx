@@ -3,6 +3,8 @@ import { Card, Container, Stack, Text } from "@mantine/core";
 import { motion } from "framer-motion";
 import {
 	AirVent,
+	Armchair,
+	BedDouble,
 	Droplets,
 	Gamepad2,
 	LucideIcon,
@@ -10,6 +12,7 @@ import {
 	PersonStanding,
 	Refrigerator,
 	Shirt,
+	Store,
 	Wind,
 } from "lucide-react";
 
@@ -23,6 +26,9 @@ const iconMap: Record<string, LucideIcon> = {
 	MonitorPlay,
 	Wind,
 	Gamepad2,
+	Store,
+	BedDouble,
+	Armchair,
 };
 
 const containerVariants = {
@@ -71,7 +77,7 @@ export function AmenitiesSection() {
 					initial="hidden"
 					whileInView="visible"
 					viewport={{ once: true }}
-					className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6"
+					className="grid grid-cols-2 lg:grid-cols-4 lg:gap-6 gap-4"
 				>
 					{amenitiesData.items.map((amenity) => {
 						const Icon = iconMap[amenity.icon];
@@ -79,10 +85,10 @@ export function AmenitiesSection() {
 							<motion.div key={amenity.title} variants={itemVariants}>
 								<Card
 									shadow="md"
-									className="bg-background border border-foreground/5 h-full hover:border-primary transition-colors group"
+									className="bg-background border border-foreground/5 h-full hover:border-primary transition-colors group lg:p-6! p-3! "
 								>
-									<Stack gap="md">
-										<div className="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center transition-all group-hover:bg-primary/20">
+									<Stack gap="xs">
+										<div className="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center transition-all group-hover:bg-primary/20 lg:w-16 lg:h-16">
 											{Icon && <Icon className="w-6 h-6 text-primary" />}
 										</div>
 										<Text size="lg" fw={500} className="font-serif text-foreground">

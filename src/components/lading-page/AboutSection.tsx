@@ -2,13 +2,15 @@ import lineStoreImage from "@/assets/line-store.jpg";
 import { aboutData } from "@/data";
 import { Button, Card, Container, Group, Stack, Text } from "@mantine/core";
 import { motion } from "framer-motion";
-import { Leaf, LucideIcon, TreePine } from "lucide-react";
+import { Cctv, Leaf, LucideIcon, QrCode, TreePine } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 const iconMap: Record<string, LucideIcon> = {
 	TreePine,
 	Leaf,
+	QrCode,
+	Cctv,
 };
 
 export function AboutSection() {
@@ -54,7 +56,7 @@ export function AboutSection() {
 									{aboutData.features.map((feature) => {
 										const Icon = iconMap[feature.icon];
 										return (
-											<Group key={feature.label} gap="sm"  wrap="nowrap">
+											<Group key={feature.label} gap="sm" wrap="nowrap">
 												<div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
 													{Icon && <Icon className="w-5 h-5 text-primary" />}
 												</div>
@@ -85,24 +87,9 @@ export function AboutSection() {
 							{aboutData.title}
 						</h2>
 
-						<p className="text-foreground/80 leading-relaxed text-sm md:text-base mb-6">
+						<p className="text-foreground/80 leading-relaxed text-sm md:text-base mb-6 whitespace-pre-line">
 							{aboutData.description}
 						</p>
-
-						<Stack gap="md" className="mb-8">
-							<div>
-								<Text fw={500} className="text-primary mb-1">{aboutData.vision.title}</Text>
-								<Text size="sm" c="dimmed">
-									{aboutData.vision.content}
-								</Text>
-							</div>
-							<div>
-								<Text fw={500} className="text-primary mb-1">{aboutData.mission.title}</Text>
-								<Text size="sm" c="dimmed">
-									{aboutData.mission.content}
-								</Text>
-							</div>
-						</Stack>
 
 						<Button
 							onClick={() => router.push('/blogs/line-store')}

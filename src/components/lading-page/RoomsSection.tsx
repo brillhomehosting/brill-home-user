@@ -271,11 +271,24 @@ export function RoomsSection() {
 
 	const groupedRooms = useMemo(() => {
 		if (!rooms.length) return null;
+		const sortByNameAZ = (a: Room, b: Room) => a.name.localeCompare(b.name);
+
 		return {
-			normal: rooms.filter(room => room.roomType === 'NORMAL'),
-			standard: rooms.filter(room => room.roomType === 'STANDARD'),
-			vip: rooms.filter(room => room.roomType === 'VIP'),
-			premium: rooms.filter(room => room.roomType === 'PREMIUM')
+			normal: rooms
+				.filter(room => room.roomType === 'NORMAL')
+				.sort(sortByNameAZ),
+
+			standard: rooms
+				.filter(room => room.roomType === 'STANDARD')
+				.sort(sortByNameAZ),
+
+			vip: rooms
+				.filter(room => room.roomType === 'VIP')
+				.sort(sortByNameAZ),
+
+			premium: rooms
+				.filter(room => room.roomType === 'PREMIUM')
+				.sort(sortByNameAZ),
 		};
 	}, [rooms]);
 

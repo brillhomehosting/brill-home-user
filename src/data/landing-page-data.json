@@ -292,6 +292,26 @@
 				"icon": "Gamepad2",
 				"title": "Game Console",
 				"description": "Giải trí cùng nhau."
+			},
+			{
+				"icon": "Store",
+				"title": "Quầy Bếp",
+				"description": "Mua sắm đồ ăn vặt tại homestay."
+			},
+			{
+				"icon": "BedDouble",
+				"title": "Giường 5 sao",
+				"description": "Giường thoải mái, rộng rãi"
+			},
+			{
+				"icon": "Armchair",
+				"title": "Ghế sofa",
+				"description": "Ghế thoải mái"
+			},
+			{
+				"icon": "Shirt",
+				"title": "Kệ quần áo",
+				"description": "Kệ quần áo thoải mái treo đồ"
 			}
 		]
 	},
@@ -368,27 +388,19 @@
 
 	"about": {
 		"sectionLabel": "Quầy Line",
-		"title": "Đồ Ăn Vặt Thỏa Thích",
-		"description": "Homestay cũng cung cấp một quầy Line với đầy đủ đồ ăn vặt cho các bạn thỏa sức lựa chọn nữa nè.",
-		"vision": {
-			"title": "Đa dạng lựa chọn",
-			"content": "Snack, bánh kẹo, nước uống... đủ cả!"
-		},
-		"mission": {
-			"title": "Tiện lợi",
-			"content": "Mua ngay tại homestay, không cần ra ngoài."
-		},
+		"title": "Quầy line – Thanh toán tự động tại Brill Home",
+		"description": "Đồ ăn vặt xịn cho bạn chill nè 🍿\n\n✨ Quét QR thanh toán trước khi lấy món\n🫶 Camera 24/7 giữ gìn không gian chung\n\nChúc bạn chill vui và ngon miệng nha 😋 💛",
 		"ctaButton": "Xem Thêm",
 		"features": [
 			{
-				"icon": "TreePine",
-				"label": "7 Phòng",
-				"sublabel": "concept độc đáo"
+				"icon": "QrCode",
+				"label": "Thanh toán QR",
+				"sublabel": "nhanh chóng"
 			},
 			{
-				"icon": "Leaf",
-				"label": "100%",
-				"sublabel": "riêng tư"
+				"icon": "Cctv",
+				"label": "Camera 24/7",
+				"sublabel": "an ninh"
 			}
 		]
 	},
@@ -423,8 +435,8 @@
 
 	"contact": {
 		"sectionLabel": "Liên Hệ",
-		"title": "Liên Hệ Đặt Phòng",
-		"description": "Inbox ngay để được tư vấn!",
+		"title": "Kết nối với Brill Home  🫶",
+		"description": "Có điều gì chưa ổn? Đừng ngại chia sẻ để Brill Home hỗ trợ bạn ngay nhé 💛\nBạn có thể gửi:\n• Phản hồi về phòng\n• Báo cáo sự cố\n• Góp ý dịch vụ",
 		"successMessage": "Đã gửi! Chúng tôi sẽ phản hồi sớm.",
 		"contactInfo": {
 			"title": "Thông tin liên hệ",

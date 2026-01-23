@@ -19,9 +19,9 @@ export interface BlogPost {
 export const mockBlogs: BlogPost[] = [
 	{
 		id: "line-store",
-		title: "Quầy Line Tại Brill Home: Góc Nhỏ Đồ Ăn Vặt Cho Những Phút Giây Chill",
+		title: "Quầy Line Tự Động: Ăn Vặt Thả Ga - Quét QR Cực Đã",
 		excerpt:
-			"Không chỉ có phòng đẹp, Brill Home còn có một quầy Line với đầy đủ đồ ăn vặt cho các bạn thỏa sức lựa chọn. Từ snack, bánh kẹo đến nước uống - mua ngay tại homestay, không cần ra ngoài!",
+			"Đói đêm? Thèm snack? Ghé ngay Quầy Line tự phục vụ hoạt động 24/7. Chỉ 3 bước: Chọn món - Quét QR - Chill ngay tại phòng!",
 		image: "/assets/line-store.jpg",
 		author: { name: "Brill Home" },
 		category: "Tiện ích",

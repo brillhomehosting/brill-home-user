@@ -82,7 +82,10 @@ export function Header() {
 									color: isTransparent ? '#f2ede4' : 'var(--mantine-color-text)',
 								}}
 								onClick={(e) => {
-									if (link.href.startsWith('#')) {
+									if (link.href === '/' && pathname === '/') {
+										e.preventDefault();
+										window.scrollTo({ top: 0, behavior: 'smooth' });
+									} else if (link.href.startsWith('#')) {
 										if (pathname === '/') {
 											e.preventDefault();
 											const targetId = link.href.slice(1);
@@ -163,7 +166,11 @@ export function Header() {
 										component={Link}
 										href={pathname === '/' ? link.href : `/${link.href}`}
 										onClick={(e) => {
-											if (link.href.startsWith('#')) {
+											if (link.href === '/' && pathname === '/') {
+												e.preventDefault();
+												setIsMobileMenuOpen(false);
+												window.scrollTo({ top: 0, behavior: 'smooth' });
+											} else if (link.href.startsWith('#')) {
 												if (pathname === '/') {
 													e.preventDefault();
 													setIsMobileMenuOpen(false);
