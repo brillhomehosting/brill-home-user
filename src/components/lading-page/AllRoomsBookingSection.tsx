@@ -367,7 +367,7 @@ export default function AllRoomsBookingSection() {
 					viewport={{ once: true }}
 					className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8"
 				>
-					<div>
+					<div className="text-center lg:text-left">
 						<span className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-[#d4af37] font-bold mb-3">
 							<CalendarClock className="w-4 h-4" />
 							Đặt phòng nhanh

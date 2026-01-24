@@ -113,10 +113,10 @@ export function ContactSection() {
 						viewport={{ once: true }}
 						transition={{ duration: 0.8 }}
 					>
-						<span className="inline-block text-xs uppercase tracking-[0.15em] md:tracking-[0.2em] text-[#d4af37] font-bold mb-3 md:mb-4">
+						<span className="block w-full text-center lg:text-left text-xs uppercase tracking-[0.15em] md:tracking-[0.2em] text-[#d4af37] font-bold mb-3 md:mb-4">
 							Liên hệ
 						</span>
-						<h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-medium leading-snug md:leading-tight text-background mb-3 md:mb-4">
+						<h2 className="text-center lg:text-left text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-medium leading-snug md:leading-tight text-background mb-3 md:mb-4">
 							{contactData.title}
 						</h2>
 						<p className="text-background/80 leading-relaxed text-sm md:text-base mb-6 md:mb-8 whitespace-pre-line">
@@ -136,7 +136,7 @@ export function ContactSection() {
 								<Group grow>
 									<TextInput
 										label="Họ và tên"
-										placeholder="Tên của bạn"
+										placeholder={contactData.form.fields[0]?.placeholder}
 										error={errors.name?.message}
 										{...register("name")}
 										styles={{
@@ -160,7 +160,7 @@ export function ContactSection() {
 									<TextInput
 										label="Email"
 										type="email"
-										placeholder="your@email.com"
+										placeholder={contactData.form.fields[1]?.placeholder}
 										error={errors.email?.message}
 										{...register("email")}
 										styles={{
@@ -185,7 +185,7 @@ export function ContactSection() {
 
 								<TextInput
 									label="Số điện thoại (Tùy chọn)"
-									placeholder="+84 123 456 789"
+									placeholder={contactData.form.fields[2]?.placeholder}
 									error={errors.phone?.message}
 									{...register("phone")}
 									styles={{
@@ -209,7 +209,7 @@ export function ContactSection() {
 
 								<Textarea
 									label="Tin nhắn"
-									placeholder="Hãy cho chúng tôi biết về kỳ nghỉ mơ ước của bạn..."
+									placeholder={contactData.form.fields[3]?.placeholder}
 									rows={5}
 									error={errors.message?.message}
 									{...register("message")}
@@ -250,7 +250,7 @@ export function ContactSection() {
 										}
 									}}
 								>
-									{mutation.isPending ? "Đang gửi..." : "Gửi tin nhắn"}
+									{mutation.isPending ? contactData.form.submitButton.loadingText : contactData.form.submitButton.text}
 								</Button>
 							</Stack>
 						</form>

@@ -395,12 +395,12 @@
 			{
 				"icon": "QrCode",
 				"label": "Thanh toán QR",
-				"sublabel": "nhanh chóng"
+				"sublabel": "Nhanh chóng"
 			},
 			{
 				"icon": "Cctv",
 				"label": "Camera 24/7",
-				"sublabel": "an ninh"
+				"sublabel": "An ninh"
 			}
 		]
 	},
@@ -468,7 +468,7 @@
 				{
 					"name": "message",
 					"label": "Tin nhắn",
-					"placeholder": "Hãy cho chúng tôi biết về kỳ nghỉ mơ ước của bạn...",
+					"placeholder": "Chỉ cần để lại tin nhắn, Brill Home sẽ liên hệ bạn ngay khi nhận được để hỗ trợ bạn sớm nhất có thể ✨",
 					"required": true
 				}
 			],

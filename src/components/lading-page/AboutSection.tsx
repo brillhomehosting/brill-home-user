@@ -78,16 +78,16 @@ export function AboutSection() {
 						whileInView={{ opacity: 1, x: 0 }}
 						viewport={{ once: true }}
 						transition={{ duration: 0.8 }}
-						className="lg:pl-8 pt-16 lg:pt-0"
+						className="lg:pl-8 pt-16 lg:pt-0 flex flex-col items-center lg:items-start"
 					>
-						<span className="inline-block text-xs uppercase tracking-[0.15em] md:tracking-[0.2em] text-[#d4af37] font-bold mb-3 md:mb-4">
+						<span className="w-full block text-center lg:text-left text-xs uppercase tracking-[0.15em] md:tracking-[0.2em] text-[#d4af37] font-bold mb-3 md:mb-4">
 							{aboutData.sectionLabel}
 						</span>
-						<h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-medium leading-snug md:leading-tight text-foreground mb-4 md:mb-6">
+						<h2 className="text-center lg:text-left text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-medium leading-snug md:leading-tight text-foreground mb-4 md:mb-6">
 							{aboutData.title}
 						</h2>
 
-						<p className="text-foreground/80 leading-relaxed text-sm md:text-base mb-6 whitespace-pre-line">
+						<p className="text-center lg:text-left text-foreground/80 leading-relaxed text-sm md:text-base mb-6 whitespace-pre-line">
 							{aboutData.description}
 						</p>
 
