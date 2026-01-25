@@ -607,21 +607,22 @@ export default function AllRoomsBookingSection() {
 																		className={`
                                                                             w-full h-[36px] rounded font-medium text-sm transition-all duration-200 flex flex-col items-center justify-center gap-0.5 shadow-sm
                                                                             ${!isActive
-																				? 'bg-red-50 text-red-500 border border-transparent cursor-not-allowed shadow-none' // UNAVAILABLE (RED)
+																				? 'bg-red-200 text-red-500 border border-transparent cursor-not-allowed shadow-none' // UNAVAILABLE (RED)
 																				: isSelected
 																					? 'bg-[#D97D48] text-white shadow-lg border border-[#D97D48]' // SELECTED
 																					: 'bg-white text-teal-700 border border-teal-200 hover:border-teal-500 hover:shadow-md hover:bg-teal-50' // AVAILABLE
 																			}
                                                                         `}
 																	>
-																		{isActive ? (
+																		{isActive && (
 																			<span className="leading-none text-[12px] font-bold">
 																			</span>
-																		) : isPast ? (
-																			<span className="text-[12px] font-bold">Quá giờ</span>
+																		) }
+																		{/* : isPast ? (
+																		 	<span className="text-[12px] font-bold">Quá giờ</span>
 																		) : (
-																			<span className="text-[12px] font-bold">Đã đặt</span>
-																		)}
+																		 	<span className="text-[12px] font-bold">Đã đặt</span>
+																		 )} */}
 																	</button>
 																</Table.Td>
 															);
@@ -650,7 +651,7 @@ export default function AllRoomsBookingSection() {
 							</div>
 							<div className="flex items-center gap-2">
 								<div className="w-3 h-3 rounded-full bg-red-500"></div>
-								<span className="text-xs text-stone-400">Đã đặt & Quá giờ</span>
+								<span className="text-xs text-stone-600">Đã đặt & Quá giờ</span>
 							</div>
 						</div>
 

@@ -395,20 +395,21 @@ export default function BookingWidget({ room }: { room: Room }) {
 														className={`
 															w-full h-[32px] rounded font-medium text-xs transition-all duration-200 flex items-center justify-center shadow-sm
 															${!isActive
-																? 'bg-red-50 text-red-500 border border-transparent cursor-not-allowed shadow-none'
+																? 'bg-red-200 text-red-500 border border-transparent cursor-not-allowed shadow-none'
 																: isSelected
 																	? 'bg-[#D97D48] text-white shadow-md border border-[#D97D48]'
 																	: 'bg-white text-teal-700 border border-teal-200 hover:border-teal-500 hover:shadow-md hover:bg-teal-50'
 															}
 														`}
 													>
-														{isActive ? (
+														{isActive && (
 															<span className="font-bold">{priceInK}k</span>
-														) : isPast ? (
-															<span className="text-[12px] font-bold">Quá giờ</span>
-														) : (
-															<span className="text-[12px] font-bold">Đã đặt</span>
 														)}
+														{/* // : isPast ? (
+														// 	<span className="text-[12px] font-bold">Quá giờ</span>
+														// ) : (
+														// 	<span className="text-[12px] font-bold">Đã đặt</span>
+														// )} */}
 													</button>
 												</Table.Td>
 											);
