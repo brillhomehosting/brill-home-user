@@ -49,6 +49,20 @@ const getTimeSlotIcon = (startTime: string, isOvernight: boolean): string => {
 	return '🌙';
 };
 
+// Check if slot is past (for today only)
+const isPastSlot = (date: Date, startTime: string): boolean => {
+	if (!isToday(date)) return false;
+
+	const now = new Date();
+	const timeParts = startTime.split(':');
+	const hours = parseInt(timeParts[0] || '0', 10);
+	const minutes = parseInt(timeParts[1] || '0', 10);
+	const slotTime = new Date();
+	slotTime.setHours(hours, minutes, 0, 0);
+
+	return now > slotTime;
+};
+
 // Loading Skeleton
 function LoadingSkeleton() {
 	return (
@@ -363,7 +377,10 @@ export default function BookingWidget({ room }: { room: Room }) {
 										{timeSlots.map((slot: TimeSlot) => {
 											const slotKey = `${formatDate(date)}::${slot.id}`;
 											const isSelected = selectedSlots.has(slotKey);
-											const isActive = getSlotAvailability(date, slot.id);
+											const isApiActive = getSlotAvailability(date, slot.id);
+											// Check if slot is past for today
+											const isPast = isPastSlot(date, slot.startTime);
+											const isActive = isApiActive && !isPast;
 											const priceInK = slot.price / 1000;
 
 											return (
@@ -387,8 +404,10 @@ export default function BookingWidget({ room }: { room: Room }) {
 													>
 														{isActive ? (
 															<span className="font-bold">{priceInK}k</span>
+														) : isPast ? (
+															<span className="text-[12px] font-bold">Quá giờ</span>
 														) : (
-															<span className="text-[10px]">Đã đặt</span>
+															<span className="text-[12px] font-bold">Đã đặt</span>
 														)}
 													</button>
 												</Table.Td>
@@ -414,7 +433,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 				</div>
 				<div className="flex items-center gap-1.5">
 					<div className="w-3 h-3 rounded-full bg-red-500"></div>
-					<span className="text-[10px] text-stone-400">Đã đặt</span>
+					<span className="text-[10px] text-stone-600">Đã đặt & Quá giờ</span>
 				</div>
 			</div>
 

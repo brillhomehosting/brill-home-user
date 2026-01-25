@@ -169,7 +169,10 @@ export function Header() {
 											if (link.href === '/' && pathname === '/') {
 												e.preventDefault();
 												setIsMobileMenuOpen(false);
-												window.scrollTo({ top: 0, behavior: 'smooth' });
+												// Delay scroll to allow menu animation to complete
+												setTimeout(() => {
+													window.scrollTo({ top: 0, behavior: 'smooth' });
+												}, 300);
 											} else if (link.href.startsWith('#')) {
 												if (pathname === '/') {
 													e.preventDefault();
@@ -207,10 +210,13 @@ export function Header() {
 									className="bg-primary hover:bg-primary/90 text-white border-primary mt-4"
 									onClick={() => {
 										setIsMobileMenuOpen(false);
-										const bookingSection = document.getElementById('booking-table');
-										if (bookingSection) {
-											bookingSection.scrollIntoView({ behavior: 'smooth' });
-										}
+										// Delay scroll to allow menu animation to complete
+										setTimeout(() => {
+											const bookingSection = document.getElementById('booking-table');
+											if (bookingSection) {
+												bookingSection.scrollIntoView({ behavior: 'smooth' });
+											}
+										}, 300);
 									}}
 								>
 									Đặt Phòng

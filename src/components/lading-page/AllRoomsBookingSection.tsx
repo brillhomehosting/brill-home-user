@@ -51,6 +51,20 @@ const getTimeSlotIcon = (startTime: string, isOvernight: boolean): string => {
 	return '🌙'; // Đêm
 };
 
+// Check if slot is past (for today only)
+const isPastSlot = (date: Date, startTime: string): boolean => {
+	if (!isToday(date)) return false;
+
+	const now = new Date();
+	const timeParts = startTime.split(':');
+	const hours = parseInt(timeParts[0] || '0', 10);
+	const minutes = parseInt(timeParts[1] || '0', 10);
+	const slotTime = new Date();
+	slotTime.setHours(hours, minutes, 0, 0);
+
+	return now > slotTime;
+};
+
 // Loading Skeleton
 function LoadingSkeleton() {
 	return (
@@ -574,7 +588,10 @@ export default function AllRoomsBookingSection() {
 															const dateStr = formatDate(date);
 															const dayData = availabilityData?.find(d => d.date === dateStr);
 															const slotStatus = dayData?.timeSlots?.find(s => s?.timeSlot?.id === slot.id);
-															const isActive = slotStatus?.isActive ?? true;
+															const isApiActive = slotStatus?.isActive ?? true;
+															// Check if slot is past for today
+															const isPast = isPastSlot(date, slot.startTime);
+															const isActive = isApiActive && !isPast;
 															// Calculate dynamic price
 															const dynamicPrice = slotStatus?.timeSlot?.price ?? slot.price;
 
@@ -600,6 +617,8 @@ export default function AllRoomsBookingSection() {
 																		{isActive ? (
 																			<span className="leading-none text-[12px] font-bold">
 																			</span>
+																		) : isPast ? (
+																			<span className="text-[12px] font-bold">Quá giờ</span>
 																		) : (
 																			<span className="text-[12px] font-bold">Đã đặt</span>
 																		)}
@@ -631,7 +650,7 @@ export default function AllRoomsBookingSection() {
 							</div>
 							<div className="flex items-center gap-2">
 								<div className="w-3 h-3 rounded-full bg-red-500"></div>
-								<span className="text-xs text-stone-400">Đã đặt</span>
+								<span className="text-xs text-stone-400">Đã đặt & Quá giờ</span>
 							</div>
 						</div>
 
