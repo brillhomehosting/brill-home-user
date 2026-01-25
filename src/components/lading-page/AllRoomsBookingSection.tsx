@@ -354,8 +354,27 @@ export default function AllRoomsBookingSection() {
 
 	const sortedRooms = useMemo(() => {
 		if (!rooms) return [];
-		return [...rooms].sort((a, b) => a.name.localeCompare(b.name));
-	}, [rooms]);
+
+		return [...rooms].sort((a, b) => {
+			const slotsA = roomTimeSlotsMap.get(a.id) || [];
+			const slotsB = roomTimeSlotsMap.get(b.id) || [];
+
+			// Helper: Get earliest start time value (e.g. 9:30 -> 930)
+			const getEarliestTime = (slots: typeof slotsA) => {
+				if (!slots.length) return Infinity; // No slots -> push to end
+				return Math.min(...slots.map(s => parseInt(s.startTime.replace(':', ''), 10)));
+			};
+
+			const timeA = getEarliestTime(slotsA);
+			const timeB = getEarliestTime(slotsB);
+
+			// Sort by time first
+			if (timeA !== timeB) return timeA - timeB;
+
+			// Fallback to name
+			return a.name.localeCompare(b.name);
+		});
+	}, [rooms, roomTimeSlotsMap]);
 
 	return (
 		<section id="booking-table" className="py-12 md:py-20">
@@ -565,7 +584,7 @@ export default function AllRoomsBookingSection() {
 																	className="text-center p-2 align-middle"
 																	style={{ backgroundColor: cellBg }}
 																>
-																	<button	
+																	<button
 																		onClick={() => isActive && handleSlotClick(room.id, date, slot.id, dynamicPrice)}
 																		disabled={!isActive}
 																		className={`
