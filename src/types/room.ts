@@ -1,10 +1,4 @@
-// Base entity with common fields
-export interface BaseEntity {
-	id: string;
-	isDeleted: boolean;
-	createdAt: string;
-	updatedAt: string;
-}
+import { ApiResponse, BaseEntity, PaginatedData } from ".";
 
 // Room Image
 export interface RoomImage extends BaseEntity {
@@ -34,67 +28,9 @@ export interface Room extends BaseEntity {
 	roomType: string;
 }
 
-// Pagination Sort
-export interface PaginationSort {
-	unsorted: boolean;
-	sorted: boolean;
-	empty: boolean;
-}
-
-// Pageable Info
-export interface Pageable {
-	pageNumber: number;
-	pageSize: number;
-	sort: PaginationSort;
-	offset: number;
-	unpaged: boolean;
-	paged: boolean;
-}
-
-// Paginated Response Data
-export interface PaginatedData<T> {
-	content: T[];
-	pageable: Pageable;
-	totalElements: number;
-	totalPages: number;
-	last: boolean;
-	numberOfElements: number;
-	size: number;
-	number: number;
-	sort: PaginationSort;
-	first: boolean;
-	empty: boolean;
-}
-
-// API Response Wrapper
-export interface ApiResponse<T> {
-	success: boolean;
-	data: T;
-	message: string;
-	error: string | null;
-}
-
-// TimeSlot types for availability
-export interface TimeSlot extends BaseEntity {
-	roomId: string;
-	startTime: string;
-	endTime: string;
-	isOvernight: boolean;
-	price: number;
-}
-
-export interface TimeSlotWithStatus {
-	timeSlot: TimeSlot;
-	isActive: boolean;
-}
-
-export interface DayAvailability {
-	date: string;
-	timeSlots: TimeSlotWithStatus[];
-}
-
 // Specific Response Types
 export type RoomsApiResponse = ApiResponse<PaginatedData<Room>>;
 export type RoomApiResponse = ApiResponse<Room>;
-export type RoomTimeSlotsApiResponse = ApiResponse<TimeSlot[]>;
-export type TimeSlotAvailabilityApiResponse = ApiResponse<DayAvailability[]>;
+
+// Re-export timeslot types for convenience
+export * from "./timeslot";

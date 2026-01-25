@@ -1,4 +1,9 @@
-// Global type definitions
+// Pagination Sort
+export interface PaginationSort {
+	unsorted: boolean;
+	sorted: boolean;
+	empty: boolean;
+}
 
 // API Response wrapper
 export interface ApiResponse<T> {
@@ -7,23 +12,43 @@ export interface ApiResponse<T> {
 	message?: string;
 }
 
-// Pagination types
-export interface PaginationParams {
-	page: number;
-	limit: number;
+// Pageable Info
+export interface Pageable {
+	pageNumber: number;
+	pageSize: number;
+	sort: PaginationSort;
+	offset: number;
+	unpaged: boolean;
+	paged: boolean;
 }
 
-export interface PaginatedResponse<T> {
-	items: T[];
-	total: number;
-	page: number;
-	limit: number;
+// Paginated Response Data
+export interface PaginatedData<T> {
+	content: T[];
+	pageable: Pageable;
+	totalElements: number;
 	totalPages: number;
+	last: boolean;
+	numberOfElements: number;
+	size: number;
+	number: number;
+	sort: PaginationSort;
+	first: boolean;
+	empty: boolean;
+}
+
+// API Response Wrapper
+export interface ApiResponse<T> {
+	success: boolean;
+	data: T;
+	message?: string;
+	error?: string | null;
 }
 
 // Common entity types
 export interface BaseEntity {
-	id: number;
-	createdAt?: string;
-	updatedAt?: string;
+	id: string;
+	isDeleted: boolean;
+	createdAt: string;
+	updatedAt: string;
 }
