@@ -1,4 +1,4 @@
-import heroImage from "@/assets/hero-resort.jpg";
+import heroImage from "@/assets/phong2.jpg";
 import zaloIcon from "@/assets/icon-zalo.png";
 import { heroData } from "@/data";
 import { Button, Container } from "@mantine/core";
