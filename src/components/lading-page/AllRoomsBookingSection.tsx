@@ -614,15 +614,14 @@ export default function AllRoomsBookingSection() {
 																			}
                                                                         `}
 																	>
-																		{isActive && (
+																		{isActive ? (
 																			<span className="leading-none text-[12px] font-bold">
 																			</span>
-																		) }
-																		{/* : isPast ? (
-																		 	<span className="text-[12px] font-bold">Quá giờ</span>
+																		) : isPast ? (
+																		 	<span className="text-[12px] font-bold"></span>
 																		) : (
 																		 	<span className="text-[12px] font-bold">Đã đặt</span>
-																		 )} */}
+																		 )}
 																	</button>
 																</Table.Td>
 															);

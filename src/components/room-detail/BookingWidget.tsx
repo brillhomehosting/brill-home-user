@@ -402,14 +402,13 @@ export default function BookingWidget({ room }: { room: Room }) {
 															}
 														`}
 													>
-														{isActive && (
+														{isActive ? (
 															<span className="font-bold">{priceInK}k</span>
+														) : isPast ? (
+															<span className="text-[12px] font-bold"></span>
+														) : (
+															<span className="text-[12px] font-bold">Đã đặt</span>
 														)}
-														{/* // : isPast ? (
-														// 	<span className="text-[12px] font-bold">Quá giờ</span>
-														// ) : (
-														// 	<span className="text-[12px] font-bold">Đã đặt</span>
-														// )} */}
 													</button>
 												</Table.Td>
 											);
