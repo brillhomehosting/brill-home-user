@@ -434,7 +434,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 				</div>
 				<div className="flex items-center gap-1.5">
 					<div className="w-3 h-3 rounded-full bg-red-500"></div>
-					<span className="text-[10px] text-stone-600">Đã đặt & Quá giờ</span>
+					<span className="text-[10px] text-stone-600">Đã đặt</span>
 				</div>
 			</div>
 
