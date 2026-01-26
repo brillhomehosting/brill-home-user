@@ -572,7 +572,7 @@ export default function AllRoomsBookingSection() {
 													</Table.Td>
 
 													{/* Room Slots */}
-													{rooms?.map((room, roomIdx) => {
+													{sortedRooms?.map((room, roomIdx) => {
 														const timeSlots = roomTimeSlotsMap.get(room.id) || [];
 														const availabilityData = roomAvailabilityMap.get(room.id);
 														// Subtle alternating background for rows/groups
