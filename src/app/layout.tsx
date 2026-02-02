@@ -22,7 +22,7 @@ const notoSerif = Noto_Serif({
 export const metadata: Metadata = {
 	metadataBase: new URL('https://brillhomestay.com'),
 	title: 'Brill Home Stay',
-	description: 'Seoul thu nhỏ giành cho các cặp đôi',
+	description: 'Seoul thu nhỏ dành riêng cho các cặp đôi',
 
 	icons: {
 		icon: '/logo.png',
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
 
 	openGraph: {
 		title: 'Brill Home Stay',
-		description: 'Seoul thu nhỏ giành cho các cặp đôi',
+		description: 'Seoul thu nhỏ dành riêng cho các cặp đôi',
 		url: 'https://brillhomestay.com',
 		siteName: 'Brill Home Stay',
 		images: [
@@ -39,6 +39,7 @@ export const metadata: Metadata = {
 				width: 1200,
 				height: 630,
 				alt: 'Brill Home Stay',
+				type: 'image/png',
 			},
 		],
 		type: 'website',
@@ -47,7 +48,7 @@ export const metadata: Metadata = {
 	twitter: {
 		card: 'summary_large_image',
 		title: 'Brill Home Stay',
-		description: 'Seoul thu nhỏ giành cho các cặp đôi',
+		description: 'Seoul thu nhỏ dành riêng cho các cặp đôi',
 		images: ['https://res.cloudinary.com/dxce9c0vh/image/upload/v1769866595/brillhome_logo_sjxffg.png'],
 	},
 
