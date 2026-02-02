@@ -111,8 +111,6 @@ export default function BookingWidget({ room }: { room: Room }) {
 	const { data: timeSlots, isLoading: isLoadingTimeSlots } = useRoomTimeSlots(room.id);
 	const { data: availabilityData } = useTimeSlotAvailability(room.id, startDate, endDate);
 
-	console.log('BookingWidget Debug:', { roomId: room.id, timeSlots, isLoadingTimeSlots, availabilityData });
-
 	// Get availability status for a specific timeslot on a specific date
 	const getSlotAvailability = (date: Date, slotId: string): boolean => {
 		if (!availabilityData || !Array.isArray(availabilityData)) return true;

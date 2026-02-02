@@ -52,6 +52,10 @@ export const metadata: Metadata = {
 		images: ['https://res.cloudinary.com/dxce9c0vh/image/upload/v1769866595/brillhome_logo_sjxffg.png'],
 	},
 
+	facebook: {
+        appId: '61585984563658',
+    },
+
 	keywords: [
 		// Brand
 		'Brill Home Stay',
