@@ -20,8 +20,9 @@ const notoSerif = Noto_Serif({
 });
 
 export const metadata: Metadata = {
+	metadataBase: new URL('https://brillhomestay.com'),
 	title: 'Brill Home Stay',
-	description: 'A hidden nature retreat surrounded by pristine forest',
+	description: 'Seoul thu nhỏ giành cho các cặp đôi',
 
 	icons: {
 		icon: '/logo.png',
@@ -34,7 +35,7 @@ export const metadata: Metadata = {
 		siteName: 'Brill Home Stay',
 		images: [
 			{
-				url: 'https://res.cloudinary.com/dxce9c0vh/image/upload/v1769866595/brillhome_logo_sjxffg.png', // BẮT BUỘC absolute URL
+				url: 'https://res.cloudinary.com/dxce9c0vh/image/upload/v1769866595/brillhome_logo_sjxffg.png',
 				width: 1200,
 				height: 630,
 				alt: 'Brill Home Stay',
@@ -46,7 +47,7 @@ export const metadata: Metadata = {
 	twitter: {
 		card: 'summary_large_image',
 		title: 'Brill Home Stay',
-		description: 'A hidden nature retreat surrounded by pristine forest',
+		description: 'Seoul thu nhỏ giành cho các cặp đôi',
 		images: ['https://res.cloudinary.com/dxce9c0vh/image/upload/v1769866595/brillhome_logo_sjxffg.png'],
 	},
 
