@@ -53,7 +53,7 @@ export const metadata: Metadata = {
 	},
 
 	other: {
-		'fb:app_id': '61585984563658',
+		'fb:pages': '61585984563658',
 	},
 
 	keywords: [
