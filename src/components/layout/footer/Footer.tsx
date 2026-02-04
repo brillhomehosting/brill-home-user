@@ -15,9 +15,9 @@ const footerLinks = {
 		{ name: 'Liên Hệ', href: '/#contact' },
 	],
 	blogs: [
-		{ name: 'Khám Phá Thiên Nhiên', href: '/blogs/1' },
-		{ name: 'Bí Quyết Thư Giãn', href: '/blogs/2' },
-		{ name: 'Ẩm Thực Địa Phương', href: '/blogs/3' },
+		{ name: 'Seoul Thu Nhỏ', href: '/blogs/1' },
+		{ name: 'Bếp Đầy Đủ Tiện Nghi', href: '/blogs/2' },
+		{ name: 'Date Night Hoàn Hảo', href: '/blogs/3' },
 		{ name: 'Blogs', href: '/blogs' },
 	],
 	// --- PHẦN QUAN TRỌNG CẦN SỬA ---
