@@ -60,8 +60,8 @@ export function Footer() {
 							</Group>
 						</Link>
 						<Text c="dimmed" mb="lg" maw={400} style={{ lineHeight: 1.6 }}>
-							Thoát khỏi cuộc sống ồn ào về với vòng tay thiên nhiên. Brill Home mang đến
-							không gian nghỉ dưỡng sinh thái cao cấp.
+							Brill Home - Homestay dành riêng cho các cặp đôi với không gian riêng tư,
+							phòng bếp đầy đủ tiện nghi, quầy line hiện đại và không gian sạch sẽ, thoáng mát.
 						</Text>
 						<Group gap="sm">
 							{socialLinks.map(({ icon, href, label }, i) => (

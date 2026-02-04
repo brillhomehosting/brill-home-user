@@ -25,8 +25,20 @@ export const metadata: Metadata = {
 	description: 'Seoul thu nhỏ dành riêng cho các cặp đôi',
 
 	icons: {
-		icon: '/logo.png',
+		icon: [
+			{ url: '/logo.png' },
+			{ url: '/logo.png', sizes: '192x192', type: 'image/png' },
+			{ url: '/logo.png', sizes: '512x512', type: 'image/png' },
+		],
+		shortcut: '/logo.png',
+		apple: [
+			{ url: '/logo.png', sizes: '180x180', type: 'image/png' },
+		],
 	},
+
+	verification: {
+        google: 'KK8bnMQkXVzfe4ZcJwUJhgN_9cvLPZtepgtRQgUJ5tc',
+    },
 
 	openGraph: {
 		title: 'Brill Home Stay',
