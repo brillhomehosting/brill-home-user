@@ -248,7 +248,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 	// Open Messenger with booking details
 	const handleBookNow = async () => {
 		if (selectedSlots.size > 0) {
-			const facebookPageId = '61585984563658';
+			const facebookPageId = "61587482319967";
 			const message = buildMessengerMessage();
 			const encodedMessage = encodeURIComponent(message);
 
@@ -259,7 +259,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 				// Ignore clipboard errors
 			}
 
-			// Open Messenger with pre-filled message
+			// Open Facebook fanpage messaging with pre-filled message
 			window.open(`https://m.me/${facebookPageId}?text=${encodedMessage}`, '_blank');
 		}
 	};
