@@ -4,6 +4,7 @@ import messengerIcon from '@/assets/icon-messenger.png';
 import { useRooms } from '@/hooks/useRooms';
 import { useRoomsAvailability } from '@/hooks/useRoomsAvailability';
 import { useRoomsTimeSlots } from '@/hooks/useRoomsTimeSlots';
+import { buildBookingMessage } from '@/lib/buildBookingMessage';
 import { Card, Table } from '@mantine/core';
 import { motion } from 'framer-motion';
 import { CalendarClock, Check, ChevronLeft, ChevronRight, Copy } from 'lucide-react';
@@ -324,7 +325,6 @@ export default function AllRoomsBookingSection() {
 			const date = new Date(dateStr + 'T00:00:00');
 			const price = slotPrices.get(slotKey);
 
-			// Find the time slot to get start/end time
 			const timeSlot = staticSlots.find(s => s.id === slotId);
 			const timeRange = timeSlot ? `${timeSlot.startTime} - ${timeSlot.endTime}` : '';
 
@@ -341,15 +341,7 @@ export default function AllRoomsBookingSection() {
 			groupedByDate[slot.date]!.push({ timeRange: slot.timeRange, price: slot.price });
 		});
 
-		let message = `ĐẶT PHÒNG HOMESTAY\n\nPhòng: ${selectedRoom.name}\n\nKhung giờ:\n`;
-		Object.entries(groupedByDate).forEach(([date, slots]) => {
-			message += `${date}:\n`;
-			slots.forEach(slot => {
-				message += `  - ${slot.timeRange} (${slot.price})\n`;
-			});
-		});
-		message += `\nTổng: ${totalPrice}k`;
-		return message;
+		return buildBookingMessage({ roomName: selectedRoom.name, groupedByDate, totalAmount: totalPrice });
 	};
 
 	const handleBookNow = useCallback(async () => {

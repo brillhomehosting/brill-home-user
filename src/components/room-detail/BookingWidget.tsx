@@ -4,6 +4,7 @@ import messengerIcon from '@/assets/icon-messenger.png';
 import { contactData } from '@/data/contact-data';
 import { useRoomTimeSlots } from '@/hooks/useRoomTimeSlots';
 import { useTimeSlotAvailability } from '@/hooks/useTimeSlotAvailability';
+import { buildBookingMessage } from '@/lib/buildBookingMessage';
 import { DayAvailability, Room, TimeSlot } from '@/types/room';
 import { Card, Table } from '@mantine/core';
 import { motion } from 'framer-motion';
@@ -212,7 +213,6 @@ export default function BookingWidget({ room }: { room: Room }) {
 			const date = new Date(dateStr);
 			const price = slotPrices.get(slotKey);
 
-			// Find the time slot to get start/end time
 			const timeSlot = timeSlots?.find(s => s.id === slotId);
 			const timeRange = timeSlot ? `${timeSlot.startTime} - ${timeSlot.endTime}` : '';
 
@@ -221,32 +221,17 @@ export default function BookingWidget({ room }: { room: Room }) {
 				timeRange,
 				price: price ? `${price / 1000}k` : ''
 			};
-		}).filter(Boolean);
+		}).filter(Boolean) as { date: string; timeRange: string; price: string }[];
 
 		const groupedByDate: Record<string, { timeRange: string; price: string }[]> = {};
 		slotsInfo.forEach(slot => {
-			if (slot) {
-				if (!groupedByDate[slot.date]) {
-					groupedByDate[slot.date] = [];
-				}
-				groupedByDate[slot.date]!.push({ timeRange: slot.timeRange, price: slot.price });
+			if (!groupedByDate[slot.date]) {
+				groupedByDate[slot.date] = [];
 			}
+			groupedByDate[slot.date]!.push({ timeRange: slot.timeRange, price: slot.price });
 		});
 
-		let message = `ĐẶT PHÒNG HOMESTAY\n\n`;
-		message += `Phòng: ${room.name}\n\n`;
-		message += `Khung giờ:\n`;
-
-		Object.entries(groupedByDate).forEach(([date, slots]) => {
-			message += `${date}:\n`;
-			slots.forEach(slot => {
-				message += `  - ${slot.timeRange} (${slot.price})\n`;
-			});
-		});
-
-		message += `\nTổng: ${totalAmount}k`;
-
-		return message;
+		return buildBookingMessage({ roomName: room.name, groupedByDate, totalAmount });
 	};
 
 	// Copy booking details to clipboard and open Messenger
