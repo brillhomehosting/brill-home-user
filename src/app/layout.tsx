@@ -4,6 +4,7 @@ import { Header } from '@/components/layout/header/Header';
 import { ColorSchemeScript, Providers } from '@/lib/providers';
 import type { Metadata } from 'next';
 import { Inter, Noto_Serif } from 'next/font/google';
+import { Toaster } from 'sonner';
 import './globals.css';
 
 const inter = Inter({
@@ -114,6 +115,7 @@ export default function RootLayout({
 					{children}
 					<Footer />
 					<FloatingContactWidget />
+					<Toaster position="top-center" richColors closeButton duration={5000} />
 				</Providers>
 			</body>
 		</html>
