@@ -1,6 +1,7 @@
 'use client';
 
 import messengerIcon from '@/assets/icon-messenger.png';
+import { contactData } from '@/data/contact-data';
 import { useRoomTimeSlots } from '@/hooks/useRoomTimeSlots';
 import { useTimeSlotAvailability } from '@/hooks/useTimeSlotAvailability';
 import { DayAvailability, Room, TimeSlot } from '@/types/room';
@@ -248,7 +249,6 @@ export default function BookingWidget({ room }: { room: Room }) {
 	// Open Messenger with booking details
 	const handleBookNow = async () => {
 		if (selectedSlots.size > 0) {
-			const facebookPageId = '61585984563658';
 			const message = buildMessengerMessage();
 			const encodedMessage = encodeURIComponent(message);
 
@@ -260,7 +260,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 			}
 
 			// Open Messenger with pre-filled message
-			window.open(`https://m.me/${facebookPageId}?text=${encodedMessage}`, '_blank');
+			window.open(`https://m.me/${contactData.facebookPageId}?text=${encodedMessage}`, '_blank');
 		}
 	};
 

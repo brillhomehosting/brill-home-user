@@ -2,8 +2,8 @@
 
 import bctImage from '@/assets/bct.png';
 import zaloIcon from '@/assets/icon-zalo.png';
+import { socialLinks } from '@/data/contact-data';
 import { ActionIcon, Anchor, Container, Grid, Group, Stack, Text, Title } from '@mantine/core';
-import { Facebook, Instagram } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link'; // Import Link của Next.js để điều hướng nhanh hơn
 
@@ -30,12 +30,6 @@ const footerLinks = {
 	],
 };
 
-const socialLinks = [
-	{ icon: Facebook, href: 'https://www.facebook.com/profile.php?id=61585984563658', label: 'Facebook' },
-	{ icon: 'zalo', href: 'https://zalo.me/0939293804', label: 'Zalo' },
-	{ icon: 'tiktok', href: 'https://www.tiktok.com/@brillhome26', label: 'TikTok' },
-	{ icon: Instagram, href: 'https://www.instagram.com/brillhomestay', label: 'Instagram' },
-];
 
 export function Footer() {
 	return (

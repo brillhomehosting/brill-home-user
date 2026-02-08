@@ -9,6 +9,7 @@ import { motion } from 'framer-motion';
 import { CalendarClock, ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
+import { contactData } from '../../data/contact-data';
 
 // --- HELPER FUNCTIONS ---
 
@@ -350,7 +351,6 @@ export default function AllRoomsBookingSection() {
 
 	const handleBookNow = async () => {
 		if (selectedRoomId && selectedSlots.size > 0) {
-			const facebookPageId = '61585984563658';
 			const message = buildMessengerMessage();
 			const encodedMessage = encodeURIComponent(message);
 
@@ -362,7 +362,7 @@ export default function AllRoomsBookingSection() {
 			}
 
 			// Open Messenger with pre-filled message
-			window.open(`https://m.me/${facebookPageId}?text=${encodedMessage}`, '_blank');
+			window.open(`https://m.me/${contactData.facebookPageId}?text=${encodedMessage}`, '_blank');
 		}
 	};
 
@@ -618,10 +618,10 @@ export default function AllRoomsBookingSection() {
 																			<span className="leading-none text-[12px] font-bold">
 																			</span>
 																		) : isPast ? (
-																		 	<span className="text-[12px] font-bold"></span>
+																			<span className="text-[12px] font-bold"></span>
 																		) : (
-																		 	<span className="text-[12px] font-bold">Đã đặt</span>
-																		 )}
+																			<span className="text-[12px] font-bold">Đã đặt</span>
+																		)}
 																	</button>
 																</Table.Td>
 															);
