@@ -58,41 +58,48 @@ const getFullContent = (id: string): string => {
 			<p><em>Chúc bạn có những phút giây chill thật vui và cái bụng thật no nê tại Brill Home! 💛</em></p>
 		`,
 		'1': `
-			<h2>Giới thiệu</h2>
-			<p>Brill Home là điểm đến lý tưởng cho những ai muốn tìm kiếm sự yên bình và hòa mình vào thiên nhiên. Nằm giữa vùng núi non hùng vĩ, homestay mang đến trải nghiệm nghỉ dưỡng đẳng cấp với không gian xanh mát quanh năm.</p>
+			<h2>Chào Mừng Đến Seoul Thu Nhỏ 🇰🇷</h2>
+			<p>Brill Home mang đến không gian nghỉ dưỡng đậm chất Hàn Quốc ngay giữa lòng thành phố. Với thiết kế hiện đại, tone màu nhẹ nhàng và những góc check-in cực xinh, đây là địa điểm lý tưởng dành riêng cho các cặp đôi.</p>
 			
-			<h2>Điểm nổi bật</h2>
+			<h2>Phong Cách Hàn Quốc Đích Thực</h2>
 			
-			<h3>Thiên nhiên hoang sơ</h3>
-			<p>Được bao quanh bởi rừng thông và các loài hoa rừng, Brill Home là nơi lý tưởng để bạn thư giãn và tái tạo năng lượng. Không khí trong lành với độ ẩm lý tưởng giúp bạn có giấc ngủ ngon và tinh thần sảng khoái.</p>
+			<h3>Tone màu pastel nhẹ nhàng</h3>
+			<p>Mỗi căn phòng được decor với tone màu pastel nhẹ nhàng, tạo cảm giác thư giãn và lãng mạn. Từ giường ngủ êm ái đến góc làm việc nhỏ xinh, mọi chi tiết đều được chăm chút tỉ mỉ như những căn phòng trong các bộ phim Hàn Quốc.</p>
 			
-			<h3>Kiến trúc độc đáo</h3>
-			<p>Mỗi căn phòng được thiết kế theo phong cách kiến trúc xanh, tận dụng tối đa ánh sáng tự nhiên và hòa quyện với cảnh quan xung quanh. Vật liệu xây dựng thân thiện với môi trường tạo nên không gian ấm áp và gần gũi.</p>
+			<h3>Ánh sáng ấm áp</h3>
+			<p>Hệ thống đèn LED tone vàng ấm tạo nên không gian lãng mạn, hoàn hảo cho những buổi tối riêng tư cùng người ấy. <strong>Đèn ngủ dịu nhẹ</strong> giúp bạn có giấc ngủ ngon và tinh thần sảng khoái.</p>
 			
-			<h3>Tiện nghi hiện đại</h3>
-			<p>Dù mang phong cách rustic, Brill Home vẫn đảm bảo đầy đủ tiện nghi hiện đại: <strong>WiFi tốc độ cao</strong>, <strong>điều hòa nhiệt độ</strong>, và các dịch vụ phòng chu đáo.</p>
+			<h3>Góc check-in siêu xinh</h3>
+			<p>Với decor phong cách Hàn Quốc trendy, mọi góc trong phòng đều là <strong>background hoàn hảo</strong> cho những bức ảnh couple đáng yêu. Đừng quên pose hình trước khi checkout nhé!</p>
 			
-			<h2>Kết luận</h2>
-			<p>Brill Home không chỉ là nơi nghỉ ngơi, mà còn là trải nghiệm sống giữa thiên nhiên. <em>Hãy đặt phòng ngay để khám phá vẻ đẹp này!</em></p>
+			<h2>Dành Riêng Cho Các Cặp Đôi 💑</h2>
+			<p>Brill Home thiết kế không gian <strong>riêng tư tuyệt đối</strong>, yên tĩnh và thoải mái để bạn và người ấy có những khoảnh khắc đáng nhớ. <em>Hãy đặt phòng ngay để trải nghiệm Seoul thu nhỏ!</em></p>
 		`,
 		'2': `
-			<h2>Bí quyết thư giãn hoàn hảo</h2>
-			<p>Khi đến Brill Home, bạn không chỉ được nghỉ ngơi mà còn có cơ hội tham gia nhiều hoạt động thú vị giúp cân bằng thân tâm.</p>
+			<h2>Bếp Đầy Đủ - Nấu Ăn Cùng Nhau 🍳</h2>
+			<p>Một trong những điểm đặc biệt của Brill Home chính là phòng bếp được trang bị đầy đủ tiện nghi. Cùng người yêu thử tài nấu nướng và tận hưởng bữa tối riêng tư ngay tại phòng!</p>
 			
-			<h3>1. Yoga buổi sáng</h3>
-			<p>Bắt đầu ngày mới với buổi yoga nhẹ nhàng giữa không gian xanh mát. Hít thở không khí trong lành và để tâm hồn được thanh thản.</p>
-			
-			<h3>2. Đạp xe khám phá</h3>
-			<p>Khám phá những con đường mòn quanh khu vực với xe đạp được cung cấp miễn phí. Bạn sẽ được chiêm ngưỡng những góc nhìn tuyệt đẹp của vùng núi.</p>
-			
-			<h3>3. Tắm suối khoáng</h3>
-			<p>Thư giãn trong làn nước suối khoáng tự nhiên, giúp làm dịu cơ bắp và tinh thần.</p>
-			
+			<h3>Trang bị đầy đủ</h3>
+			<p>Phòng bếp tại Brill Home được trang bị:</p>
 			<ul>
-				<li>Yoga mỗi sáng lúc 6:00</li>
-				<li>Đạp xe khám phá từ 7:00 - 17:00</li>
-				<li>Tắm suối khoáng từ 9:00 - 21:00</li>
+				<li><strong>Bếp từ</strong> hiện đại, an toàn và dễ sử dụng</li>
+				<li><strong>Lò vi sóng</strong> tiện lợi cho việc hâm nóng thức ăn</li>
+				<li><strong>Tủ lạnh</strong> để bảo quản thực phẩm tươi ngon</li>
+				<li><strong>Ấm đun nước siêu tốc</strong> cho trà, cà phê buổi sáng</li>
+				<li><strong>Đầy đủ dụng cụ nấu ăn</strong>: nồi, chảo, dao, thớt, bát đĩa...</li>
 			</ul>
+			
+			<h3>Ý tưởng bữa tối lãng mạn</h3>
+			<p>Bạn có thể ghé siêu thị gần đó mua nguyên liệu và tự tay nấu một bữa ăn cho hai người. Vừa nấu ăn cùng nhau, vừa trò chuyện - đây sẽ là kỷ niệm đáng nhớ trong chuyến đi của bạn!</p>
+			
+			<h3>Mẹo nhỏ từ Brill Home</h3>
+			<ul>
+				<li>Chuẩn bị sẵn danh sách nguyên liệu trước khi đi chợ</li>
+				<li>Chọn món đơn giản nhưng ngon miệng như mì Ý, salad, hoặc lẩu nhỏ</li>
+				<li>Đừng quên thắp nến và mở nhạc để tạo không khí lãng mạn</li>
+			</ul>
+			
+			<p><em>Nấu ăn cùng nhau không chỉ tạo ra bữa ăn ngon mà còn là cách tuyệt vời để gắn kết tình cảm! 💕</em></p>
 		`,
 	};
 	return contents[id] || `

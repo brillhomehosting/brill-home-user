@@ -2,8 +2,8 @@
 
 import bctImage from '@/assets/bct.png';
 import zaloIcon from '@/assets/icon-zalo.png';
+import { socialLinks } from '@/data/contact-data';
 import { ActionIcon, Anchor, Container, Grid, Group, Stack, Text, Title } from '@mantine/core';
-import { Facebook, Instagram } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link'; // Import Link của Next.js để điều hướng nhanh hơn
 
@@ -15,9 +15,9 @@ const footerLinks = {
 		{ name: 'Liên Hệ', href: '/#contact' },
 	],
 	blogs: [
-		{ name: 'Khám Phá Thiên Nhiên', href: '/blogs/1' },
-		{ name: 'Bí Quyết Thư Giãn', href: '/blogs/2' },
-		{ name: 'Ẩm Thực Địa Phương', href: '/blogs/3' },
+		{ name: 'Seoul Thu Nhỏ', href: '/blogs/1' },
+		{ name: 'Bếp Đầy Đủ Tiện Nghi', href: '/blogs/2' },
+		{ name: 'Date Night Hoàn Hảo', href: '/blogs/3' },
 		{ name: 'Blogs', href: '/blogs' },
 	],
 	// --- PHẦN QUAN TRỌNG CẦN SỬA ---
@@ -30,12 +30,6 @@ const footerLinks = {
 	],
 };
 
-const socialLinks = [
-	{ icon: Facebook, href: 'https://www.facebook.com/profile.php?id=61585984563658', label: 'Facebook' },
-	{ icon: 'zalo', href: 'https://zalo.me/0939293804', label: 'Zalo' },
-	{ icon: 'tiktok', href: 'https://www.tiktok.com/@brillhome26', label: 'TikTok' },
-	{ icon: Instagram, href: 'https://www.instagram.com/brillhomestay', label: 'Instagram' },
-];
 
 export function Footer() {
 	return (
@@ -60,8 +54,8 @@ export function Footer() {
 							</Group>
 						</Link>
 						<Text c="dimmed" mb="lg" maw={400} style={{ lineHeight: 1.6 }}>
-							Thoát khỏi cuộc sống ồn ào về với vòng tay thiên nhiên. Brill Home mang đến
-							không gian nghỉ dưỡng sinh thái cao cấp.
+							Brill Home - Homestay dành riêng cho các cặp đôi với không gian riêng tư,
+							phòng bếp đầy đủ tiện nghi, quầy line hiện đại và không gian sạch sẽ, thoáng mát.
 						</Text>
 						<Group gap="sm">
 							{socialLinks.map(({ icon, href, label }, i) => (

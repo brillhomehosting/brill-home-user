@@ -6,24 +6,22 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { MessageCircle, Phone, X } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
+import {contactData} from '@/data/contact-data'
 
-const FACEBOOK_PAGE_ID = '61585984563658';
-const ZALO_PHONE = '0939293804';
-const PHONE_NUMBER = '0939293804';
 
 export default function FloatingContactWidget() {
 	const [isOpen, setIsOpen] = useState(true);
 
 	const handleMessengerClick = () => {
-		window.open(`https://m.me/${FACEBOOK_PAGE_ID}`, '_blank');
+		window.open(`https://m.me/${contactData.facebookPageId}`, '_blank');
 	};
 
 	const handleZaloClick = () => {
-		window.open(`https://zalo.me/${ZALO_PHONE}`, '_blank');
+		window.open(`https://zalo.me/${contactData.phoneNumber}`, '_blank');
 	};
 
 	const handlePhoneClick = () => {
-		window.location.href = `tel:${PHONE_NUMBER}`;
+		window.location.href = `tel:${contactData.phoneNumber}`;
 	};
 
 	// Bounce animation
