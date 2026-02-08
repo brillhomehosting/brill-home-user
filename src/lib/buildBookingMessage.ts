@@ -76,12 +76,15 @@ export function buildBookingMessage({ roomName, groupedByDate, totalAmount }: Bu
 	const opener = pickRandom(openers);
 	const closing = pickRandom(closings);
 
+	const endings = ['😊', '🥰', '❤️', '😄', '🤗', '💕'];
+	const ending = pickRandom(endings);
+
 	// Randomly pick a full message shape
 	const shapes = [
-		`${opener}, ${body}. ${closing}. Cảm ơn nhaa`,
-		`${opener}, ${body}, ${closing}!`,
-		`${opener}! ${body}. ${closing} ~~`,
-		`${opener} ${body}, ${closing}. Thanks bạn!`,
+		`${opener}, ${body}. ${closing}. Cảm ơn nhaa ${ending}`,
+		`${opener}, ${body}, ${closing} ${ending}`,
+		`${opener} ${body}. ${closing}. Thanks bạn ${ending}`,
+		`${opener} ${body}, ${closing}. Cảm ơn nha ${ending}`,
 	];
 
 	return pickRandom(shapes);
