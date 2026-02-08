@@ -4,12 +4,14 @@ import messengerIcon from '@/assets/icon-messenger.png';
 import { contactData } from '@/data/contact-data';
 import { useRoomTimeSlots } from '@/hooks/useRoomTimeSlots';
 import { useTimeSlotAvailability } from '@/hooks/useTimeSlotAvailability';
+import { buildBookingMessage } from '@/lib/buildBookingMessage';
 import { DayAvailability, Room, TimeSlot } from '@/types/room';
 import { Card, Table } from '@mantine/core';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Copy } from 'lucide-react';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 // Generate dates for next N days
 const generateDates = (count: number) => {
@@ -95,6 +97,8 @@ export default function BookingWidget({ room }: { room: Room }) {
 	const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set());
 	const [currentDatePage, setCurrentDatePage] = useState(0);
 	const [slotPrices, setSlotPrices] = useState<Map<string, number>>(new Map());
+	const [isCopied, setIsCopied] = useState(false);
+	const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	const allDates = generateDates(30);
 	const DATES_PER_PAGE = 7;
@@ -209,7 +213,6 @@ export default function BookingWidget({ room }: { room: Room }) {
 			const date = new Date(dateStr);
 			const price = slotPrices.get(slotKey);
 
-			// Find the time slot to get start/end time
 			const timeSlot = timeSlots?.find(s => s.id === slotId);
 			const timeRange = timeSlot ? `${timeSlot.startTime} - ${timeSlot.endTime}` : '';
 
@@ -218,51 +221,71 @@ export default function BookingWidget({ room }: { room: Room }) {
 				timeRange,
 				price: price ? `${price / 1000}k` : ''
 			};
-		}).filter(Boolean);
+		}).filter(Boolean) as { date: string; timeRange: string; price: string }[];
 
 		const groupedByDate: Record<string, { timeRange: string; price: string }[]> = {};
 		slotsInfo.forEach(slot => {
-			if (slot) {
-				if (!groupedByDate[slot.date]) {
-					groupedByDate[slot.date] = [];
-				}
-				groupedByDate[slot.date]!.push({ timeRange: slot.timeRange, price: slot.price });
+			if (!groupedByDate[slot.date]) {
+				groupedByDate[slot.date] = [];
 			}
+			groupedByDate[slot.date]!.push({ timeRange: slot.timeRange, price: slot.price });
 		});
 
-		let message = `ĐẶT PHÒNG HOMESTAY\n\n`;
-		message += `Phòng: ${room.name}\n\n`;
-		message += `Khung giờ:\n`;
+		return buildBookingMessage({ roomName: room.name, groupedByDate, totalAmount });
+	};
 
-		Object.entries(groupedByDate).forEach(([date, slots]) => {
-			message += `${date}:\n`;
-			slots.forEach(slot => {
-				message += `  - ${slot.timeRange} (${slot.price})\n`;
+	// Copy booking details to clipboard and open Messenger
+	const handleBookNow = useCallback(async () => {
+		if (selectedSlots.size === 0 || isCopied) return;
+
+		const message = buildMessengerMessage();
+		if (!message) return;
+
+		try {
+			await navigator.clipboard.writeText(message);
+			setIsCopied(true);
+
+			if (copiedTimeoutRef.current) clearTimeout(copiedTimeoutRef.current);
+			copiedTimeoutRef.current = setTimeout(() => setIsCopied(false), 4000);
+
+			toast.success('Đã sao chép thông tin đặt phòng!', {
+				description: 'Mở Messenger và dán (Ctrl+V) tin nhắn để gửi cho chúng tôi.',
+				duration: 5000,
 			});
-		});
 
-		message += `\nTổng: ${totalAmount}k`;
-
-		return message;
-	};
-
-	// Open Messenger with booking details
-	const handleBookNow = async () => {
-		if (selectedSlots.size > 0) {
-			const message = buildMessengerMessage();
-			const encodedMessage = encodeURIComponent(message);
-
-			// Copy to clipboard as backup
+			setTimeout(() => {
+				window.open(`https://m.me/${contactData.facebookPageId}`, '_blank');
+			}, 600);
+		} catch {
+			// Fallback: try execCommand for older browsers
 			try {
-				await navigator.clipboard.writeText(message);
-			} catch {
-				// Ignore clipboard errors
-			}
+				const textarea = document.createElement('textarea');
+				textarea.value = message;
+				textarea.style.position = 'fixed';
+				textarea.style.opacity = '0';
+				document.body.appendChild(textarea);
+				textarea.select();
+				document.execCommand('copy');
+				document.body.removeChild(textarea);
 
-			// Open Messenger with pre-filled message
-			window.open(`https://m.me/${contactData.facebookPageId}?text=${encodedMessage}`, '_blank');
+				setIsCopied(true);
+				if (copiedTimeoutRef.current) clearTimeout(copiedTimeoutRef.current);
+				copiedTimeoutRef.current = setTimeout(() => setIsCopied(false), 4000);
+
+				toast.success('Đã sao chép thông tin đặt phòng!', {
+					description: 'Mở Messenger và dán (Ctrl+V) tin nhắn để gửi cho chúng tôi.',
+					duration: 5000,
+				});
+
+				setTimeout(() => {
+					window.open(`https://m.me/${contactData.facebookPageId}`, '_blank');
+				}, 600);
+			} catch {
+				toast.error('Không thể sao chép. Vui lòng thử lại.', { duration: 3000 });
+				window.open(`https://m.me/${contactData.facebookPageId}`, '_blank');
+			}
 		}
-	};
+	}, [selectedSlots, isCopied, buildMessengerMessage, contactData.facebookPageId]);  // eslint-disable-line react-hooks/exhaustive-deps
 
 	// Only wait for timeSlots to load, availability can load in background
 	const isLoading = isLoadingTimeSlots;
@@ -450,14 +473,30 @@ export default function BookingWidget({ room }: { room: Room }) {
 						<span className="text-xs text-stone-500">Tổng cộng</span>
 						<span className="text-xl font-bold text-[#D97D48]">{totalAmount}k</span>
 					</div>
-					<button
+						<button
 						onClick={handleBookNow}
-						className="w-full px-4 py-2.5 rounded-lg font-medium text-white transition-colors flex items-center justify-center gap-2 hover:opacity-90 cursor-pointer"
-						style={{ backgroundColor: '#D97D48' }}
+						disabled={isCopied}
+						className={`w-full px-4 py-2.5 rounded-lg font-medium text-white transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${
+							isCopied ? 'bg-green-600 hover:bg-green-600' : 'hover:opacity-90'
+						}`}
+						style={!isCopied ? { backgroundColor: '#D97D48' } : undefined}
 					>
-						<Image src={messengerIcon} alt="Messenger" width={24} height={24} />
-						Đặt phòng ngay
+						{isCopied ? (
+							<>
+								<Check className="w-5 h-5" />
+								Đã sao chép! Dán vào Messenger
+							</>
+						) : (
+							<>
+								<Image src={messengerIcon} alt="Messenger" width={24} height={24} />
+								Đặt phòng ngay
+							</>
+						)}
 					</button>
+					<p className="text-[10px] text-stone-400 text-center mt-1.5">
+						<Copy className="w-3 h-3 inline mr-1" />
+						Nhấn để sao chép & mở Messenger — dán tin nhắn để đặt phòng
+					</p>
 				</motion.div>
 			)}
 
