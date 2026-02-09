@@ -10,8 +10,16 @@ export function HeroSection() {
 	return (
 		<section className="relative min-h-screen flex items-center overflow-hidden">
 			<div className="absolute inset-0 z-0">
+				{/* Fallback image when video not load */}
+				<Image
+					src={heroImage}
+					alt="Hero background"
+					fill
+					priority
+					className="object-cover"
+				/>
 				<video
-					className="w-full h-full object-cover"
+					className="absolute inset-0 w-full h-full object-cover"
 					autoPlay
 					muted
 					loop
