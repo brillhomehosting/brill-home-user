@@ -30,15 +30,7 @@ export function buildBookingMessage({ roomName, groupedByDate }: BuildBookingMes
 		'Shop ơi',
 	];
 
-	const closings = [
-		'Cảm ơn shop',
-		'Cảm ơn bạn',
-		'Thanks shop nha',
-		'Cảm ơn shop nhiều',
-	];
-
 	const opener = pickRandom(openers);
-	const closing = pickRandom(closings);
 
-	return `${opener}, mình muốn đặt ${roomName} ${timePart}. ${closing}`;
+	return `${opener}, mình muốn đặt ${roomName} ${timePart}.`;
 }
