@@ -425,11 +425,9 @@ export default function BookingWidget({ room }: { room: Room }) {
 													>
 														{isActive ? (
 															<span className="font-bold">{priceInK}k</span>
-														) : isPast ? (
-															<span className="text-[12px] font-bold"></span>
-														) : (
+														) : !isApiActive ? (
 															<span className="text-[12px] font-bold">Đã đặt</span>
-														)}
+														) : null}
 													</button>
 												</Table.Td>
 											);
