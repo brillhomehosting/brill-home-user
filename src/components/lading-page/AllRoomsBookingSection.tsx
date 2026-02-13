@@ -647,11 +647,9 @@ export default function AllRoomsBookingSection() {
 																		{isActive ? (
 																			<span className="leading-none text-[12px] font-bold">
 																			</span>
-																		) : isPast ? (
-																			<span className="text-[12px] font-bold"></span>
-																		) : (
+																		) : !isApiActive ? (
 																			<span className="text-[12px] font-bold">Đã đặt</span>
-																		)}
+																		) : null}
 																	</button>
 																</Table.Td>
 															);
@@ -701,9 +699,8 @@ export default function AllRoomsBookingSection() {
 											<button
 												onClick={handleBookNow}
 												disabled={isCopied}
-												className={`px-6 py-2.5 rounded-md font-medium text-white transition-all duration-300 flex items-center gap-2 cursor-pointer ${
-													isCopied ? 'bg-green-600 hover:bg-green-600' : 'hover:bg-[#c06b3d]'
-												}`}
+												className={`px-6 py-2.5 rounded-md font-medium text-white transition-all duration-300 flex items-center gap-2 cursor-pointer ${isCopied ? 'bg-green-600 hover:bg-green-600' : 'hover:bg-[#c06b3d]'
+													}`}
 												style={!isCopied ? { backgroundColor: '#D97D48' } : undefined}
 											>
 												{isCopied ? (
