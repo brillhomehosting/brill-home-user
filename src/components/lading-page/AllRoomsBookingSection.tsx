@@ -3,8 +3,8 @@
 import messengerIcon from '@/assets/icon-messenger.png';
 import { useRooms } from '@/hooks/useRooms';
 import { useRoomsAvailability } from '@/hooks/useRoomsAvailability';
-import { useRoomsTimeSlots } from '@/hooks/useRoomsTimeSlots';
 import { buildBookingMessage } from '@/lib/buildBookingMessage';
+import { TimeSlot } from '@/types/room';
 import { Card, Table } from '@mantine/core';
 import { motion } from 'framer-motion';
 import { CalendarClock, Check, ChevronLeft, ChevronRight, Copy } from 'lucide-react';
@@ -121,24 +121,43 @@ export default function AllRoomsBookingSection() {
 	const startDate = formatDate(dates[0] || new Date());
 	const endDate = formatDate(dates[dates.length - 1] || new Date());
 
-	// Use reusable hooks for multiple rooms
-	const { data: roomTimeSlotsMap } = useRoomsTimeSlots(rooms);
-	const { data: roomAvailabilityMap } = useRoomsAvailability(rooms, startDate, endDate);
+	// Use availability API only (contains full time slot info)
+	const { data: roomAvailabilityMap, isLoading: isLoadingAvailability } = useRoomsAvailability(rooms, startDate, endDate);
+
+	// Derive unique time slots per room from availability data
+	const roomTimeSlotsMap = useMemo(() => {
+		const map = new Map<string, TimeSlot[]>();
+		if (!rooms) return map;
+
+		rooms.forEach(room => {
+			const availabilityData = roomAvailabilityMap.get(room.id);
+			if (!availabilityData || availabilityData.length === 0) return;
+
+			// Extract unique time slots from the first day's data
+			const firstDay = availabilityData[0];
+			if (!firstDay?.timeSlots) return;
+
+			const slots = firstDay.timeSlots
+				.map(ts => ts.timeSlot)
+				.filter(Boolean)
+				.sort((a, b) => {
+					const timeA = parseInt(a.startTime.replace(':', ''), 10);
+					const timeB = parseInt(b.startTime.replace(':', ''), 10);
+					return timeA - timeB;
+				});
+
+			map.set(room.id, slots);
+		});
+
+		return map;
+	}, [rooms, roomAvailabilityMap]);
 
 	// --- LOGIC: CONSECUTIVE SLOT SELECTION ---
 
-	// 1. Helper to flatten all slots for a specific room into a linear list (sorted by time)
-	// Returns array of: { key, price, isActive, date, slotId }
+	// Helper to flatten all slots for a specific room into a linear list (sorted by time)
 	const getLinearSlots = (roomId: string) => {
-		let staticSlots = roomTimeSlotsMap.get(roomId) || [];
-		if (!staticSlots.length) return [];
-
-		// Sort slots by time to ensure linear order corresponds to time order
-		staticSlots = [...staticSlots].sort((a, b) => {
-			const timeA = parseInt(a.startTime.replace(':', ''), 10);
-			const timeB = parseInt(b.startTime.replace(':', ''), 10);
-			return timeA - timeB;
-		});
+		const timeSlots = roomTimeSlotsMap.get(roomId) || [];
+		if (!timeSlots.length) return [];
 
 		const availabilityData = roomAvailabilityMap.get(roomId);
 		const linearList: { key: string; price: number; isActive: boolean; date: Date; slotId: string }[] = [];
@@ -147,11 +166,9 @@ export default function AllRoomsBookingSection() {
 			const dateStr = formatDate(date);
 			const dayData = availabilityData?.find(d => d.date === dateStr);
 
-			staticSlots.forEach(slot => {
+			timeSlots.forEach(slot => {
 				const slotStatus = dayData?.timeSlots?.find(s => s?.timeSlot?.id === slot.id);
-				const isActive = slotStatus?.isActive ?? true; // Default to true if no status found (or logic depends on API)
-
-				// Calculate price
+				const isActive = slotStatus?.isActive ?? true;
 				const dynamicPrice = slotStatus?.timeSlot?.price ?? slot.price;
 
 				linearList.push({
@@ -477,7 +494,7 @@ export default function AllRoomsBookingSection() {
 						radius="md"
 						className="bg-white border border-stone-200 overflow-hidden p-0!"
 					>
-						{isLoading ? (
+						{(isLoading || isLoadingAvailability) ? (
 							<LoadingSkeleton />
 						) : (
 							<div className="max-h-[650px] overflow-auto scrollbar-thin scrollbar-thumb-stone-200 scrollbar-track-transparent">
@@ -665,7 +682,7 @@ export default function AllRoomsBookingSection() {
 					</Card>
 
 					{/* Footer: Legend & Action */}
-					<div className="mt-6 flex flex-col md:flex-row items-center justify-between gap-6">
+					<div className="mt-10 relative flex flex-col md:flex-row items-center justify-between gap-6">
 						{/* Legend */}
 						<div className="flex items-center gap-6 bg-white px-4 py-2 rounded-full border border-stone-200 shadow-sm">
 							<div className="flex items-center gap-2">
@@ -687,6 +704,8 @@ export default function AllRoomsBookingSection() {
 							<motion.div
 								initial={{ opacity: 0, scale: 0.9 }}
 								animate={{ opacity: 1, scale: 1 }}
+								className="md:absolute md:right-0 md:top-1/2 md:-translate-y-1/2"
+
 							>
 								<Card shadow="lg" radius="md" className="border border-stone-200 w-[350px]" p={0}>
 									<div className="flex items-center justify-center gap-4 bg-white p-2 pl-6 pr-2">
