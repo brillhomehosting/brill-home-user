@@ -2,15 +2,14 @@
 
 import messengerIcon from '@/assets/icon-messenger.png';
 import { contactData } from '@/data/contact-data';
-import { useRoomTimeSlots } from '@/hooks/useRoomTimeSlots';
 import { useTimeSlotAvailability } from '@/hooks/useTimeSlotAvailability';
 import { buildBookingMessage } from '@/lib/buildBookingMessage';
-import { DayAvailability, Room, TimeSlot } from '@/types/room';
+import { Room, TimeSlot } from '@/types/room';
 import { Card, Table } from '@mantine/core';
 import { motion } from 'framer-motion';
 import { Check, ChevronLeft, ChevronRight, Copy } from 'lucide-react';
 import Image from 'next/image';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 // Generate dates for next N days
@@ -112,40 +111,33 @@ export default function BookingWidget({ room }: { room: Room }) {
 	const startDate = formatDate(dates[0] || new Date());
 	const endDate = formatDate(dates[dates.length - 1] || new Date());
 
-	// Use reusable hooks
-	const { data: timeSlots, isLoading: isLoadingTimeSlots } = useRoomTimeSlots(room.id);
-	const { data: availabilityData } = useTimeSlotAvailability(room.id, startDate, endDate);
+	// Use availability API only (contains full time slot info)
+	const { data: availabilityData, isLoading: isLoadingAvailability } = useTimeSlotAvailability(room.id, startDate, endDate);
+
+	// Derive unique time slots from availability data
+	const timeSlots = useMemo(() => {
+		if (!availabilityData || !Array.isArray(availabilityData) || availabilityData.length === 0) return [];
+		const firstDay = availabilityData[0];
+		if (!firstDay?.timeSlots) return [];
+
+		return firstDay.timeSlots
+			.map(ts => ts.timeSlot)
+			.filter(Boolean)
+			.sort((a, b) => {
+				const timeA = parseInt(a.startTime.replace(':', ''), 10);
+				const timeB = parseInt(b.startTime.replace(':', ''), 10);
+				return timeA - timeB;
+			});
+	}, [availabilityData]);
 
 	// Get availability status for a specific timeslot on a specific date
 	const getSlotAvailability = (date: Date, slotId: string): boolean => {
 		if (!availabilityData || !Array.isArray(availabilityData)) return true;
 		const dateStr = formatDate(date);
-		const dayData = availabilityData.find((d: DayAvailability) => d.date === dateStr);
+		const dayData = availabilityData.find(d => d.date === dateStr);
 		if (!dayData) return true;
 		const slotStatus = dayData.timeSlots.find(s => s.timeSlot.id === slotId);
 		return slotStatus?.isActive ?? true;
-	};
-
-	// Get the first and last slot in current selection (sorted by date)
-	const getSelectionBounds = (slots: Set<string>) => {
-		if (slots.size === 0) return null;
-
-		const sortedSlots = Array.from(slots).sort((a, b) => {
-			const partsA = a.split('::') as [string, string];
-			const partsB = b.split('::') as [string, string];
-			const [dateA] = partsA;
-			const [dateB] = partsB;
-
-			const dateTimeA = new Date(dateA).getTime();
-			const dateTimeB = new Date(dateB).getTime();
-
-			return dateTimeA - dateTimeB;
-		});
-
-		return {
-			first: sortedSlots[0]!,
-			last: sortedSlots[sortedSlots.length - 1]!,
-		};
 	};
 
 	// Calculate total from selected slots using stored prices
@@ -160,42 +152,97 @@ export default function BookingWidget({ room }: { room: Room }) {
 		return total;
 	};
 
-	// Handle slot click
+	// Build linear list of slots for adjacency checks
+	const getLinearSlots = () => {
+		if (!timeSlots.length) return [];
+		const linearList: { key: string; price: number }[] = [];
+		dates.forEach(date => {
+			timeSlots.forEach(slot => {
+				linearList.push({
+					key: `${formatDate(date)}::${slot.id}`,
+					price: slot.price,
+				});
+			});
+		});
+		return linearList;
+	};
+
+	// Handle slot click — consecutive only
 	const handleSlotClick = (date: Date, slotId: string, price: number) => {
 		const slotKey = `${formatDate(date)}::${slotId}`;
+		const linearSlots = getLinearSlots();
+		const clickedSlotIndex = linearSlots.findIndex(s => s.key === slotKey);
+		if (clickedSlotIndex === -1) return;
 
 		setSelectedSlots(prev => {
 			const newSet = new Set(prev);
 
-			// If clicking on already selected slot
+			// A. DESELECTION
 			if (newSet.has(slotKey)) {
-				const bounds = getSelectionBounds(newSet);
-				// Only allow deselecting from the start or end
-				if (bounds && (slotKey === bounds.first || slotKey === bounds.last)) {
+				if (newSet.size === 1) {
+					newSet.clear();
+					setSlotPrices(new Map());
+					return newSet;
+				}
+				const selectedIndices = linearSlots
+					.map((s, i) => newSet.has(s.key) ? i : -1)
+					.filter(i => i !== -1);
+				const minIdx = Math.min(...selectedIndices);
+				const maxIdx = Math.max(...selectedIndices);
+
+				if (clickedSlotIndex === minIdx || clickedSlotIndex === maxIdx) {
 					newSet.delete(slotKey);
 					setSlotPrices(prev => {
 						const newPrices = new Map(prev);
 						newPrices.delete(slotKey);
 						return newPrices;
 					});
+				} else {
+					// Clicked middle -> trim tail
+					const remainingIndices = selectedIndices.filter(i => i < clickedSlotIndex);
+					const newSetReset = new Set<string>();
+					const newPricesReset = new Map<string, number>();
+					remainingIndices.forEach(idx => {
+						const s = linearSlots[idx];
+						if (s) {
+							newSetReset.add(s.key);
+							newPricesReset.set(s.key, s.price);
+						}
+					});
+					setSlotPrices(newPricesReset);
+					return newSetReset;
 				}
 				return newSet;
 			}
 
-			// If no slots selected, start new selection
+			// B. SELECTION
 			if (newSet.size === 0) {
 				newSet.add(slotKey);
 				setSlotPrices(new Map([[slotKey, price]]));
 				return newSet;
 			}
 
-			// Add the new slot
-			newSet.add(slotKey);
-			setSlotPrices(prev => {
-				const newPrices = new Map(prev);
-				newPrices.set(slotKey, price);
-				return newPrices;
-			});
+			// Check adjacency
+			const selectedIndices = linearSlots
+				.map((s, i) => newSet.has(s.key) ? i : -1)
+				.filter(i => i !== -1);
+			const minIdx = Math.min(...selectedIndices);
+			const maxIdx = Math.max(...selectedIndices);
+			const isAdjacent = clickedSlotIndex === minIdx - 1 || clickedSlotIndex === maxIdx + 1;
+
+			if (isAdjacent) {
+				newSet.add(slotKey);
+				setSlotPrices(prev => {
+					const newPrices = new Map(prev);
+					newPrices.set(slotKey, price);
+					return newPrices;
+				});
+			} else {
+				// Not adjacent -> reset to just the new slot
+				newSet.clear();
+				newSet.add(slotKey);
+				setSlotPrices(new Map([[slotKey, price]]));
+			}
 			return newSet;
 		});
 	};
@@ -287,8 +334,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 		}
 	}, [selectedSlots, isCopied, buildMessengerMessage, contactData.facebookPageId]);  // eslint-disable-line react-hooks/exhaustive-deps
 
-	// Only wait for timeSlots to load, availability can load in background
-	const isLoading = isLoadingTimeSlots;
+	const isLoading = isLoadingAvailability;
 
 	return (
 		<Card
@@ -408,7 +454,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 												<Table.Td
 													key={slot.id}
 													className="text-center p-1.5 align-middle"
-													style={{ backgroundColor: isTodayRow ? '#FFFBF5' : undefined }}
+													style={{ backgroundColor: isTodayRow ? '#FFF7ED' : '#FFFFFF' }}
 												>
 													<button
 														onClick={() => isActive && handleSlotClick(date, slot.id, slot.price)}
@@ -471,12 +517,11 @@ export default function BookingWidget({ room }: { room: Room }) {
 						<span className="text-xs text-stone-500">Tổng cộng</span>
 						<span className="text-xl font-bold text-[#D97D48]">{totalAmount}k</span>
 					</div>
-						<button
+					<button
 						onClick={handleBookNow}
 						disabled={isCopied}
-						className={`w-full px-4 py-2.5 rounded-lg font-medium text-white transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${
-							isCopied ? 'bg-green-600 hover:bg-green-600' : 'hover:opacity-90'
-						}`}
+						className={`w-full px-4 py-2.5 rounded-lg font-medium text-white transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${isCopied ? 'bg-green-600 hover:bg-green-600' : 'hover:opacity-90'
+							}`}
 						style={!isCopied ? { backgroundColor: '#D97D48' } : undefined}
 					>
 						{isCopied ? (
