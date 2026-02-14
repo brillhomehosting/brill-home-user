@@ -1,5 +1,6 @@
 'use client';
 
+import { contactData } from '@/data/contact-data';
 import { Card, Container } from '@mantine/core'; // Import thêm Card
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -70,9 +71,7 @@ const CONTENT_DATA = {
 		icon: RefreshCcw,
 		content: (
 			<div className="space-y-6 text-foreground/80">
-				<p>Chính sách hủy phòng và hoàn tiền áp dụng tại Brill Home:</p>
-				<div className="overflow-hidden rounded-md border border-foreground/10">
-					<table className="w-full text-sm text-left">
+					{/* <table className="w-full text-sm text-left">
 						<thead className="bg-foreground/5 text-foreground font-bold">
 							<tr>
 								<th className="p-4 border-b border-foreground/10">Thời gian hủy</th>
@@ -93,8 +92,12 @@ const CONTENT_DATA = {
 								<td className="p-4 text-red-500 font-bold">Không hoàn</td>
 							</tr>
 						</tbody>
-					</table>
-				</div>
+					</table> */}
+					<div className="flex items-center justify-center h-full">
+						<h3 className="text-center">
+							Hiện tại Brill Home không hỗ trợ hoàn tiền ạ !
+						</h3>
+					</div>
 			</div>
 		)
 	},
@@ -223,11 +226,11 @@ function HelpCenterContent() {
 								<ul className="space-y-3">
 									<li className="flex items-center gap-3 text-sm text-foreground/80 hover:text-[#D96D44] transition-colors cursor-pointer">
 										<Phone size={16} className="text-[#D96D44]" />
-										<span>1900 123 456</span>
+										<span>{contactData.phoneNumber}</span>
 									</li>
 									<li className="flex items-center gap-3 text-sm text-foreground/80 hover:text-[#D96D44] transition-colors cursor-pointer">
 										<Mail size={16} className="text-[#D96D44]" />
-										<span>support@brill.vn</span>
+										<span>{contactData.email}</span>
 									</li>
 								</ul>
 							</div>
