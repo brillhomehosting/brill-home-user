@@ -2,10 +2,12 @@ import { Room } from '@/types/room';
 import { motion } from 'framer-motion';
 import * as Icons from 'lucide-react';
 import {
+	AlarmPlus,
 	Ban,
 	BedDouble,
 	Cigarette,
 	Clock,
+	DoorClosed,
 	HeartHandshake,
 	Info,
 	LucideIcon,
@@ -14,6 +16,7 @@ import {
 	Moon,
 	PawPrint,
 	ShieldCheck,
+	UtensilsCrossed,
 	Users,
 	Wallet,
 	Wifi
@@ -172,7 +175,7 @@ export default function RoomInfo({ room }: { room: Room }) {
 				</div>
 
 				{/* Guest Capacity & Surcharge Card */}
-				<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 					<div className="flex flex-col p-5 bg-secondary/20 rounded-lg border border-border/50">
 						<div className="flex items-center gap-2 text-muted-foreground text-xs font-medium uppercase tracking-wider mb-2">
 							<Users size={14} /> Số lượng khách
@@ -190,17 +193,28 @@ export default function RoomInfo({ room }: { room: Room }) {
 						</div>
 						<div className="space-y-2 text-sm">
 							<div className="flex justify-between items-center">
-								<span className="text-muted-foreground">10-30 phút</span>
-								<span className="font-medium text-foreground">50k</span>
+								<span className="text-muted-foreground">10–20 phút</span>
+								<span className="font-medium text-foreground">150k</span>
 							</div>
 							<div className="flex justify-between items-center">
-								<span className="text-muted-foreground">30-60 phút</span>
-								<span className="font-medium text-primary">100k</span>
+								<span className="text-muted-foreground">20–30 phút</span>
+								<span className="font-medium text-primary">250k</span>
 							</div>
 							<div className="flex justify-between items-center">
-								<span className="text-muted-foreground">&gt; 1 tiếng</span>
-								<span className="font-medium text-destructive">150k</span>
+								<span className="text-muted-foreground">30–60 phút</span>
+								<span className="font-medium text-destructive">500k</span>
 							</div>
+						</div>
+					</div>
+					<div className="flex flex-col p-5 bg-secondary/20 rounded-lg border border-border/50 sm:col-span-2 lg:col-span-1">
+						<div className="flex items-center gap-2 text-muted-foreground text-xs font-medium uppercase tracking-wider mb-2">
+							<AlarmPlus size={14} /> Thêm giờ
+						</div>
+						<div className="text-2xl font-serif font-medium text-foreground mb-1">
+							1 giờ — <span className="text-primary">100k</span>
+						</div>
+						<div className="text-sm text-muted-foreground leading-relaxed">
+							Vui lòng yêu cầu thêm giờ trước khi checkout để chúng tôi sắp xếp lịch phù hợp.
 						</div>
 					</div>
 				</div>
@@ -221,6 +235,9 @@ export default function RoomInfo({ room }: { room: Room }) {
 								{ icon: Moon, text: 'Giữ yên lặng sau 24:00', strict: false },
 								{ icon: Users, text: 'Không tổ chức tiệc quá số người', strict: false },
 								{ icon: Wallet, text: 'Vui lòng tự bảo quản tư trang cá nhân', strict: false },
+								{ icon: Clock, text: 'Không checkout trễ quá 5 phút', strict: true },
+								{ icon: DoorClosed, text: 'Ra vào nhớ đóng cửa cuốn', strict: false },
+								{ icon: UtensilsCrossed, text: 'Không đem đồ ăn có mùi nặng vào home (ví dụ: lẩu mắm, lẩu dấm,...)', strict: true },
 							] as { icon: LucideIcon; text: string; strict?: boolean }[]).map((rule, i) => (
 								<li key={i} className="flex items-start gap-3 text-sm text-muted-foreground">
 									<rule.icon className={`w-4 h-4 shrink-0 mt-0.5 ${rule.strict ? 'text-destructive' : 'text-muted-foreground'}`} />
