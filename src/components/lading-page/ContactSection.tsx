@@ -66,7 +66,6 @@ export function ContactSection() {
 	return (
 		<section id="contact" className="py-20 md:py-28 lg:py-32 bg-foreground relative">
 			<Container size="xl">
-				{/* ... */}
 				{/* (Keeping structure, just targeting section mostly, but Card is deep) */}
 				<div className="grid lg:grid-cols-2 gap-16 items-center">
 					{/* Image Side */}
