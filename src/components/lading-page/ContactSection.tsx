@@ -10,20 +10,30 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 const contactSchema = z.object({
-	name: z.string().min(2, "Tên phải có ít nhất 2 ký tự").max(100, "Tên không được quá 100 ký tự"),
+	name: z.string().max(100, "Tên không được quá 100 ký tự"),
 	email: z.string().email("Vui lòng nhập email hợp lệ"),
 	phone: z.string().optional(),
-	message: z.string().min(10, "Tin nhắn phải có ít nhất 10 ký tự").max(1000, "Tin nhắn không được quá 1000 ký tự"),
+	message: z.string().max(1000, "Tin nhắn không được quá 1000 ký tự"),
 });
 
 type ContactFormData = z.infer<typeof contactSchema>;
 
-// Mock API submission
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 const submitContact = async (values: ContactFormData): Promise<{ success: boolean }> => {
-	// Simulate network request using the data
-	console.log("Submitting:", values);
-	await new Promise((resolve) => setTimeout(resolve, 1500));
-	return { success: true };
+	const res = await fetch(`${API_BASE_URL}/api/v1/feedback`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({
+			name: values.name,
+			email: values.email,
+			phone: values.phone,
+			content: values.message,
+		}),
+	});
+	const data = await res.json();
+	if (!res.ok || !data.success) throw new Error(data.message ?? "Gửi thất bại");
+	return data;
 };
 
 export function ContactSection() {
