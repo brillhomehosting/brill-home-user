@@ -1,15 +1,18 @@
 'use client';
 
 import messengerIcon from '@/assets/icon-messenger.png';
+import { DISCOUNT_PROGRAM_PERCENT } from '@/constants/pricing';
 import { useRooms } from '@/hooks/useRooms';
 import { useRoomsAvailability } from '@/hooks/useRoomsAvailability';
 import { buildBookingMessage } from '@/lib/buildBookingMessage';
+import { calculatePricing, isInDiscountProgram, toKDisplay } from '@/lib/pricingUtils';
 import { TimeSlot } from '@/types/room';
 import { Card, Table } from '@mantine/core';
 import { motion } from 'framer-motion';
 import { CalendarClock, Check, ChevronLeft, ChevronRight, Copy } from 'lucide-react';
 import Image from 'next/image';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useBookingUIStore } from '@/store/bookingUIStore';
 import { toast } from 'sonner';
 import { contactData } from '../../data/contact-data';
 
@@ -108,6 +111,12 @@ export default function AllRoomsBookingSection() {
 	const [slotPrices, setSlotPrices] = useState<Map<string, number>>(new Map());
 	const [isCopied, setIsCopied] = useState(false);
 	const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const setMobileBookingBarVisible = useBookingUIStore(s => s.setMobileBookingBarVisible);
+
+	useEffect(() => {
+		setMobileBookingBarVisible(selectedSlots.size > 0);
+		return () => setMobileBookingBarVisible(false);
+	}, [selectedSlots.size, setMobileBookingBarVisible]);
 
 	const DATES_PER_PAGE = 7;
 	const allDates = generateDates(30);
@@ -184,14 +193,10 @@ export default function AllRoomsBookingSection() {
 		return linearList;
 	};
 
-	const calculateTotal = () => {
-		let total = 0;
-		selectedSlots.forEach(slotKey => {
-			const price = slotPrices.get(slotKey);
-			if (price !== undefined) total += price / 1000;
-		});
-		return total;
-	};
+	const pricing = useMemo(
+		() => calculatePricing(slotPrices, selectedSlots),
+		[slotPrices, selectedSlots],
+	);
 
 	const handleSlotClick = (roomId: string, _date: Date, _slotId: string, _price: number) => {
 		// If switching rooms, reset everything immediately
@@ -328,8 +333,8 @@ export default function AllRoomsBookingSection() {
 		});
 	};
 
-	const totalPrice = calculateTotal();
 	const selectedRoom = rooms?.find(r => r.id === selectedRoomId);
+	const showDiscountBanner = dates.some(d => isInDiscountProgram(formatDate(d)));
 
 	const buildMessengerMessage = () => {
 		if (!selectedRoom || selectedSlots.size === 0) return '';
@@ -358,7 +363,7 @@ export default function AllRoomsBookingSection() {
 			groupedByDate[slot.date]!.push({ timeRange: slot.timeRange, price: slot.price });
 		});
 
-		return buildBookingMessage({ roomName: selectedRoom.name, groupedByDate, totalAmount: totalPrice });
+		return buildBookingMessage({ roomName: selectedRoom.name, groupedByDate, totalAmount: pricing.totalAmount });
 	};
 
 	const handleBookNow = useCallback(async () => {
@@ -663,6 +668,12 @@ export default function AllRoomsBookingSection() {
 																	>
 																		{isActive ? (
 																			<span className="leading-none text-[12px] font-bold">
+																				{(() => {
+																					const dp = isInDiscountProgram(formatDate(date))
+																						? Math.round(dynamicPrice * (1 - DISCOUNT_PROGRAM_PERCENT))
+																						: dynamicPrice;
+																					return `${Math.round(dp / 1000)}k`;
+																				})()}
 																			</span>
 																		) : !isApiActive ? (
 																			<span className="text-[12px] font-bold">Đã đặt</span>
@@ -681,71 +692,209 @@ export default function AllRoomsBookingSection() {
 						)}
 					</Card>
 
-					{/* Footer: Legend & Action */}
-					<div className="mt-10 relative flex flex-col md:flex-row items-center justify-between gap-6">
-						{/* Legend */}
-						<div className="flex items-center gap-6 bg-white px-4 py-2 rounded-full border border-stone-200 shadow-sm">
-							<div className="flex items-center gap-2">
-								<div className="w-3 h-3 rounded-full bg-white border border-teal-400"></div>
-								<span className="text-xs text-stone-600">Còn trống</span>
-							</div>
-							<div className="flex items-center gap-2">
-								<div className="w-3 h-3 rounded-full bg-[#D97D48]"></div>
-								<span className="text-xs text-stone-600">Đang chọn</span>
-							</div>
-							<div className="flex items-center gap-2">
-								<div className="w-3 h-3 rounded-full bg-red-500"></div>
-								<span className="text-xs text-stone-600">Đã đặt</span>
-							</div>
+					{/* Info Banner */}
+				<div className="mt-2 flex items-center justify-center gap-1.5 py-1.5 px-3 bg-white border border-stone-200 rounded-lg text-[10px] text-stone-500">
+					{showDiscountBanner ? (
+						<span className="text-green-700 font-semibold">
+							🎁 Khuyến mãi: Giảm {Math.round(DISCOUNT_PROGRAM_PERCENT * 100)}% tất cả đặt phòng từ 2/3 - 5/3/2026
+						</span>
+					) : (
+						<>
+							<span>Ưu đãi combo:</span>
+							<span className="text-green-600 font-semibold">2 khung liên tiếp → -5%</span>
+							<span>·</span>
+							<span className="text-green-600 font-semibold">3+ khung → -10%</span>
+						</>
+					)}
+				</div>
+
+				{/* Footer: Legend & Action */}
+				<div className="mt-4 flex flex-col md:flex-row items-center justify-between gap-6">
+					{/* Legend */}
+					<div className="flex items-center gap-6 bg-white px-4 py-2 rounded-full border border-stone-200 shadow-sm">
+						<div className="flex items-center gap-2">
+							<div className="w-3 h-3 rounded-full bg-white border border-teal-400"></div>
+							<span className="text-xs text-stone-600">Còn trống</span>
 						</div>
-
-						{/* Booking Summary Floating Action */}
-						{selectedSlots.size > 0 && (
-							<motion.div
-								initial={{ opacity: 0, scale: 0.9 }}
-								animate={{ opacity: 1, scale: 1 }}
-								className="md:absolute md:right-0 md:top-1/2 md:-translate-y-1/2"
-
-							>
-								<Card shadow="lg" radius="md" className="border border-stone-200 w-[350px]" p={0}>
-									<div className="flex items-center justify-center gap-4 bg-white p-2 pl-6 pr-2">
-										<div className="flex flex-col">
-											<span className="text-xs text-stone-500">Tổng cộng</span>
-											<span className="font-bold text-lg text-[#D97D48] leading-none">{totalPrice}k</span>
-										</div>
-										<div className="h-8 w-px bg-stone-200 mx-2"></div>
-										<div className="flex flex-col items-center">
-											<button
-												onClick={handleBookNow}
-												disabled={isCopied}
-												className={`px-6 py-2.5 rounded-md font-medium text-white transition-all duration-300 flex items-center gap-2 cursor-pointer ${isCopied ? 'bg-green-600 hover:bg-green-600' : 'hover:bg-[#c06b3d]'
-													}`}
-												style={!isCopied ? { backgroundColor: '#D97D48' } : undefined}
-											>
-												{isCopied ? (
-													<>
-														<Check className="w-5 h-5" />
-														<span>Đã sao chép!</span>
-													</>
-												) : (
-													<>
-														<Image src={messengerIcon} alt="Messenger" width={30} height={30} />
-														<span>Đặt ngay</span>
-													</>
-												)}
-											</button>
-											<p className="text-[9px] text-stone-400 mt-1 flex items-center gap-0.5">
-												<Copy className="w-2.5 h-2.5" />
-												Sao chép & dán vào Messenger
-											</p>
-										</div>
-									</div>
-								</Card>
-							</motion.div>
-						)}
+						<div className="flex items-center gap-2">
+							<div className="w-3 h-3 rounded-full bg-[#D97D48]"></div>
+							<span className="text-xs text-stone-600">Đang chọn</span>
+						</div>
+						<div className="flex items-center gap-2">
+							<div className="w-3 h-3 rounded-full bg-red-500"></div>
+							<span className="text-xs text-stone-600">Đã đặt</span>
+						</div>
 					</div>
+
+					{/* Booking Summary — desktop inline card */}
+					{selectedSlots.size > 0 && (
+						<motion.div
+							initial={{ opacity: 0, scale: 0.95 }}
+							animate={{ opacity: 1, scale: 1 }}
+							className="hidden md:block"
+						>
+							<Card shadow="lg" radius="md" className="border border-stone-200 w-[380px]" p={0}>
+								<div className="bg-white rounded-md overflow-hidden p-3">
+									{/* Header row */}
+									<div className="flex justify-between items-center mb-2">
+										<span className="text-xs text-stone-500">
+											Đã chọn:{' '}
+											<span className="text-stone-700 font-semibold">{selectedSlots.size} khung giờ</span>
+										</span>
+										{pricing.discountPercent > 0 && pricing.comboPercent > 0 ? (
+											<span className="text-[10px] font-semibold bg-green-100 text-green-600 px-2 py-0.5 rounded-full">
+												2 ưu đãi · Tiết kiệm {toKDisplay(pricing.savings)}
+											</span>
+										) : pricing.discountPercent > 0 ? (
+											<span className="text-[10px] font-semibold bg-green-100 text-green-600 px-2 py-0.5 rounded-full">
+												Khuyến mãi -{Math.round(pricing.discountPercent * 100)}%
+											</span>
+										) : pricing.comboPercent > 0 ? (
+											<span className="text-[10px] font-semibold bg-green-100 text-green-600 px-2 py-0.5 rounded-full">
+												Combo -{Math.round(pricing.comboPercent * 100)}%{pricing.sameDayFourSlotBonus > 0 ? ' · -250k' : ''}
+											</span>
+										) : null}
+									</div>
+									{/* Pricing breakdown box */}
+									<div className="mb-3 bg-stone-50 border border-stone-200 rounded-lg overflow-hidden">
+										<div className="px-3 py-1.5 flex justify-between items-center">
+											<span className="text-xs text-stone-500">Giá gốc</span>
+											<span className="text-xs text-stone-700">{toKDisplay(pricing.basePrice)}</span>
+										</div>
+										{pricing.discountPercent > 0 && (
+											<div className="px-3 py-1.5 flex justify-between items-center">
+												<span className="text-xs text-green-600">
+													Ưu đãi chương trình (-{Math.round(pricing.discountPercent * 100)}%)
+												</span>
+												<span className="text-xs text-green-600">-{toKDisplay(pricing.discountAmount)}</span>
+											</div>
+										)}
+										{pricing.comboPercent > 0 && (
+											<div className="px-3 py-1.5 flex justify-between items-center">
+												<span className="text-xs text-green-600">
+													Giảm giá combo (-{Math.round(pricing.comboPercent * 100)}%)
+												</span>
+												<span className="text-xs text-green-600">-{toKDisplay(pricing.comboDiscount)}</span>
+											</div>
+										)}
+										{pricing.sameDayFourSlotBonus > 0 && (
+											<div className="px-3 py-1.5 flex justify-between items-center">
+												<span className="text-xs text-green-600">Combo 4 khung cùng ngày</span>
+												<span className="text-xs text-green-600">-{toKDisplay(pricing.sameDayFourSlotBonus)}</span>
+											</div>
+										)}
+										<div className="border-t border-stone-200 px-3 py-2 flex justify-between items-center">
+											<span className="text-xs text-stone-500">Tổng tiền</span>
+											<span className="text-xl font-bold text-[#D97D48]">{toKDisplay(pricing.totalAmount)}</span>
+										</div>
+										{pricing.savings > 0 && (
+											<div className="px-3 pb-2 flex justify-end">
+												<span className="text-[10px] font-semibold bg-green-100 text-green-600 px-2 py-0.5 rounded-full">
+													Bạn đã tiết kiệm được {toKDisplay(pricing.savings)} 🟢
+												</span>
+											</div>
+										)}
+									</div>
+									<button
+										onClick={handleBookNow}
+										disabled={isCopied}
+										className={`w-full px-6 py-2.5 rounded-md font-medium text-white transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${isCopied ? 'bg-green-600 hover:bg-green-600' : 'hover:bg-[#c06b3d]'
+											}`}
+										style={!isCopied ? { backgroundColor: '#D97D48' } : undefined}
+									>
+										{isCopied ? (
+											<>
+												<Check className="w-5 h-5" />
+												<span>Đã sao chép! Dán vào Messenger</span>
+											</>
+										) : (
+											<>
+												<Image src={messengerIcon} alt="Messenger" width={30} height={30} />
+												<span>Đặt ngay</span>
+											</>
+										)}
+									</button>
+									<p className="text-[9px] text-stone-400 mt-1 flex items-center justify-center gap-0.5">
+										<Copy className="w-2.5 h-2.5" />
+										Sao chép & dán vào Messenger
+									</p>
+								</div>
+							</Card>
+						</motion.div>
+					)}
+				</div>
+
+				{/* Mobile spacer — prevents footer being hidden behind the fixed booking bar */}
+				{selectedSlots.size > 0 && <div className="h-32 md:hidden" />}
 				</motion.div>
 			</div>
+
+			{/* Booking Summary — mobile fixed bottom bar */}
+			{selectedSlots.size > 0 && (
+				<motion.div
+					initial={{ opacity: 0, y: 24 }}
+					animate={{ opacity: 1, y: 0 }}
+					className="fixed bottom-0 inset-x-0 z-50 md:hidden bg-white border-t border-stone-200 shadow-[0_-4px_24px_rgba(0,0,0,0.10)]"
+				>
+				<div className="px-4 pt-3 pb-1">
+					{/* Row 1: slot count + badge */}
+					<div className="flex items-center justify-between mb-2">
+						<span className="text-xs text-stone-500">
+							Đã chọn:{' '}
+							<span className="text-stone-700 font-semibold">{selectedSlots.size} khung giờ</span>
+						</span>
+						{pricing.discountPercent > 0 && pricing.comboPercent > 0 ? (
+							<span className="text-[10px] font-semibold bg-green-100 text-green-600 px-2 py-0.5 rounded-full">
+								2 ưu đãi · Tiết kiệm {toKDisplay(pricing.savings)}
+							</span>
+						) : pricing.discountPercent > 0 ? (
+							<span className="text-[10px] font-semibold bg-green-100 text-green-600 px-2 py-0.5 rounded-full">
+								Khuyến mãi -{Math.round(pricing.discountPercent * 100)}%
+							</span>
+						) : pricing.comboPercent > 0 ? (
+							<span className="text-[10px] font-semibold bg-green-100 text-green-600 px-2 py-0.5 rounded-full">
+								-{Math.round(pricing.comboPercent * 100)}%{pricing.sameDayFourSlotBonus > 0 ? ' · -250k' : ''}
+							</span>
+						) : null}
+					</div>
+					{/* Row 2: price + book button */}
+					<div className="flex items-center justify-between gap-3">
+						<div className="flex flex-col gap-0.5 min-w-0">
+							<span className="font-bold text-lg text-[#D97D48] leading-none">
+								{toKDisplay(pricing.totalAmount)}
+							</span>
+							{pricing.savings > 0 && (
+								<span className="text-[10px] font-semibold text-green-600">
+									Tiết kiệm {toKDisplay(pricing.savings)} 🟢
+								</span>
+							)}
+						</div>
+						<button
+							onClick={handleBookNow}
+							disabled={isCopied}
+							className={`shrink-0 px-5 py-2.5 rounded-lg font-medium text-white transition-all duration-300 flex items-center gap-2 cursor-pointer ${isCopied ? 'bg-green-600' : 'hover:opacity-90'}`}
+							style={!isCopied ? { backgroundColor: '#D97D48' } : undefined}
+						>
+							{isCopied ? (
+								<>
+									<Check className="w-4 h-4" />
+									<span className="text-sm">Đã sao chép!</span>
+								</>
+							) : (
+								<>
+									<Image src={messengerIcon} alt="Messenger" width={22} height={22} />
+									<span className="text-sm">Đặt ngay</span>
+								</>
+							)}
+						</button>
+					</div>
+				</div>
+				<p className="text-[9px] text-stone-400 text-center pb-3 flex items-center justify-center gap-0.5">
+					<Copy className="w-2.5 h-2.5" />
+					Sao chép & dán vào Messenger
+				</p>
+				</motion.div>
+			)}
 		</section>
 	);
 }

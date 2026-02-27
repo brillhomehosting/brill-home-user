@@ -1,3 +1,5 @@
+import { toKDisplay } from '@/lib/pricingUtils';
+
 type SlotInfo = {
 	timeRange: string;
 	price: string;
@@ -13,7 +15,7 @@ function pickRandom<T>(arr: T[]): T {
 	return arr[Math.floor(Math.random() * arr.length)]!;
 }
 
-export function buildBookingMessage({ roomName, groupedByDate }: BuildBookingMessageParams): string {
+export function buildBookingMessage({ roomName, groupedByDate, totalAmount }: BuildBookingMessageParams): string {
 	const entries = Object.entries(groupedByDate);
 
 	const dateParts = entries.map(([date, slots]) => {
@@ -32,5 +34,5 @@ export function buildBookingMessage({ roomName, groupedByDate }: BuildBookingMes
 
 	const opener = pickRandom(openers);
 
-	return `${opener}, mình muốn đặt ${roomName} ${timePart}.`;
+	return `${opener}, mình muốn đặt ${roomName} ${timePart}. Tổng tiền: ${toKDisplay(totalAmount)}.`;
 }

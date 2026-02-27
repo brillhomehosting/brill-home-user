@@ -4,6 +4,8 @@ import messengerIcon from '@/assets/icon-messenger.png';
 import { contactData } from '@/data/contact-data';
 import { useTimeSlotAvailability } from '@/hooks/useTimeSlotAvailability';
 import { buildBookingMessage } from '@/lib/buildBookingMessage';
+import { DISCOUNT_PROGRAM_PERCENT } from '@/constants/pricing';
+import { calculatePricing, isInDiscountProgram, toKDisplay } from '@/lib/pricingUtils';
 import { Room, TimeSlot } from '@/types/room';
 import { Card, Table } from '@mantine/core';
 import { motion } from 'framer-motion';
@@ -140,17 +142,10 @@ export default function BookingWidget({ room }: { room: Room }) {
 		return slotStatus?.isActive ?? true;
 	};
 
-	// Calculate total from selected slots using stored prices
-	const calculateTotal = () => {
-		let total = 0;
-		selectedSlots.forEach(slotKey => {
-			const price = slotPrices.get(slotKey);
-			if (price !== undefined) {
-				total += price / 1000;
-			}
-		});
-		return total;
-	};
+	const pricing = useMemo(
+		() => calculatePricing(slotPrices, selectedSlots),
+		[slotPrices, selectedSlots],
+	);
 
 	// Build linear list of slots for adjacency checks
 	const getLinearSlots = () => {
@@ -159,7 +154,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 		dates.forEach(date => {
 			timeSlots.forEach(slot => {
 				linearList.push({
-					key: `${formatDate(date)}::${slot.id}`,
+					key: `${room.id}::${formatDate(date)}::${slot.id}`,
 					price: slot.price,
 				});
 			});
@@ -169,7 +164,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 
 	// Handle slot click — consecutive only
 	const handleSlotClick = (date: Date, slotId: string, price: number) => {
-		const slotKey = `${formatDate(date)}::${slotId}`;
+		const slotKey = `${room.id}::${formatDate(date)}::${slotId}`;
 		const linearSlots = getLinearSlots();
 		const clickedSlotIndex = linearSlots.findIndex(s => s.key === slotKey);
 		if (clickedSlotIndex === -1) return;
@@ -247,7 +242,8 @@ export default function BookingWidget({ room }: { room: Room }) {
 		});
 	};
 
-	const totalAmount = calculateTotal();
+	const totalAmount = pricing.totalAmount;
+	const showDiscountBanner = dates.some(d => isInDiscountProgram(formatDate(d)));
 
 	// Build Messenger message with booking details
 	const buildMessengerMessage = () => {
@@ -255,9 +251,9 @@ export default function BookingWidget({ room }: { room: Room }) {
 
 		const slotsInfo = Array.from(selectedSlots).map(slotKey => {
 			const parts = slotKey.split('::');
-			if (parts.length !== 2) return null;
-			const [dateStr, slotId] = parts as [string, string];
-			const date = new Date(dateStr);
+			if (parts.length !== 3) return null;
+			const [, dateStr, slotId] = parts as [string, string, string];
+			const date = new Date(dateStr + 'T00:00:00');
 			const price = slotPrices.get(slotKey);
 
 			const timeSlot = timeSlots?.find(s => s.id === slotId);
@@ -442,13 +438,17 @@ export default function BookingWidget({ room }: { room: Room }) {
 
 										{/* Time Slots */}
 										{timeSlots.map((slot: TimeSlot) => {
-											const slotKey = `${formatDate(date)}::${slot.id}`;
+											const slotKey = `${room.id}::${formatDate(date)}::${slot.id}`;
 											const isSelected = selectedSlots.has(slotKey);
 											const isApiActive = getSlotAvailability(date, slot.id);
 											// Check if slot is past for today
 											const isPast = isPastSlot(date, slot.startTime);
 											const isActive = isApiActive && !isPast;
-											const priceInK = slot.price / 1000;
+											const isDiscount = isInDiscountProgram(formatDate(date));
+											const displayPrice = isDiscount
+												? Math.round(slot.price * (1 - DISCOUNT_PROGRAM_PERCENT))
+												: slot.price;
+											const priceInK = Math.round(displayPrice / 1000);
 
 											return (
 												<Table.Td
@@ -502,6 +502,22 @@ export default function BookingWidget({ room }: { room: Room }) {
 				</div>
 			</div>
 
+			{/* Info Banner */}
+			{!isLoading && timeSlots && Array.isArray(timeSlots) && timeSlots.length > 0 && (
+				showDiscountBanner ? (
+					<div className="flex items-center justify-center gap-1.5 py-1.5 px-3 bg-green-50 border-t border-green-200 text-[10px] text-green-700">
+						<span className="font-semibold">🎁 Khuyến mãi: Giảm {Math.round(DISCOUNT_PROGRAM_PERCENT * 100)}% tất cả đặt phòng từ 2/3 - 5/3/2026</span>
+					</div>
+				) : (
+					<div className="flex items-center justify-center gap-1.5 py-1.5 px-3 bg-stone-50 border-t border-stone-200 text-[10px] text-stone-500">
+						<span>Ưu đãi combo:</span>
+						<span className="text-green-600 font-semibold">2 khung liên tiếp → -5%</span>
+						<span>·</span>
+						<span className="text-green-600 font-semibold">3+ khung → -10%</span>
+					</div>
+				)
+			)}
+
 			{/* Booking Summary */}
 			{selectedSlots.size > 0 && (
 				<motion.div
@@ -509,14 +525,68 @@ export default function BookingWidget({ room }: { room: Room }) {
 					animate={{ opacity: 1, height: 'auto' }}
 					className="border-t border-stone-200 p-3"
 				>
+					{/* Header row */}
 					<div className="flex justify-between items-center mb-2">
-						<span className="text-xs text-stone-500">Đã chọn:</span>
-						<span className="text-xs text-stone-700">{selectedSlots.size} khung giờ</span>
+						<span className="text-xs text-stone-500">
+							Đã chọn:{' '}
+							<span className="text-stone-700 font-semibold">{selectedSlots.size} khung giờ</span>
+						</span>
+						{pricing.discountPercent > 0 && pricing.comboPercent > 0 ? (
+							<span className="text-[10px] font-semibold bg-green-100 text-green-600 px-2 py-0.5 rounded-full">
+								2 ưu đãi · Tiết kiệm {toKDisplay(pricing.savings)}
+							</span>
+						) : pricing.discountPercent > 0 ? (
+							<span className="text-[10px] font-semibold bg-green-100 text-green-600 px-2 py-0.5 rounded-full">
+								Khuyến mãi -{Math.round(pricing.discountPercent * 100)}%
+							</span>
+						) : pricing.comboPercent > 0 ? (
+							<span className="text-[10px] font-semibold bg-green-100 text-green-600 px-2 py-0.5 rounded-full">
+								Combo -{Math.round(pricing.comboPercent * 100)}%{pricing.sameDayFourSlotBonus > 0 ? ' · -250k' : ''}
+							</span>
+						) : null}
 					</div>
-					<div className="flex justify-between items-baseline mb-3">
-						<span className="text-xs text-stone-500">Tổng cộng</span>
-						<span className="text-xl font-bold text-[#D97D48]">{totalAmount}k</span>
+
+					{/* Pricing breakdown box */}
+					<div className="mb-3 bg-stone-50 border border-stone-200 rounded-lg overflow-hidden">
+						<div className="px-3 py-1.5 flex justify-between items-center">
+							<span className="text-xs text-stone-500">Giá gốc</span>
+							<span className="text-xs text-stone-700">{toKDisplay(pricing.basePrice)}</span>
+						</div>
+						{pricing.discountPercent > 0 && (
+							<div className="px-3 py-1.5 flex justify-between items-center">
+								<span className="text-xs text-green-600">
+									Ưu đãi chương trình (-{Math.round(pricing.discountPercent * 100)}%)
+								</span>
+								<span className="text-xs text-green-600">-{toKDisplay(pricing.discountAmount)}</span>
+							</div>
+						)}
+						{pricing.comboPercent > 0 && (
+							<div className="px-3 py-1.5 flex justify-between items-center">
+								<span className="text-xs text-green-600">
+									Giảm giá combo (-{Math.round(pricing.comboPercent * 100)}%)
+								</span>
+								<span className="text-xs text-green-600">-{toKDisplay(pricing.comboDiscount)}</span>
+							</div>
+						)}
+						{pricing.sameDayFourSlotBonus > 0 && (
+							<div className="px-3 py-1.5 flex justify-between items-center">
+								<span className="text-xs text-green-600">Combo 4 khung cùng ngày</span>
+								<span className="text-xs text-green-600">-{toKDisplay(pricing.sameDayFourSlotBonus)}</span>
+							</div>
+						)}
+						<div className="border-t border-stone-200 px-3 py-2 flex justify-between items-center">
+							<span className="text-xs text-stone-500">Tổng tiền</span>
+							<span className="text-xl font-bold text-[#D97D48]">{toKDisplay(pricing.totalAmount)}</span>
+						</div>
+						{pricing.savings > 0 && (
+							<div className="px-3 pb-2 flex justify-end">
+								<span className="text-[10px] font-semibold bg-green-100 text-green-600 px-2 py-0.5 rounded-full">
+									Bạn đã tiết kiệm được {toKDisplay(pricing.savings)} 🟢
+								</span>
+							</div>
+						)}
 					</div>
+
 					<button
 						onClick={handleBookNow}
 						disabled={isCopied}
