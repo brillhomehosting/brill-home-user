@@ -4,6 +4,7 @@ import messengerIcon from '@/assets/icon-messenger.png';
 import { DISCOUNT_PROGRAM_PERCENT } from '@/constants/pricing';
 import { useRooms } from '@/hooks/useRooms';
 import { useRoomsAvailability } from '@/hooks/useRoomsAvailability';
+import { useRoomsTimeSlots } from '@/hooks/useRoomsTimeSlots';
 import { buildBookingMessage } from '@/lib/buildBookingMessage';
 import { calculatePricing, isInDiscountProgram, toKDisplay } from '@/lib/pricingUtils';
 import { TimeSlot } from '@/types/room';
@@ -130,8 +131,9 @@ export default function AllRoomsBookingSection() {
 	const startDate = formatDate(dates[0] || new Date());
 	const endDate = formatDate(dates[dates.length - 1] || new Date());
 
-	// Use availability API only (contains full time slot info)
+	// Use availability API for booking status, time-slots API for prices
 	const { data: roomAvailabilityMap, isLoading: isLoadingAvailability } = useRoomsAvailability(rooms, startDate, endDate);
+	const { data: roomTimeSlotsApiMap } = useRoomsTimeSlots(rooms);
 
 	// Derive unique time slots per room from availability data
 	const roomTimeSlotsMap = useMemo(() => {
@@ -644,8 +646,8 @@ export default function AllRoomsBookingSection() {
 															// Check if slot is past for today
 															const isPast = isPastSlot(date, slot.startTime);
 															const isActive = isApiActive && !isPast;
-															// Calculate dynamic price
-															const dynamicPrice = slotStatus?.timeSlot?.price ?? slot.price;
+															const baseSlotPrice = roomTimeSlotsApiMap.get(room.id)?.find(s => s.id === slot.id)?.price ?? slot.price;
+															const dynamicPrice = baseSlotPrice;
 
 															return (
 																<Table.Td
@@ -666,16 +668,7 @@ export default function AllRoomsBookingSection() {
 																			}
                                                                         `}
 																	>
-																		{isActive ? (
-																			<span className="leading-none text-[12px] font-bold">
-																				{(() => {
-																					const dp = isInDiscountProgram(formatDate(date))
-																						? Math.round(dynamicPrice * (1 - DISCOUNT_PROGRAM_PERCENT))
-																						: dynamicPrice;
-																					return `${Math.round(dp / 1000)}k`;
-																				})()}
-																			</span>
-																		) : !isApiActive ? (
+																		{!isApiActive ? (
 																			<span className="text-[12px] font-bold">Đã đặt</span>
 																		) : null}
 																	</button>
