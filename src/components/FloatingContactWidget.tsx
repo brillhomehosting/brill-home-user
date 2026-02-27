@@ -7,10 +7,12 @@ import { MessageCircle, Phone, X } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 import {contactData} from '@/data/contact-data'
+import { useBookingUIStore } from '@/store/bookingUIStore';
 
 
 export default function FloatingContactWidget() {
-	const [isOpen, setIsOpen] = useState(true);
+	const [isOpen, setIsOpen] = useState(false);
+	const isMobileBookingBarVisible = useBookingUIStore(s => s.isMobileBookingBarVisible);
 
 	const handleMessengerClick = () => {
 		window.open(`https://m.me/${contactData.facebookPageId}`, '_blank');
@@ -35,7 +37,7 @@ export default function FloatingContactWidget() {
 	};
 
 	return (
-		<div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+		<div className={`fixed right-4 z-50 flex flex-col items-end gap-3 transition-all duration-300 ease-in-out md:bottom-6 md:right-6 ${isMobileBookingBarVisible ? 'bottom-[116px]' : 'bottom-6'}`}>
 			{/* Contact Icons */}
 			<AnimatePresence>
 				{isOpen && (
