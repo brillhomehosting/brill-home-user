@@ -67,6 +67,19 @@ const isPastSlot = (date: Date, startTime: string): boolean => {
 	return now > slotTime;
 };
 
+// Check if slot's end time has passed (for today only)
+const isEndPastSlot = (date: Date, endTime: string, isOvernight: boolean): boolean => {
+	if (!isToday(date)) return false;
+	const now = new Date();
+	const timeParts = endTime.split(':');
+	const hours = parseInt(timeParts[0] || '0', 10);
+	const minutes = parseInt(timeParts[1] || '0', 10);
+	const endDate = new Date();
+	endDate.setHours(hours, minutes, 0, 0);
+	if (isOvernight) endDate.setDate(endDate.getDate() + 1);
+	return now > endDate;
+};
+
 // Loading Skeleton
 function LoadingSkeleton() {
 	return (
@@ -442,8 +455,10 @@ export default function BookingWidget({ room }: { room: Room }) {
 											const isSelected = selectedSlots.has(slotKey);
 											const isApiActive = getSlotAvailability(date, slot.id);
 											// Check if slot is past for today
-											const isPast = isPastSlot(date, slot.startTime);
-											const isActive = isApiActive && !isPast;
+											const isStartPast = isPastSlot(date, slot.startTime);
+											const isEndPast = isEndPastSlot(date, slot.endTime, slot.isOvernight);
+											const isActive = isApiActive && !isEndPast;
+											const isRed = !isApiActive || isStartPast;
 											const isDiscount = isInDiscountProgram(formatDate(date));
 											const displayPrice = isDiscount
 												? Math.round(slot.price * (1 - DISCOUNT_PROGRAM_PERCENT))
@@ -465,7 +480,9 @@ export default function BookingWidget({ room }: { room: Room }) {
 																? 'bg-red-200 text-red-500 border border-transparent cursor-not-allowed shadow-none'
 																: isSelected
 																	? 'bg-[#D97D48] text-white shadow-md border border-[#D97D48]'
-																	: 'bg-white text-teal-700 border border-teal-200 hover:border-teal-500 hover:shadow-md hover:bg-teal-50'
+																	: isRed
+																		? 'bg-red-200 text-red-500 border border-transparent shadow-none'
+																		: 'bg-white text-teal-700 border border-teal-200 hover:border-teal-500 hover:shadow-md hover:bg-teal-50'
 															}
 														`}
 													>
