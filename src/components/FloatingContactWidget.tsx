@@ -37,7 +37,7 @@ export default function FloatingContactWidget() {
 	};
 
 	return (
-		<div className={`fixed right-4 z-50 flex flex-col items-end gap-3 transition-all duration-300 ease-in-out md:bottom-6 md:right-6 ${isMobileBookingBarVisible ? 'bottom-[116px]' : 'bottom-6'}`}>
+		<div className={`fixed right-4 z-50 flex flex-col items-end gap-3 transition-all duration-300 ease-in-out md:bottom-6 md:right-6 ${isMobileBookingBarVisible ? 'bottom-[320px]' : 'bottom-6'}`}>
 			{/* Contact Icons */}
 			<AnimatePresence>
 				{isOpen && (
