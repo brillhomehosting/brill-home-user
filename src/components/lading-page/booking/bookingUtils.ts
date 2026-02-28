@@ -50,3 +50,18 @@ export const isPastSlot = (date: Date, startTime: string): boolean => {
 
 	return now > slotTime;
 };
+
+// Check if slot's end time has passed (for today only)
+export const isEndPastSlot = (date: Date, endTime: string, isOvernight: boolean): boolean => {
+	if (!isToday(date)) return false;
+
+	const now = new Date();
+	const timeParts = endTime.split(':');
+	const hours = parseInt(timeParts[0] || '0', 10);
+	const minutes = parseInt(timeParts[1] || '0', 10);
+	const endDate = new Date();
+	endDate.setHours(hours, minutes, 0, 0);
+	if (isOvernight) endDate.setDate(endDate.getDate() + 1);
+
+	return now > endDate;
+};

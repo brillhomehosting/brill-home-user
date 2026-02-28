@@ -3,7 +3,7 @@
 import { DayAvailability, Room, TimeSlot } from '@/types/room';
 import { Card, Table } from '@mantine/core';
 import Image from 'next/image';
-import { formatDate, getDayLabel, getTimeSlotIcon, isPastSlot, isToday } from './bookingUtils';
+import { formatDate, getDayLabel, getTimeSlotIcon, isEndPastSlot, isPastSlot, isToday } from './bookingUtils';
 import LoadingSkeleton from './LoadingSkeleton';
 
 interface BookingCalendarTableProps {
@@ -175,8 +175,10 @@ export default function BookingCalendarTable({
 												const dayData = availabilityData?.find(d => d.date === dateStr);
 												const slotStatus = dayData?.timeSlots?.find(s => s?.timeSlot?.id === slot.id);
 												const isApiActive = slotStatus?.isActive ?? true;
-												const isPast = isPastSlot(date, slot.startTime);
-												const isActive = isApiActive && !isPast;
+												const isStartPast = isPastSlot(date, slot.startTime);
+												const isEndPast = isEndPastSlot(date, slot.endTime, slot.isOvernight);
+												const isActive = isApiActive && !isEndPast;
+												const isRed = !isApiActive || isStartPast;
 												const baseSlotPrice = roomTimeSlotsApiMap.get(room.id)?.find(s => s.id === slot.id)?.price ?? slot.price;
 												const dynamicPrice = baseSlotPrice;
 
@@ -195,7 +197,9 @@ export default function BookingCalendarTable({
 																	? 'bg-red-200 text-red-500 border border-transparent cursor-not-allowed shadow-none'
 																	: isSelected
 																		? 'bg-[#D97D48] text-white shadow-lg border border-[#D97D48]'
-																		: 'bg-white text-teal-700 border border-teal-200 hover:border-teal-500 hover:shadow-md hover:bg-teal-50'
+																		: isRed
+																			? 'bg-red-200 text-red-500 border border-transparent shadow-none'
+																			: 'bg-white text-teal-700 border border-teal-200 hover:border-teal-500 hover:shadow-md hover:bg-teal-50'
 																}
                                                             `}
 														>
