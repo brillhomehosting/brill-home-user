@@ -537,7 +537,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 							</span>
 						) : pricing.discountPercent > 0 ? (
 							<span className="text-[10px] font-semibold bg-green-100 text-green-600 px-2 py-0.5 rounded-full">
-								Khuyến mãi -{Math.round(pricing.discountPercent * 100)}%
+								Khuyến mãi -{Math.round(pricing.discountPercent * 100)}%{pricing.sameDayFourSlotBonus > 0 ? ' · -250k' : ''}
 							</span>
 						) : pricing.comboPercent > 0 ? (
 							<span className="text-[10px] font-semibold bg-green-100 text-green-600 px-2 py-0.5 rounded-full">

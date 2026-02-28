@@ -78,8 +78,8 @@ export function calculatePricing(
 	const comboPercent = regularSlots.size > 0 ? getComboPercent(regularSlots.size) : 0;
 	const comboDiscount = Math.round(regularBasePrice * comboPercent);
 
-	// Same-day 4-slot bonus: only for regular slots
-	const sameDayFourSlotBonus = hasSameDayFourSlots(regularSlots) ? SAME_DAY_4_SLOT_BONUS : 0;
+	// Same-day 4-slot bonus: applies to all slots (regular + discount-program)
+	const sameDayFourSlotBonus = hasSameDayFourSlots(selectedSlots) ? SAME_DAY_4_SLOT_BONUS : 0;
 
 	const totalAmount = basePrice - discountAmount - comboDiscount - sameDayFourSlotBonus;
 	const savings = discountAmount + comboDiscount + sameDayFourSlotBonus;
