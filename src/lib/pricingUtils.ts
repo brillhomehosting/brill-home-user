@@ -8,6 +8,7 @@ export interface PricingBreakdown {
 	comboPercent: number;
 	comboDiscount: number;
 	sameDayFourSlotBonus: number;
+	sameDayFourSlotCount: number;
 	totalAmount: number;
 	savings: number;
 }
@@ -26,19 +27,25 @@ export function getComboPercent(slotCount: number): number {
 }
 
 /**
- * Returns true if any single calendar day has 4 or more selected slots.
+ * Returns the number of calendar days that have 4 or more selected slots.
  * Key format: roomId::YYYY-MM-DD::slotId
  */
-export function hasSameDayFourSlots(selectedSlots: Set<string>): boolean {
+export function countSameDayFourSlotDays(selectedSlots: Set<string>): number {
 	const countByDate = new Map<string, number>();
 	selectedSlots.forEach(key => {
 		const dateStr = key.split('::')[1];
 		if (dateStr) countByDate.set(dateStr, (countByDate.get(dateStr) ?? 0) + 1);
 	});
+	let days = 0;
 	for (const count of countByDate.values()) {
-		if (count >= 4) return true;
+		if (count >= 4) days++;
 	}
-	return false;
+	return days;
+}
+
+/** Backward-compatible helper: returns true if any single day has 4+ slots. */
+export function hasSameDayFourSlots(selectedSlots: Set<string>): boolean {
+	return countSameDayFourSlotDays(selectedSlots) > 0;
 }
 
 /** Full pricing breakdown from raw slot prices and selected slot keys.
@@ -78,8 +85,9 @@ export function calculatePricing(
 	const comboPercent = regularSlots.size > 0 ? getComboPercent(regularSlots.size) : 0;
 	const comboDiscount = Math.round(regularBasePrice * comboPercent);
 
-	// Same-day 4-slot bonus: applies to all slots (regular + discount-program)
-	const sameDayFourSlotBonus = hasSameDayFourSlots(selectedSlots) ? SAME_DAY_4_SLOT_BONUS : 0;
+	// Same-day 4-slot bonus: applies per qualifying day (each day with 4+ slots → 250k)
+	const sameDayFourSlotCount = countSameDayFourSlotDays(selectedSlots);
+	const sameDayFourSlotBonus = sameDayFourSlotCount * SAME_DAY_4_SLOT_BONUS;
 
 	const totalAmount = basePrice - discountAmount - comboDiscount - sameDayFourSlotBonus;
 	const savings = discountAmount + comboDiscount + sameDayFourSlotBonus;
@@ -92,6 +100,7 @@ export function calculatePricing(
 		comboPercent,
 		comboDiscount,
 		sameDayFourSlotBonus,
+		sameDayFourSlotCount,
 		totalAmount,
 		savings,
 	};

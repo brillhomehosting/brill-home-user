@@ -42,11 +42,11 @@ export default function BookingSummaryCard({
 							</span>
 						) : pricing.discountPercent > 0 ? (
 							<span className="text-[10px] font-semibold bg-green-100 text-green-600 px-2 py-0.5 rounded-full">
-								Khuyến mãi -{Math.round(pricing.discountPercent * 100)}%{pricing.sameDayFourSlotBonus > 0 ? ' · -250k' : ''}
-							</span>
-						) : pricing.comboPercent > 0 ? (
-							<span className="text-[10px] font-semibold bg-green-100 text-green-600 px-2 py-0.5 rounded-full">
-								Combo -{Math.round(pricing.comboPercent * 100)}%{pricing.sameDayFourSlotBonus > 0 ? ' · -250k' : ''}
+							Khuyến mãi -{Math.round(pricing.discountPercent * 100)}%{pricing.sameDayFourSlotBonus > 0 ? ` · -${toKDisplay(pricing.sameDayFourSlotBonus)}` : ''}
+						</span>
+					) : pricing.comboPercent > 0 ? (
+						<span className="text-[10px] font-semibold bg-green-100 text-green-600 px-2 py-0.5 rounded-full">
+							Combo -{Math.round(pricing.comboPercent * 100)}%{pricing.sameDayFourSlotBonus > 0 ? ` · -${toKDisplay(pricing.sameDayFourSlotBonus)}` : ''}
 							</span>
 						) : null}
 					</div>
