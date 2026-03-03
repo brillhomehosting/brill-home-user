@@ -60,7 +60,7 @@ export function Header() {
 					<Anchor component={Link} href="/" underline="never">
 						<Group gap="xs">
 							{/* <Leaf className="w-8 h-8 transition-transform group-hover:rotate-12" style={{ width: 32, height: 32, color: 'var(--primary)' }} /> */}
-							<Image src="https://res.cloudinary.com/dxce9c0vh/image/upload/v1770040501/brillhome_logo_transparent.png_omsdxc.png" alt="Logo" width={32} height={32} />
+							<Image src="/brillhome_logo_transparent.png_omsdxc.png" alt="Logo" width={32} height={32} />
 							<Title order={3} style={{ fontFamily: 'serif', fontWeight: 600, color: isTransparent ? '#f2ede4' : 'var(--foreground)' }}>
 								Brill Home
 							</Title>

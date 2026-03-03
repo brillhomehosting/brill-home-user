@@ -8,8 +8,6 @@ import { HeroSection } from '@/components/lading-page/HeroSection';
 import { MapSection } from '@/components/lading-page/MapSection';
 import { RoomsSection } from '@/components/lading-page/RoomsSection';
 
-
-
 export default function HomePage() {
 	return (
 		<div className="w-full">
