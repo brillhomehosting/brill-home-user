@@ -5,8 +5,31 @@ import { socialLinks } from "@/data/contact-data";
 import { ActionIcon, Button, Container, Group } from "@mantine/core";
 import { motion } from "framer-motion";
 import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
 
 export function HeroSection() {
+	const videoRef = useRef<HTMLVideoElement>(null);
+	const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
+
+	// Delay video loading to reduce Cloudinary bandwidth:
+	// 1. Only load video after page is fully rendered (3s delay)
+	// 2. Uses preload="none" so the browser doesn't auto-fetch
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setShouldLoadVideo(true);
+		}, 3000);
+		return () => clearTimeout(timer);
+	}, []);
+
+	// Once the video source is set, start playing
+	useEffect(() => {
+		if (shouldLoadVideo && videoRef.current) {
+			videoRef.current.load();
+			videoRef.current.play().catch(() => {
+				// Autoplay may be blocked — poster image is shown as fallback
+			});
+		}
+	}, [shouldLoadVideo]);
 	return (
 		<section className="relative min-h-screen flex items-center overflow-hidden">
 			<div className="absolute inset-0 z-0">
@@ -19,14 +42,17 @@ export function HeroSection() {
 					className="object-cover"
 				/>
 				<video
+					ref={videoRef}
 					className="absolute inset-0 w-full h-full object-cover"
-					autoPlay
 					muted
 					loop
 					playsInline
+					preload="none"
 					poster={heroImage.src}
 				>
-					<source src={heroData.video.src} type="video/mp4" />
+					{shouldLoadVideo && (
+						<source src={heroData.video.src} type="video/mp4" />
+					)}
 				</video>
 
 				<div className="absolute inset-0 bg-linear-to-r from-black/80 via-black/40 to-transparent" />
