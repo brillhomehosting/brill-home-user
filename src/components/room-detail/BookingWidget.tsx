@@ -1,10 +1,10 @@
 'use client';
 
 import messengerIcon from '@/assets/icon-messenger.png';
+import { DISCOUNT_PROGRAM_PERCENT } from '@/constants/pricing';
 import { contactData } from '@/data/contact-data';
 import { useTimeSlotAvailability } from '@/hooks/useTimeSlotAvailability';
 import { buildBookingMessage } from '@/lib/buildBookingMessage';
-import { DISCOUNT_PROGRAM_PERCENT } from '@/constants/pricing';
 import { calculatePricing, isInDiscountProgram, toKDisplay } from '@/lib/pricingUtils';
 import { Room, TimeSlot } from '@/types/room';
 import { Card, Table } from '@mantine/core';
@@ -360,7 +360,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 				>
 					<ChevronLeft className="w-4 h-4" />
 				</button>
-				<span className="text-xs font-semibold text-stone-700">
+				<span className="text-xs font-semibold text-stone-700" suppressHydrationWarning>
 					{dates[0]?.getDate()}/{dates[0]?.getMonth()! + 1} - {dates[dates.length - 1]?.getDate()}/{dates[dates.length - 1]?.getMonth()! + 1}
 				</span>
 				<button
@@ -440,10 +440,10 @@ export default function BookingWidget({ room }: { room: Room }) {
 												flex flex-col items-center justify-center py-2 px-1 h-full
 												${isTodayRow ? 'border-l-3 border-l-[#D97D48]' : 'border-l-3 border-l-transparent'}
 											`}>
-												<span className={`text-[10px] font-bold uppercase tracking-wide ${isTodayRow ? 'text-[#D97D48]' : 'text-stone-500'}`}>
+												<span className={`text-[10px] font-bold uppercase tracking-wide ${isTodayRow ? 'text-[#D97D48]' : 'text-stone-500'}`} suppressHydrationWarning>
 													{isTodayRow ? 'Nay' : getDayLabel(date)}
 												</span>
-												<span className={`text-xs font-semibold ${isTodayRow ? 'text-stone-800' : 'text-stone-600'}`}>
+												<span className={`text-xs font-semibold ${isTodayRow ? 'text-stone-800' : 'text-stone-600'}`} suppressHydrationWarning>
 													{date.getDate()}/{date.getMonth() + 1}
 												</span>
 											</div>
@@ -554,11 +554,11 @@ export default function BookingWidget({ room }: { room: Room }) {
 							</span>
 						) : pricing.discountPercent > 0 ? (
 							<span className="text-[10px] font-semibold bg-green-100 text-green-600 px-2 py-0.5 rounded-full">
-							Khuyến mãi -{Math.round(pricing.discountPercent * 100)}%{pricing.sameDayFourSlotBonus > 0 ? ` · -${toKDisplay(pricing.sameDayFourSlotBonus)}` : ''}
-						</span>
-					) : pricing.comboPercent > 0 ? (
-						<span className="text-[10px] font-semibold bg-green-100 text-green-600 px-2 py-0.5 rounded-full">
-							Combo -{Math.round(pricing.comboPercent * 100)}%{pricing.sameDayFourSlotBonus > 0 ? ` · -${toKDisplay(pricing.sameDayFourSlotBonus)}` : ''}
+								Khuyến mãi -{Math.round(pricing.discountPercent * 100)}%{pricing.sameDayFourSlotBonus > 0 ? ` · -${toKDisplay(pricing.sameDayFourSlotBonus)}` : ''}
+							</span>
+						) : pricing.comboPercent > 0 ? (
+							<span className="text-[10px] font-semibold bg-green-100 text-green-600 px-2 py-0.5 rounded-full">
+								Combo -{Math.round(pricing.comboPercent * 100)}%{pricing.sameDayFourSlotBonus > 0 ? ` · -${toKDisplay(pricing.sameDayFourSlotBonus)}` : ''}
 							</span>
 						) : null}
 					</div>
