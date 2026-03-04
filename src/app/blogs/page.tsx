@@ -128,7 +128,7 @@ function RecentArticlesSection({ blogs }: { blogs: BlogPost[] }) {
 								<div className="p-4">
 									<div className="flex items-center justify-between text-sm mb-3">
 										<span className="text-[#D97D48] font-medium">{blog.author.name}</span>
-										<span className="text-foreground/50">
+										<span className="text-foreground/50" suppressHydrationWarning>
 											{new Date(blog.publishedAt).toLocaleDateString('vi-VN', {
 												day: '2-digit',
 												month: 'short',

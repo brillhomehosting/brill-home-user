@@ -149,10 +149,10 @@ export default function BookingCalendarTable({
                                                 flex flex-col items-center justify-center py-3 px-2 h-full
                                                 ${isTodayRow ? 'border-l-4 border-l-[#D97D48]' : 'border-l-4 border-l-transparent'}
                                             `}>
-												<span className={`text-xs font-bold uppercase tracking-wide mb-0.5 ${isTodayRow ? 'text-[#D97D48]' : 'text-stone-500'}`}>
+												<span className={`text-xs font-bold uppercase tracking-wide mb-0.5 ${isTodayRow ? 'text-[#D97D48]' : 'text-stone-500'}`} suppressHydrationWarning>
 													{isTodayRow ? 'Hôm nay' : getDayLabel(date)}
 												</span>
-												<span className={`text-sm font-semibold ${isTodayRow ? 'text-stone-800' : 'text-stone-600'}`}>
+												<span className={`text-sm font-semibold ${isTodayRow ? 'text-stone-800' : 'text-stone-600'}`} suppressHydrationWarning>
 													{date.getDate()}/{date.getMonth() + 1}
 												</span>
 											</div>

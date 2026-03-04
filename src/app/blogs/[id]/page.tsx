@@ -201,7 +201,7 @@ export default function BlogDetailPage({ params }: { params: Promise<{ id: strin
 							</div>
 							<div className="w-px h-8 bg-foreground/20" />
 							<div className="text-left">
-								<p className="text-sm font-bold text-foreground">
+								<p className="text-sm font-bold text-foreground" suppressHydrationWarning>
 									{new Date(blog.publishedAt).toLocaleDateString('vi-VN', { month: 'long', day: 'numeric', year: 'numeric' })}
 								</p>
 								<p className="text-xs text-foreground/50">Ngày đăng</p>
