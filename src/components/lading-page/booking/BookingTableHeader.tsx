@@ -47,7 +47,7 @@ export default function BookingTableHeader({
 				>
 					<ChevronLeft className="w-5 h-5" />
 				</button>
-				<span className="text-sm font-semibold text-stone-700 min-w-[120px] text-center px-2 border-x border-stone-100">
+				<span className="text-sm font-semibold text-stone-700 min-w-[120px] text-center px-2 border-x border-stone-100" suppressHydrationWarning>
 					{dates[0]?.getDate()}/{dates[0]?.getMonth()! + 1} - {dates[dates.length - 1]?.getDate()}/{dates[dates.length - 1]?.getMonth()! + 1}
 				</span>
 				<button
