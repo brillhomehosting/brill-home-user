@@ -1,7 +1,7 @@
 'use client';
 
 import messengerIcon from '@/assets/icon-messenger.png';
-import { PricingBreakdown, toKDisplay } from '@/lib/pricingUtils';
+import { getSavingsBadgeLabel, PricingBreakdown, toKDisplay } from '@/lib/pricingUtils';
 import { motion } from 'framer-motion';
 import { Check, Copy } from 'lucide-react';
 import Image from 'next/image';
@@ -21,6 +21,8 @@ export default function MobileBookingBar({
 }: MobileBookingBarProps) {
 	if (selectedSlots.size === 0) return null;
 
+	const savingsBadgeLabel = getSavingsBadgeLabel(pricing);
+
 	return (
 		<motion.div
 			initial={{ opacity: 0, y: 24 }}
@@ -34,17 +36,9 @@ export default function MobileBookingBar({
 						Đã chọn:{' '}
 						<span className="text-stone-700 font-semibold">{selectedSlots.size} khung giờ</span>
 					</span>
-					{pricing.discountPercent > 0 && pricing.comboPercent > 0 ? (
+					{savingsBadgeLabel ? (
 						<span className="text-[10px] font-semibold bg-green-100 text-green-600 px-2 py-0.5 rounded-full">
-							2 ưu đãi · Tiết kiệm {toKDisplay(pricing.savings)}
-						</span>
-					) : pricing.discountPercent > 0 ? (
-						<span className="text-[10px] font-semibold bg-green-100 text-green-600 px-2 py-0.5 rounded-full">
-							Khuyến mãi -{Math.round(pricing.discountPercent * 100)}%{pricing.sameDayFourSlotBonus > 0 ? ` · -${toKDisplay(pricing.sameDayFourSlotBonus)}` : ''}
-						</span>
-					) : pricing.comboPercent > 0 ? (
-						<span className="text-[10px] font-semibold bg-green-100 text-green-600 px-2 py-0.5 rounded-full">
-							-{Math.round(pricing.comboPercent * 100)}%{pricing.sameDayFourSlotBonus > 0 ? ` · -${toKDisplay(pricing.sameDayFourSlotBonus)}` : ''}
+							{savingsBadgeLabel}
 						</span>
 					) : null}
 				</div>
@@ -75,6 +69,12 @@ export default function MobileBookingBar({
 						<div className="px-3 py-1.5 flex justify-between items-center">
 							<span className="text-xs text-green-600">Combo 4 khung cùng ngày</span>
 							<span className="text-xs text-green-600">-{toKDisplay(pricing.sameDayFourSlotBonus)}</span>
+						</div>
+					)}
+					{pricing.weekdayDiscountAmount > 0 && (
+						<div className="px-3 py-1.5 flex justify-between items-center">
+							<span className="text-xs text-green-600">Ưu đãi ngày thường (-20k/phòng)</span>
+							<span className="text-xs text-green-600">-{toKDisplay(pricing.weekdayDiscountAmount)}</span>
 						</div>
 					)}
 					<div className="border-t border-stone-200 px-3 py-2 flex justify-between items-center">
