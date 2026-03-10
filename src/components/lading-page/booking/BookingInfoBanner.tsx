@@ -13,7 +13,7 @@ export default function BookingInfoBanner({ showDiscountBanner }: BookingInfoBan
 						🎁 Khuyến mãi: Giảm {Math.round(DISCOUNT_PROGRAM_PERCENT * 100)}% tất cả đặt phòng từ 2/3 - 5/3/2026
 					</span>
 					<span>·</span>
-					<span className="text-green-600 font-semibold">Thứ 2 - Thứ 6: -20k/phòng</span>
+					<span className="text-green-600 font-semibold">Tuần này từ Thứ 2 - Thứ 6: -20k/phòng</span>
 				</>
 			) : (
 				<>
@@ -24,7 +24,7 @@ export default function BookingInfoBanner({ showDiscountBanner }: BookingInfoBan
 					<span>·</span>
 					<span className="text-green-600 font-semibold">4 khung cùng ngày → -250k</span>
 					<span>·</span>
-					<span className="text-green-600 font-semibold">Thứ 2 - Thứ 6 → -20k/phòng</span>
+					<span className="text-green-600 font-semibold">Tuần này Thứ 2 - Thứ 6 → -20k/phòng</span>
 				</>
 			)}
 		</div>

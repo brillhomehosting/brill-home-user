@@ -1,5 +1,7 @@
 'use client';
 
+import { WEEKDAY_SLOT_DISCOUNT } from '@/constants/pricing';
+import { isEligibleForWeeklyDiscount, toKDisplay } from '@/lib/pricingUtils';
 import { DayAvailability, Room, TimeSlot } from '@/types/room';
 import { Card, Table } from '@mantine/core';
 import Image from 'next/image';
@@ -172,6 +174,7 @@ export default function BookingCalendarTable({
 												const slotKey = `${room.id}::${formatDate(date)}::${slot.id}`;
 												const isSelected = selectedSlots.has(slotKey);
 												const dateStr = formatDate(date);
+												const isWeeklyDiscount = isEligibleForWeeklyDiscount(dateStr);
 												const dayData = availabilityData?.find(d => d.date === dateStr);
 												const slotStatus = dayData?.timeSlots?.find(s => s?.timeSlot?.id === slot.id);
 												const isApiActive = slotStatus?.isActive ?? true;
@@ -192,17 +195,24 @@ export default function BookingCalendarTable({
 															onClick={() => isActive && onSlotClick(room.id, date, slot.id, dynamicPrice)}
 															disabled={!isActive}
 															className={`
-                                                                w-full h-[36px] rounded font-medium text-sm transition-all duration-200 flex flex-col items-center justify-center gap-0.5 shadow-sm
-                                                                ${!isActive
+                                                                relative w-full h-[36px] rounded font-medium text-sm transition-all duration-200 flex flex-col items-center justify-center gap-0.5 shadow-sm
+																${!isActive
 																	? 'bg-red-200 text-red-500 border border-transparent cursor-not-allowed shadow-none'
 																	: isSelected
 																		? 'bg-[#D97D48] text-white shadow-lg border border-[#D97D48]'
 																		: isRed
 																			? 'bg-red-200 text-red-500 border border-transparent shadow-none'
-																			: 'bg-white text-teal-700 border border-teal-200 hover:border-teal-500 hover:shadow-md hover:bg-teal-50'
+																			: isWeeklyDiscount
+																				? 'bg-emerald-50 text-emerald-700 border border-transparent shadow-[0_8px_20px_rgba(16,185,129,0.12)] hover:border-transparent hover:bg-emerald-100 hover:shadow-[0_12px_28px_rgba(16,185,129,0.18)]'
+																					: 'bg-white text-teal-700 border border-teal-200 hover:border-teal-500 hover:shadow-md hover:bg-teal-50'
 																}
                                                             `}
 														>
+															{isActive && isWeeklyDiscount && !isSelected ? (
+																<span className="rounded-full bg-white/95 px-2 py-[1px] text-[10px] font-bold uppercase tracking-wide text-emerald-700 shadow-sm">
+																	-{toKDisplay(WEEKDAY_SLOT_DISCOUNT)}
+																</span>
+															) : null}
 															{!isApiActive ? (
 																<span className="text-[12px] font-bold">Đã đặt</span>
 															) : null}

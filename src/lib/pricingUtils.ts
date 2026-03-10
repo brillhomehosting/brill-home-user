@@ -34,6 +34,27 @@ export function isWeekday(dateStr: string): boolean {
 	return day >= 1 && day <= 5;
 }
 
+export function isInCurrentWeek(dateStr: string): boolean {
+	const date = new Date(`${dateStr}T00:00:00`);
+	const today = new Date();
+	const currentDay = today.getDay();
+	const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+
+	const startOfWeek = new Date(today);
+	startOfWeek.setHours(0, 0, 0, 0);
+	startOfWeek.setDate(today.getDate() + diffToMonday);
+
+	const endOfWeek = new Date(startOfWeek);
+	endOfWeek.setDate(startOfWeek.getDate() + 6);
+	endOfWeek.setHours(23, 59, 59, 999);
+
+	return date >= startOfWeek && date <= endOfWeek;
+}
+
+export function isEligibleForWeeklyDiscount(dateStr: string): boolean {
+	return isWeekday(dateStr) && isInCurrentWeek(dateStr);
+}
+
 /**
  * Returns the number of calendar days that have 4 or more selected slots.
  * Key format: roomId::YYYY-MM-DD::slotId
@@ -75,7 +96,7 @@ export function calculatePricing(
 	selectedSlots.forEach(slotKey => {
 		const dateStr = slotKey.split('::')[1];
 		const price = slotPrices.get(slotKey) ?? 0;
-		if (dateStr && isWeekday(dateStr)) {
+		if (dateStr && isEligibleForWeeklyDiscount(dateStr)) {
 			weekdayDiscountSlotCount += 1;
 		}
 		if (dateStr && isInDiscountProgram(dateStr)) {
