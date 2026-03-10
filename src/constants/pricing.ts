@@ -11,3 +11,4 @@ export const COMBO_DISCOUNTS = [
 ];
 
 export const SAME_DAY_4_SLOT_BONUS = 250_000;
+export const WEEKDAY_SLOT_DISCOUNT = 20_000;
