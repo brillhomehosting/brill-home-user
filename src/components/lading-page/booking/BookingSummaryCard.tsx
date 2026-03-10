@@ -74,7 +74,7 @@ export default function BookingSummaryCard({
 						)}
 						{pricing.weekdayDiscountAmount > 0 && (
 							<div className="px-3 py-1.5 flex justify-between items-center">
-								<span className="text-xs text-green-600">Ưu đãi ngày thường (-20k/phòng)</span>
+								<span className="text-xs text-green-600">Chương trình ưu đãi theo tuần (-20k/phòng)</span>
 								<span className="text-xs text-green-600">-{toKDisplay(pricing.weekdayDiscountAmount)}</span>
 							</div>
 						)}
