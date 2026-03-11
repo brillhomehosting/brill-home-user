@@ -203,7 +203,7 @@ export default function BookingCalendarTable({
 																		: isRed
 																			? 'bg-red-200 text-red-500 border border-transparent shadow-none'
 																			: isWeeklyDiscount
-																				? 'bg-emerald-50 text-emerald-700 border border-transparent shadow-[0_8px_20px_rgba(16,185,129,0.12)] hover:border-transparent hover:bg-emerald-100 hover:shadow-[0_12px_28px_rgba(16,185,129,0.18)]'
+																				? 'bg-emerald-50 text-emerald-700 border border-transparent shadow-[0_14px_34px_rgba(16,185,129,0.20)] hover:border-transparent hover:bg-emerald-100 hover:shadow-[0_18px_40px_rgba(16,185,129,0.24)]'
 																					: 'bg-white text-teal-700 border border-teal-200 hover:border-teal-500 hover:shadow-md hover:bg-teal-50'
 																}
                                                             `}
