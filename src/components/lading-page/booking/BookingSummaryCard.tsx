@@ -66,15 +66,9 @@ export default function BookingSummaryCard({
 								<span className="text-xs text-green-600">-{toKDisplay(pricing.comboDiscount)}</span>
 							</div>
 						)}
-						{pricing.sameDayFourSlotBonus > 0 && (
-							<div className="px-3 py-1.5 flex justify-between items-center">
-								<span className="text-xs text-green-600">Combo 4 khung cùng ngày</span>
-								<span className="text-xs text-green-600">-{toKDisplay(pricing.sameDayFourSlotBonus)}</span>
-							</div>
-						)}
 						{pricing.weekdayDiscountAmount > 0 && (
 							<div className="px-3 py-1.5 flex justify-between items-center">
-								<span className="text-xs text-green-600">Chương trình ưu đãi theo tuần (-20k/phòng)</span>
+								<span className="text-xs text-green-600">Chương trình ưu đãi theo tuần (-20k/đơn)</span>
 								<span className="text-xs text-green-600">-{toKDisplay(pricing.weekdayDiscountAmount)}</span>
 							</div>
 						)}

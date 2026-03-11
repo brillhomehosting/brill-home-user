@@ -1,4 +1,4 @@
-import { COMBO_DISCOUNTS, DISCOUNT_PROGRAM_END, DISCOUNT_PROGRAM_PERCENT, DISCOUNT_PROGRAM_START, SAME_DAY_4_SLOT_BONUS, WEEKDAY_SLOT_DISCOUNT } from '@/constants/pricing';
+import { COMBO_DISCOUNTS, DISCOUNT_PROGRAM_END, DISCOUNT_PROGRAM_PERCENT, DISCOUNT_PROGRAM_START, WEEKDAY_SLOT_DISCOUNT } from '@/constants/pricing';
 
 export interface PricingBreakdown {
 	basePrice: number;
@@ -7,10 +7,8 @@ export interface PricingBreakdown {
 	discountAmount: number;
 	comboPercent: number;
 	comboDiscount: number;
-	sameDayFourSlotBonus: number;
-	sameDayFourSlotCount: number;
 	weekdayDiscountAmount: number;
-	weekdayDiscountSlotCount: number;
+	hasWeekdayDiscount: boolean;
 	totalAmount: number;
 	savings: number;
 }
@@ -55,76 +53,46 @@ export function isEligibleForWeeklyDiscount(dateStr: string): boolean {
 	return isWeekday(dateStr) && isInCurrentWeek(dateStr);
 }
 
-/**
- * Returns the number of calendar days that have 4 or more selected slots.
- * Key format: roomId::YYYY-MM-DD::slotId
- */
-export function countSameDayFourSlotDays(selectedSlots: Set<string>): number {
-	const countByDate = new Map<string, number>();
-	selectedSlots.forEach(key => {
-		const dateStr = key.split('::')[1];
-		if (dateStr) countByDate.set(dateStr, (countByDate.get(dateStr) ?? 0) + 1);
-	});
-	let days = 0;
-	for (const count of countByDate.values()) {
-		if (count >= 4) days++;
-	}
-	return days;
-}
-
-/** Backward-compatible helper: returns true if any single day has 4+ slots. */
-export function hasSameDayFourSlots(selectedSlots: Set<string>): boolean {
-	return countSameDayFourSlotDays(selectedSlots) > 0;
-}
-
 /** Full pricing breakdown from raw slot prices and selected slot keys.
  *
  * Slots are split into two independent groups:
  * - Discount-program slots (dates within the program range): program % applied to their subtotal only.
- * - Regular slots (all other dates): combo % + optional same-day-4-slot bonus applied to their subtotal only.
- * Both discounts can be active simultaneously when the user has slots from both day types.
+ * - Combo discount is applied by total selected slot count across the booking.
+ * - Weekday program discount applies once per booking if any selected slot is eligible.
  */
 export function calculatePricing(
 	slotPrices: Map<string, number>,
 	selectedSlots: Set<string>,
 ): PricingBreakdown {
-	let regularBasePrice = 0;
 	let discountProgramBasePrice = 0;
-	const regularSlots = new Set<string>();
-	let weekdayDiscountSlotCount = 0;
+	let basePrice = 0;
+	let hasWeekdayDiscount = false;
 
 	selectedSlots.forEach(slotKey => {
 		const dateStr = slotKey.split('::')[1];
 		const price = slotPrices.get(slotKey) ?? 0;
 		if (dateStr && isEligibleForWeeklyDiscount(dateStr)) {
-			weekdayDiscountSlotCount += 1;
+			hasWeekdayDiscount = true;
 		}
+		basePrice += price;
 		if (dateStr && isInDiscountProgram(dateStr)) {
 			discountProgramBasePrice += price;
-		} else {
-			regularBasePrice += price;
-			regularSlots.add(slotKey);
 		}
 	});
 
-	const basePrice = regularBasePrice + discountProgramBasePrice;
 	const hasDiscountProgram = discountProgramBasePrice > 0;
 
 	// Discount program: only on discount-program-day slots
 	const discountPercent = hasDiscountProgram ? DISCOUNT_PROGRAM_PERCENT : 0;
 	const discountAmount = Math.round(discountProgramBasePrice * discountPercent);
 
-	// Combo: only on regular slots, sized by their count
-	const comboPercent = regularSlots.size > 0 ? getComboPercent(regularSlots.size) : 0;
-	const comboDiscount = Math.round(regularBasePrice * comboPercent);
+	const comboPercent = selectedSlots.size > 0 ? getComboPercent(selectedSlots.size) : 0;
+	const comboDiscount = Math.round(basePrice * comboPercent);
+	const subtotalAfterCombo = basePrice - discountAmount - comboDiscount;
+	const weekdayDiscountAmount = hasWeekdayDiscount ? Math.min(WEEKDAY_SLOT_DISCOUNT, subtotalAfterCombo) : 0;
 
-	// Same-day 4-slot bonus: applies per qualifying day (each day with 4+ slots → 250k)
-	const sameDayFourSlotCount = countSameDayFourSlotDays(selectedSlots);
-	const sameDayFourSlotBonus = sameDayFourSlotCount * SAME_DAY_4_SLOT_BONUS;
-	const weekdayDiscountAmount = weekdayDiscountSlotCount * WEEKDAY_SLOT_DISCOUNT;
-
-	const totalAmount = basePrice - discountAmount - comboDiscount - sameDayFourSlotBonus - weekdayDiscountAmount;
-	const savings = discountAmount + comboDiscount + sameDayFourSlotBonus + weekdayDiscountAmount;
+	const totalAmount = subtotalAfterCombo - weekdayDiscountAmount;
+	const savings = discountAmount + comboDiscount + weekdayDiscountAmount;
 
 	return {
 		basePrice,
@@ -133,10 +101,8 @@ export function calculatePricing(
 		discountAmount,
 		comboPercent,
 		comboDiscount,
-		sameDayFourSlotBonus,
-		sameDayFourSlotCount,
 		weekdayDiscountAmount,
-		weekdayDiscountSlotCount,
+		hasWeekdayDiscount,
 		totalAmount,
 		savings,
 	};
@@ -157,13 +123,11 @@ export function getSavingsBadgeLabel(pricing: PricingBreakdown): string | null {
 	const hasPromo = pricing.discountPercent > 0;
 	const hasCombo = pricing.comboPercent > 0;
 	const hasWeekday = pricing.weekdayDiscountAmount > 0;
-	const hasSameDayBonus = pricing.sameDayFourSlotBonus > 0;
-	const activeDiscountCount = [hasPromo, hasCombo, hasWeekday, hasSameDayBonus].filter(Boolean).length;
+	const activeDiscountCount = [hasPromo, hasCombo, hasWeekday].filter(Boolean).length;
 
 	if (activeDiscountCount === 0) return null;
 	if (activeDiscountCount > 1) return `Nhiều ưu đãi · Tiết kiệm ${toKDisplay(pricing.savings)}`;
 	if (hasPromo) return `Khuyến mãi -${Math.round(pricing.discountPercent * 100)}%`;
 	if (hasCombo) return `Combo -${Math.round(pricing.comboPercent * 100)}%`;
-	if (hasWeekday) return `Ngày thường -${toKDisplay(pricing.weekdayDiscountAmount)}`;
-	return `Combo ngày -${toKDisplay(pricing.sameDayFourSlotBonus)}`;
+	return `ƯĐ tuần -${toKDisplay(pricing.weekdayDiscountAmount)}`;
 }
