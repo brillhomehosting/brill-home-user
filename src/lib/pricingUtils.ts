@@ -32,25 +32,8 @@ export function isWeekday(dateStr: string): boolean {
 	return day >= 1 && day <= 5;
 }
 
-export function isInCurrentWeek(dateStr: string): boolean {
-	const date = new Date(`${dateStr}T00:00:00`);
-	const today = new Date();
-	const currentDay = today.getDay();
-	const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
-
-	const startOfWeek = new Date(today);
-	startOfWeek.setHours(0, 0, 0, 0);
-	startOfWeek.setDate(today.getDate() + diffToMonday);
-
-	const endOfWeek = new Date(startOfWeek);
-	endOfWeek.setDate(startOfWeek.getDate() + 6);
-	endOfWeek.setHours(23, 59, 59, 999);
-
-	return date >= startOfWeek && date <= endOfWeek;
-}
-
 export function isEligibleForWeeklyDiscount(dateStr: string): boolean {
-	return isWeekday(dateStr) && isInCurrentWeek(dateStr);
+	return isWeekday(dateStr);
 }
 
 /** Full pricing breakdown from raw slot prices and selected slot keys.
