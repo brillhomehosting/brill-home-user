@@ -20,8 +20,8 @@ interface BookingCalendarTableProps {
 	isLoadingAvailability: boolean;
 }
 
-const TODAY_ROW_BOX_SHADOW = 'inset 0 1px 0 rgba(255,255,255,0.96), inset 0 -1px 0 rgba(255,255,255,0.96), 0 0 0 1px rgba(217,125,72,0.12), 0 10px 24px rgba(217,125,72,0.12)';
-const TODAY_SLOT_BOX_SHADOW = '0 0 0 1px rgba(13,148,136,0.42), 0 6px 14px rgba(15,118,110,0.30), 0 0 12px rgba(45,212,191,0.20)';
+const TODAY_ROW_BOX_SHADOW = 'inset 0 1px 0 rgba(255,255,255,1), inset 0 -1px 0 rgba(255,255,255,1), 0 0 0 3px rgba(154,52,18,1), 0 0 22px rgba(154,52,18,0.92), 0 0 40px rgba(251,146,60,0.52)';
+const TODAY_SLOT_BOX_SHADOW = '0 6px 12px rgba(15,118,110,0.88), 0 -2px 5px rgba(13,148,136,0.40)';
 
 const isDateBeforeToday = (date: Date) => {
 	const today = new Date();
@@ -151,10 +151,10 @@ export default function BookingCalendarTable({
 										className="group transition-colors"
 									>
 										{/* Sticky Date Column */}
-								<Table.Td
+										<Table.Td
 											className="sticky left-0 z-20 p-0!"
 											style={{
-												backgroundColor: isTodayRow ? '#FFF7ED' : '#FFFFFF',
+												backgroundColor: isTodayRow ? '#FAFAF8' : '#FFFFFF',
 												borderRight: '1px solid #E7E5E4',
 												boxShadow: isTodayRow ? TODAY_ROW_BOX_SHADOW : undefined,
 											}}
@@ -204,7 +204,7 @@ export default function BookingCalendarTable({
 														key={slot.id}
 														className="text-center p-2 align-middle"
 														style={{
-															backgroundColor: cellBg,
+															backgroundColor: isTodayRow ? '#FAFAF8' : cellBg,
 														}}
 													>
 														<button
