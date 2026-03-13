@@ -20,7 +20,7 @@ interface BookingCalendarTableProps {
 	isLoadingAvailability: boolean;
 }
 
-const TODAY_ROW_BOX_SHADOW = 'inset 0 1px 0 rgba(255,255,255,1), inset 0 -1px 0 rgba(255,255,255,1), 0 0 0 3px rgba(154,52,18,1), 0 0 22px rgba(154,52,18,0.92), 0 0 40px rgba(251,146,60,0.52)';
+const TODAY_ROW_BOX_SHADOW = '0 0 18px rgba(154,52,18,0.24), 0 0 30px rgba(251,146,60,0.18)';
 const TODAY_SLOT_BOX_SHADOW = '0 6px 12px rgba(15,118,110,0.88), 0 -2px 5px rgba(13,148,136,0.40)';
 
 const isDateBeforeToday = (date: Date) => {
@@ -151,18 +151,19 @@ export default function BookingCalendarTable({
 										className="group transition-colors"
 									>
 										{/* Sticky Date Column */}
-										<Table.Td
-											className="sticky left-0 z-20 p-0!"
-											style={{
-												backgroundColor: isTodayRow ? '#FAFAF8' : '#FFFFFF',
-												borderRight: '1px solid #E7E5E4',
-												boxShadow: isTodayRow ? TODAY_ROW_BOX_SHADOW : undefined,
-											}}
-										>
-											<div className={`
-                                                flex flex-col items-center justify-center py-3 px-2 h-full
-                                                ${isTodayRow ? 'border-l-4 border-l-[#D97D48]' : 'border-l-4 border-l-transparent'}
-                                            `}>
+											<Table.Td
+												className="sticky left-0 z-20 p-0!"
+												style={{
+													backgroundColor: isTodayRow ? '#FAFAF8' : '#FFFFFF',
+													borderRight: '1px solid #E7E5E4',
+												}}
+											>
+												<div className={`
+	                                                flex flex-col items-center justify-center py-3 px-2 h-full
+	                                                ${isTodayRow ? 'border-l-4 border-l-[#D97D48]' : 'border-l-4 border-l-transparent'}
+	                                            `}
+													style={isTodayRow ? { boxShadow: TODAY_ROW_BOX_SHADOW } : undefined}
+												>
 												<span className={`text-xs font-bold uppercase tracking-wide mb-0.5 ${isTodayRow ? 'text-[#D97D48]' : 'text-stone-500'}`} suppressHydrationWarning>
 													{isTodayRow ? 'Hôm nay' : getDayLabel(date)}
 												</span>
