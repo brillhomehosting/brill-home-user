@@ -88,8 +88,8 @@ const isDateBeforeToday = (date: Date) => {
 	return compareDate < today;
 };
 
-const TODAY_ROW_BOX_SHADOW = 'inset 0 1px 0 rgba(255,255,255,0.96), inset 0 -1px 0 rgba(255,255,255,0.96), 0 0 0 1px rgba(217,125,72,0.12), 0 10px 24px rgba(217,125,72,0.12)';
-const TODAY_SLOT_BOX_SHADOW = '0 0 0 1px rgba(13,148,136,0.42), 0 6px 14px rgba(15,118,110,0.30), 0 0 12px rgba(45,212,191,0.20)';
+const TODAY_ROW_BOX_SHADOW = 'inset 0 1px 0 rgba(255,255,255,1), inset 0 -1px 0 rgba(255,255,255,1), 0 0 0 3px rgba(154,52,18,1), 0 0 22px rgba(154,52,18,0.92), 0 0 40px rgba(251,146,60,0.52)';
+const TODAY_SLOT_BOX_SHADOW = '0 6px 12px rgba(15,118,110,0.88), 0 -2px 5px rgba(13,148,136,0.40)';
 
 // Loading Skeleton
 function LoadingSkeleton() {
@@ -132,9 +132,10 @@ export default function BookingWidget({ room }: { room: Room }) {
 		currentDatePage * DATES_PER_PAGE,
 		(currentDatePage + 1) * DATES_PER_PAGE
 	);
+	const shouldShowYesterdayRow = new Date().getHours() < 17;
 	const yesterday = new Date();
 	yesterday.setDate(yesterday.getDate() - 1);
-	const dates = currentDatePage === 0 ? [yesterday, ...pagedDates] : pagedDates;
+	const dates = currentDatePage === 0 && shouldShowYesterdayRow ? [yesterday, ...pagedDates] : pagedDates;
 
 	// Calculate start and end dates for the availability API call
 	const startDate = formatDate(dates[0] || new Date());
@@ -447,7 +448,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 										<Table.Td
 											className="sticky left-0 z-20 p-0!"
 											style={{
-												backgroundColor: isTodayRow ? '#FFF7ED' : '#FFFFFF',
+												backgroundColor: isTodayRow ? '#FAFAF8' : '#FFFFFF',
 												borderRight: '1px solid #E7E5E4',
 												boxShadow: isTodayRow ? TODAY_ROW_BOX_SHADOW : undefined,
 											}}
@@ -493,7 +494,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 													key={slot.id}
 													className="text-center p-1.5 align-middle"
 													style={{
-														backgroundColor: isTodayRow ? '#FFF7ED' : '#FFFFFF',
+														backgroundColor: isTodayRow ? '#FAFAF8' : '#FFFFFF',
 													}}
 												>
 													<button
