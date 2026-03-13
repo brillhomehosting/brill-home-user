@@ -80,6 +80,14 @@ const isEndPastSlot = (date: Date, endTime: string, isOvernight: boolean): boole
 	return now > endDate;
 };
 
+const isDateBeforeToday = (date: Date) => {
+	const today = new Date();
+	today.setHours(0, 0, 0, 0);
+	const compareDate = new Date(date);
+	compareDate.setHours(0, 0, 0, 0);
+	return compareDate < today;
+};
+
 const TODAY_ROW_BOX_SHADOW = 'inset 0 1px 0 rgba(255,255,255,0.96), inset 0 -1px 0 rgba(255,255,255,0.96), 0 0 0 1px rgba(217,125,72,0.12), 0 10px 24px rgba(217,125,72,0.12)';
 const TODAY_SLOT_BOX_SHADOW = '0 0 0 1px rgba(13,148,136,0.42), 0 6px 14px rgba(15,118,110,0.30), 0 0 12px rgba(45,212,191,0.20)';
 
@@ -120,10 +128,13 @@ export default function BookingWidget({ room }: { room: Room }) {
 	const allDates = generateDates(30);
 	const DATES_PER_PAGE = 7;
 	const totalPages = Math.ceil(allDates.length / DATES_PER_PAGE);
-	const dates = allDates.slice(
+	const pagedDates = allDates.slice(
 		currentDatePage * DATES_PER_PAGE,
 		(currentDatePage + 1) * DATES_PER_PAGE
 	);
+	const yesterday = new Date();
+	yesterday.setDate(yesterday.getDate() - 1);
+	const dates = currentDatePage === 0 ? [yesterday, ...pagedDates] : pagedDates;
 
 	// Calculate start and end dates for the availability API call
 	const startDate = formatDate(dates[0] || new Date());
@@ -135,7 +146,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 	// Derive unique time slots from availability data
 	const timeSlots = useMemo(() => {
 		if (!availabilityData || !Array.isArray(availabilityData) || availabilityData.length === 0) return [];
-		const firstDay = availabilityData[0];
+		const firstDay = availabilityData.find(day => day?.timeSlots?.length);
 		if (!firstDay?.timeSlots) return [];
 
 		return firstDay.timeSlots
@@ -167,7 +178,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 	const getLinearSlots = () => {
 		if (!timeSlots.length) return [];
 		const linearList: { key: string; price: number }[] = [];
-		dates.forEach(date => {
+		pagedDates.forEach(date => {
 			timeSlots.forEach(slot => {
 				linearList.push({
 					key: `${room.id}::${formatDate(date)}::${slot.id}`,
@@ -259,7 +270,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 	};
 
 	const totalAmount = pricing.totalAmount;
-	const showDiscountBanner = dates.some(d => isInDiscountProgram(formatDate(d)));
+	const showDiscountBanner = pagedDates.some(d => isInDiscountProgram(formatDate(d)));
 	const savingsBadgeLabel = getSavingsBadgeLabel(pricing);
 
 	// Build Messenger message with booking details
@@ -459,10 +470,12 @@ export default function BookingWidget({ room }: { room: Room }) {
 											const slotKey = `${room.id}::${formatDate(date)}::${slot.id}`;
 											const isSelected = selectedSlots.has(slotKey);
 											const isApiActive = getSlotAvailability(date, slot.id);
+											const isPastDateRow = isDateBeforeToday(date);
 											// Check if slot is past for today
 											const isStartPast = isPastSlot(date, slot.startTime);
 											const isEndPast = isEndPastSlot(date, slot.endTime, slot.isOvernight);
 											const isActive = isApiActive && !isEndPast;
+											const canInteract = !isPastDateRow && isActive;
 											const isRed = !isApiActive || isStartPast;
 											const isDiscount = isInDiscountProgram(formatDate(date));
 											const isWeeklyDiscount = isEligibleForWeeklyDiscount(formatDate(date));
@@ -484,15 +497,17 @@ export default function BookingWidget({ room }: { room: Room }) {
 													}}
 												>
 													<button
-														onClick={() => isActive && handleSlotClick(date, slot.id, slot.price)}
-														disabled={!isActive}
+														onClick={() => canInteract && handleSlotClick(date, slot.id, slot.price)}
+														disabled={!canInteract}
 														className={`
 															w-full h-[32px] rounded font-medium text-xs transition-all duration-200 flex items-center justify-center shadow-sm
-																${!isActive
+																${!canInteract && !isPastDateRow
 																	? 'bg-red-200 text-red-500 border border-transparent cursor-not-allowed shadow-none'
-																	: isSelected
-																		? 'bg-[#D97D48] text-white shadow-md border border-[#D97D48]'
-																		: isRed
+																	: isPastDateRow
+																		? 'bg-red-200 text-red-500 border border-transparent cursor-not-allowed shadow-none'
+																		: isSelected
+																			? 'bg-[#D97D48] text-white shadow-md border border-[#D97D48]'
+																			: isRed
 																			? 'bg-red-200 text-red-500 border border-transparent shadow-none'
 																			: 'bg-white text-teal-700 border border-transparent hover:border-transparent hover:shadow-md hover:bg-teal-50'
 																}
@@ -501,9 +516,9 @@ export default function BookingWidget({ room }: { room: Room }) {
 															boxShadow: TODAY_SLOT_BOX_SHADOW,
 														} : undefined}
 														>
-														{isActive ? (
+														{!isPastDateRow && isApiActive ? (
 															<span className="font-bold">{priceInK}k</span>
-														) : !isApiActive ? (
+														) : !isPastDateRow && !isApiActive ? (
 															<span className="text-[12px] font-bold">Đã đặt</span>
 														) : null}
 													</button>

@@ -37,10 +37,13 @@ export default function AllRoomsBookingSection() {
 	const DATES_PER_PAGE = 7;
 	const allDates = generateDates(30);
 	const totalPages = Math.ceil(allDates.length / DATES_PER_PAGE);
-	const dates = allDates.slice(
+	const pagedDates = allDates.slice(
 		currentDatePage * DATES_PER_PAGE,
 		(currentDatePage + 1) * DATES_PER_PAGE
 	);
+	const yesterday = new Date();
+	yesterday.setDate(yesterday.getDate() - 1);
+	const dates = currentDatePage === 0 ? [yesterday, ...pagedDates] : pagedDates;
 
 	const startDate = formatDate(dates[0] || new Date());
 	const endDate = formatDate(dates[dates.length - 1] || new Date());
@@ -56,7 +59,7 @@ export default function AllRoomsBookingSection() {
 			const availabilityData = roomAvailabilityMap.get(room.id);
 			if (!availabilityData || availabilityData.length === 0) return;
 
-			const firstDay = availabilityData[0];
+			const firstDay = availabilityData.find(day => day?.timeSlots?.length);
 			if (!firstDay?.timeSlots) return;
 
 			const slots = firstDay.timeSlots
@@ -82,7 +85,7 @@ export default function AllRoomsBookingSection() {
 		const availabilityData = roomAvailabilityMap.get(roomId);
 		const linearList: { key: string; price: number; isActive: boolean; date: Date; slotId: string }[] = [];
 
-		dates.forEach(date => {
+		pagedDates.forEach(date => {
 			const dateStr = formatDate(date);
 			const dayData = availabilityData?.find(d => d.date === dateStr);
 
@@ -209,7 +212,7 @@ export default function AllRoomsBookingSection() {
 	};
 
 	const selectedRoom = rooms?.find(r => r.id === selectedRoomId);
-	const showDiscountBanner = dates.some(d => isInDiscountProgram(formatDate(d)));
+	const showDiscountBanner = pagedDates.some(d => isInDiscountProgram(formatDate(d)));
 
 	const buildMessengerMessage = () => {
 		if (!selectedRoom || selectedSlots.size === 0) return '';

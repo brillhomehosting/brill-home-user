@@ -23,6 +23,14 @@ interface BookingCalendarTableProps {
 const TODAY_ROW_BOX_SHADOW = 'inset 0 1px 0 rgba(255,255,255,0.96), inset 0 -1px 0 rgba(255,255,255,0.96), 0 0 0 1px rgba(217,125,72,0.12), 0 10px 24px rgba(217,125,72,0.12)';
 const TODAY_SLOT_BOX_SHADOW = '0 0 0 1px rgba(13,148,136,0.42), 0 6px 14px rgba(15,118,110,0.30), 0 0 12px rgba(45,212,191,0.20)';
 
+const isDateBeforeToday = (date: Date) => {
+	const today = new Date();
+	today.setHours(0, 0, 0, 0);
+	const compareDate = new Date(date);
+	compareDate.setHours(0, 0, 0, 0);
+	return compareDate < today;
+};
+
 export default function BookingCalendarTable({
 	dates,
 	sortedRooms,
@@ -178,6 +186,7 @@ export default function BookingCalendarTable({
 												const slotKey = `${room.id}::${formatDate(date)}::${slot.id}`;
 												const isSelected = selectedSlots.has(slotKey);
 												const dateStr = formatDate(date);
+												const isPastDateRow = isDateBeforeToday(date);
 												const isWeeklyDiscount = isEligibleForWeeklyDiscount(dateStr);
 												const dayData = availabilityData?.find(d => d.date === dateStr);
 												const slotStatus = dayData?.timeSlots?.find(s => s?.timeSlot?.id === slot.id);
@@ -185,6 +194,7 @@ export default function BookingCalendarTable({
 												const isStartPast = isPastSlot(date, slot.startTime);
 												const isEndPast = isEndPastSlot(date, slot.endTime, slot.isOvernight);
 												const isActive = isApiActive && !isEndPast;
+												const canInteract = !isPastDateRow && isActive;
 												const isRed = !isApiActive || isStartPast;
 												const baseSlotPrice = roomTimeSlotsApiMap.get(room.id)?.find(s => s.id === slot.id)?.price ?? slot.price;
 												const dynamicPrice = baseSlotPrice;
@@ -198,12 +208,14 @@ export default function BookingCalendarTable({
 														}}
 													>
 														<button
-															onClick={() => isActive && onSlotClick(room.id, date, slot.id, dynamicPrice)}
-															disabled={!isActive}
+															onClick={() => canInteract && onSlotClick(room.id, date, slot.id, dynamicPrice)}
+															disabled={!canInteract}
 															className={`
                                                                 relative w-full h-[36px] rounded font-medium text-sm transition-all duration-200 flex flex-col items-center justify-center gap-0.5 shadow-sm
-																${!isActive
+																${!canInteract && !isPastDateRow
 																	? 'bg-red-200 text-red-500 border border-transparent cursor-not-allowed shadow-none'
+																	: isPastDateRow
+																		? 'bg-red-200 text-red-500 border border-transparent cursor-not-allowed shadow-none'
 																	: isSelected
 																		? 'bg-[#D97D48] text-white shadow-lg border border-[#D97D48]'
 																		: isRed
@@ -217,12 +229,12 @@ export default function BookingCalendarTable({
 																boxShadow: TODAY_SLOT_BOX_SHADOW,
 															} : undefined}
 														>
-															{isActive && isWeeklyDiscount && !isSelected ? (
+															{!isPastDateRow && isActive && isWeeklyDiscount && !isSelected ? (
 																<span className="rounded-full bg-white/95 px-2 py-[1px] text-[10px] font-bold uppercase tracking-wide text-emerald-700 shadow-sm">
 																	-{toKDisplay(WEEKDAY_SLOT_DISCOUNT)}
 																</span>
 															) : null}
-															{!isApiActive ? (
+															{!isPastDateRow && !isApiActive ? (
 																<span className="text-[12px] font-bold">Đã đặt</span>
 															) : null}
 														</button>
