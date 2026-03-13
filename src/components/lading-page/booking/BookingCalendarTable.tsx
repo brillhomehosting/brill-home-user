@@ -20,6 +20,9 @@ interface BookingCalendarTableProps {
 	isLoadingAvailability: boolean;
 }
 
+const TODAY_ROW_BOX_SHADOW = 'inset 0 1px 0 rgba(255,255,255,0.96), inset 0 -1px 0 rgba(255,255,255,0.96), 0 0 0 1px rgba(217,125,72,0.12), 0 10px 24px rgba(217,125,72,0.12)';
+const TODAY_SLOT_BOX_SHADOW = '0 0 0 1px rgba(13,148,136,0.42), 0 6px 14px rgba(15,118,110,0.30), 0 0 12px rgba(45,212,191,0.20)';
+
 export default function BookingCalendarTable({
 	dates,
 	sortedRooms,
@@ -140,11 +143,12 @@ export default function BookingCalendarTable({
 										className="group transition-colors"
 									>
 										{/* Sticky Date Column */}
-										<Table.Td
+								<Table.Td
 											className="sticky left-0 z-20 p-0!"
 											style={{
 												backgroundColor: isTodayRow ? '#FFF7ED' : '#FFFFFF',
-												borderRight: '1px solid #E7E5E4'
+												borderRight: '1px solid #E7E5E4',
+												boxShadow: isTodayRow ? TODAY_ROW_BOX_SHADOW : undefined,
 											}}
 										>
 											<div className={`
@@ -189,7 +193,9 @@ export default function BookingCalendarTable({
 													<Table.Td
 														key={slot.id}
 														className="text-center p-2 align-middle"
-														style={{ backgroundColor: cellBg }}
+														style={{
+															backgroundColor: cellBg,
+														}}
 													>
 														<button
 															onClick={() => isActive && onSlotClick(room.id, date, slot.id, dynamicPrice)}
@@ -207,6 +213,9 @@ export default function BookingCalendarTable({
 																					: 'bg-white text-teal-700 border border-teal-200 hover:border-teal-500 hover:shadow-md hover:bg-teal-50'
 																}
                                                             `}
+															style={isTodayRow ? {
+																boxShadow: TODAY_SLOT_BOX_SHADOW,
+															} : undefined}
 														>
 															{isActive && isWeeklyDiscount && !isSelected ? (
 																<span className="rounded-full bg-white/95 px-2 py-[1px] text-[10px] font-bold uppercase tracking-wide text-emerald-700 shadow-sm">

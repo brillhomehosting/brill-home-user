@@ -80,6 +80,9 @@ const isEndPastSlot = (date: Date, endTime: string, isOvernight: boolean): boole
 	return now > endDate;
 };
 
+const TODAY_ROW_BOX_SHADOW = 'inset 0 1px 0 rgba(255,255,255,0.96), inset 0 -1px 0 rgba(255,255,255,0.96), 0 0 0 1px rgba(217,125,72,0.12), 0 10px 24px rgba(217,125,72,0.12)';
+const TODAY_SLOT_BOX_SHADOW = '0 0 0 1px rgba(13,148,136,0.42), 0 6px 14px rgba(15,118,110,0.30), 0 0 12px rgba(45,212,191,0.20)';
+
 // Loading Skeleton
 function LoadingSkeleton() {
 	return (
@@ -434,7 +437,8 @@ export default function BookingWidget({ room }: { room: Room }) {
 											className="sticky left-0 z-20 p-0!"
 											style={{
 												backgroundColor: isTodayRow ? '#FFF7ED' : '#FFFFFF',
-												borderRight: '1px solid #E7E5E4'
+												borderRight: '1px solid #E7E5E4',
+												boxShadow: isTodayRow ? TODAY_ROW_BOX_SHADOW : undefined,
 											}}
 										>
 											<div className={`
@@ -475,7 +479,9 @@ export default function BookingWidget({ room }: { room: Room }) {
 												<Table.Td
 													key={slot.id}
 													className="text-center p-1.5 align-middle"
-													style={{ backgroundColor: isTodayRow ? '#FFF7ED' : '#FFFFFF' }}
+													style={{
+														backgroundColor: isTodayRow ? '#FFF7ED' : '#FFFFFF',
+													}}
 												>
 													<button
 														onClick={() => isActive && handleSlotClick(date, slot.id, slot.price)}
@@ -491,6 +497,9 @@ export default function BookingWidget({ room }: { room: Room }) {
 																			: 'bg-white text-teal-700 border border-transparent hover:border-transparent hover:shadow-md hover:bg-teal-50'
 																}
 															`}
+														style={isTodayRow ? {
+															boxShadow: TODAY_SLOT_BOX_SHADOW,
+														} : undefined}
 														>
 														{isActive ? (
 															<span className="font-bold">{priceInK}k</span>
