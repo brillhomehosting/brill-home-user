@@ -527,12 +527,8 @@ export default function BookingWidget({ room }: { room: Room }) {
 														>
 														{!isPastDateRow && isApiActive ? (
 															<span className="font-bold">{priceInK}k</span>
-														) : isPastDateRow && !isApiActive ? (
-															<span className="text-[12px] font-bold">Đã đặt</span>
-														) : !isPastDateRow && isBooked ? (
-															<span className="text-[12px] font-bold">Đã đặt</span>
 														) : null}
-													</button>
+														</button>
 												</Table.Td>
 											);
 										})}
