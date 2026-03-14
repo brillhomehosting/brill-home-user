@@ -216,18 +216,18 @@ export default function BookingCalendarTable({
                                                                 relative w-full h-[36px] rounded font-medium text-sm transition-all duration-200 flex flex-col items-center justify-center gap-0.5 shadow-sm
 																${!canInteract && !isPastDateRow
 																	? isBooked
-																		? 'bg-red-200 text-red-500 border border-transparent cursor-not-allowed shadow-none'
+																		? 'bg-red-500 text-white border border-transparent cursor-not-allowed shadow-none'
 																		: isPastTimeToday
 																			? 'bg-white text-teal-700 border border-teal-200 cursor-not-allowed shadow-none'
 																			: 'bg-white text-teal-700 border border-teal-200 cursor-not-allowed shadow-none'
 																	: isPastDateRow
 																		? isBooked
-																			? 'bg-red-200 text-red-500 border border-transparent cursor-not-allowed shadow-none'
+																			? 'bg-red-500 text-white border border-transparent cursor-not-allowed shadow-none'
 																			: 'bg-white text-teal-700 border border-teal-200 cursor-not-allowed shadow-none'
 																	: isSelected
 																		? 'bg-[#D97D48] text-white shadow-lg border border-[#D97D48]'
 																		: isBooked
-																			? 'bg-red-200 text-red-500 border border-transparent shadow-none'
+																			? 'bg-red-500 text-white border border-transparent shadow-none'
 																			: 'bg-white text-teal-700 border border-teal-200 hover:border-teal-500 hover:shadow-md'
 																}
 	                                                            `}
