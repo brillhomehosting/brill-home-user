@@ -41,7 +41,7 @@ export default function AllRoomsBookingSection() {
 		currentDatePage * DATES_PER_PAGE,
 		(currentDatePage + 1) * DATES_PER_PAGE
 	);
-	const shouldShowYesterdayRow = new Date().getHours() < 17;
+	const shouldShowYesterdayRow = new Date().getHours() < 19;
 	const yesterday = new Date();
 	yesterday.setDate(yesterday.getDate() - 1);
 	const dates = currentDatePage === 0 && shouldShowYesterdayRow ? [yesterday, ...pagedDates] : pagedDates;
