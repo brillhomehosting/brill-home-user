@@ -499,11 +499,11 @@ export default function BookingWidget({ room }: { room: Room }) {
 														backgroundColor: isTodayRow ? '#FAFAF8' : '#FFFFFF',
 													}}
 												>
-													<button
-														onClick={() => canInteract && handleSlotClick(date, slot.id, slot.price)}
-														disabled={!canInteract}
-														className={`
-															w-full h-[32px] rounded font-medium text-xs transition-all duration-200 flex items-center justify-center shadow-sm
+														<button
+															onClick={() => canInteract && handleSlotClick(date, slot.id, slot.price)}
+															disabled={!canInteract}
+															className={`
+																w-full h-[32px] rounded font-medium text-xs transition-all duration-200 flex flex-col items-center justify-center gap-0.5 shadow-sm
 																${!canInteract && !isPastDateRow
 																	? isBooked
 																		? 'bg-red-200 text-red-500 border border-transparent cursor-not-allowed shadow-none'
@@ -518,13 +518,18 @@ export default function BookingWidget({ room }: { room: Room }) {
 																			? 'bg-[#D97D48] text-white shadow-md border border-[#D97D48]'
 																			: isBooked
 																				? 'bg-red-200 text-red-500 border border-transparent shadow-none'
-																				: 'bg-white text-teal-700 border border-transparent hover:border-transparent hover:shadow-md hover:bg-teal-50'
+																				: 'bg-white text-teal-700 border border-teal-200 hover:border-teal-500 hover:shadow-md'
 																}
 															`}
 														style={isTodayRow ? {
 															boxShadow: TODAY_SLOT_BOX_SHADOW,
 														} : undefined}
 														>
+														{!isPastDateRow && isActive && isWeeklyDiscount && !isSelected ? (
+															<span className="rounded-full bg-white/95 px-2 py-[1px] text-[10px] font-bold uppercase tracking-wide text-emerald-700 shadow-sm">
+																-{toKDisplay(WEEKDAY_SLOT_DISCOUNT)}
+															</span>
+														) : null}
 														{!isPastDateRow && isApiActive ? (
 															<span className="font-bold">{priceInK}k</span>
 														) : null}
@@ -551,7 +556,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 					<span className="text-[10px] text-stone-600">Đang chọn</span>
 				</div>
 				<div className="flex items-center gap-1.5">
-					<div className="w-3 h-3 rounded-full bg-red-500"></div>
+					<div className="w-3 h-3 rounded-full bg-red-400"></div>
 					<span className="text-[10px] text-stone-600">Đã đặt</span>
 				</div>
 			</div>
