@@ -242,11 +242,6 @@ export default function BookingCalendarTable({
 																	-{toKDisplay(WEEKDAY_SLOT_DISCOUNT)}
 																</span>
 															) : null}
-															{isPastDateRow && !isApiActive ? (
-																<span className="text-[12px] font-bold">Đã đặt</span>
-															) : !isPastDateRow && isBooked ? (
-																<span className="text-[12px] font-bold">Đã đặt</span>
-															) : null}
 														</button>
 													</Table.Td>
 												);
