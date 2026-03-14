@@ -221,7 +221,9 @@ export default function BookingCalendarTable({
 																			? 'bg-white text-teal-700 border border-teal-200 cursor-not-allowed shadow-none'
 																			: 'bg-white text-teal-700 border border-teal-200 cursor-not-allowed shadow-none'
 																	: isPastDateRow
-																		? 'bg-red-200 text-red-500 border border-transparent cursor-not-allowed shadow-none'
+																		? isBooked
+																			? 'bg-red-200 text-red-500 border border-transparent cursor-not-allowed shadow-none'
+																			: 'bg-white text-teal-700 border border-teal-200 cursor-not-allowed shadow-none'
 																	: isSelected
 																		? 'bg-[#D97D48] text-white shadow-lg border border-[#D97D48]'
 																		: isBooked
