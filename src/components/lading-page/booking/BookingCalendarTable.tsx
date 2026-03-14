@@ -167,9 +167,9 @@ export default function BookingCalendarTable({
 												<span className={`text-xs font-bold uppercase tracking-wide mb-0.5 ${isTodayRow ? 'text-[#D97D48]' : 'text-stone-500'}`} suppressHydrationWarning>
 													{isTodayRow ? 'Hôm nay' : getDayLabel(date)}
 												</span>
-												<span className={`text-sm font-semibold ${isTodayRow ? 'text-stone-800' : 'text-stone-600'}`} suppressHydrationWarning>
-													{date.getDate()}/{date.getMonth() + 1}
-												</span>
+													<span className={`text-sm font-semibold ${isTodayRow ? 'text-[#D97D48]' : 'text-stone-600'}`} suppressHydrationWarning>
+														{date.getDate()}/{date.getMonth() + 1}
+													</span>
 											</div>
 										</Table.Td>
 
@@ -196,7 +196,8 @@ export default function BookingCalendarTable({
 												const isEndPast = isEndPastSlot(date, slot.endTime, slot.isOvernight);
 												const isActive = isApiActive && !isEndPast;
 												const canInteract = !isPastDateRow && isActive;
-												const isRed = !isApiActive || isStartPast;
+												const isBooked = !isApiActive;
+												const isPastTimeToday = isStartPast && isApiActive;
 												const baseSlotPrice = roomTimeSlotsApiMap.get(room.id)?.find(s => s.id === slot.id)?.price ?? slot.price;
 												const dynamicPrice = baseSlotPrice;
 
@@ -214,12 +215,16 @@ export default function BookingCalendarTable({
 															className={`
                                                                 relative w-full h-[36px] rounded font-medium text-sm transition-all duration-200 flex flex-col items-center justify-center gap-0.5 shadow-sm
 																${!canInteract && !isPastDateRow
-																	? 'bg-red-200 text-red-500 border border-transparent cursor-not-allowed shadow-none'
+																	? isBooked
+																		? 'bg-red-200 text-red-500 border border-transparent cursor-not-allowed shadow-none'
+																		: isPastTimeToday
+																			? 'bg-white text-teal-700 border border-teal-200 cursor-not-allowed shadow-none'
+																			: 'bg-white text-teal-700 border border-teal-200 cursor-not-allowed shadow-none'
 																	: isPastDateRow
 																		? 'bg-red-200 text-red-500 border border-transparent cursor-not-allowed shadow-none'
 																	: isSelected
 																		? 'bg-[#D97D48] text-white shadow-lg border border-[#D97D48]'
-																		: isRed
+																		: isBooked
 																			? 'bg-red-200 text-red-500 border border-transparent shadow-none'
 																			: isWeeklyDiscount
 																				? 'bg-emerald-50 text-emerald-700 border border-transparent shadow-[0_14px_34px_rgba(16,185,129,0.20)] hover:border-transparent hover:bg-emerald-100 hover:shadow-[0_18px_40px_rgba(16,185,129,0.24)]'
@@ -237,7 +242,7 @@ export default function BookingCalendarTable({
 															) : null}
 															{isPastDateRow && !isApiActive ? (
 																<span className="text-[12px] font-bold">Đã đặt</span>
-															) : !isPastDateRow && !isApiActive ? (
+															) : !isPastDateRow && isBooked ? (
 																<span className="text-[12px] font-bold">Đã đặt</span>
 															) : null}
 														</button>
