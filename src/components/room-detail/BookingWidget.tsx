@@ -461,7 +461,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 												<span className={`text-[10px] font-bold uppercase tracking-wide ${isTodayRow ? 'text-[#D97D48]' : 'text-stone-500'}`} suppressHydrationWarning>
 													{isTodayRow ? 'Nay' : getDayLabel(date)}
 												</span>
-												<span className={`text-xs font-semibold ${isTodayRow ? 'text-stone-800' : 'text-stone-600'}`} suppressHydrationWarning>
+												<span className={`text-xs font-semibold ${isTodayRow ? 'text-[#D97D48]' : 'text-stone-600'}`} suppressHydrationWarning>
 													{date.getDate()}/{date.getMonth() + 1}
 												</span>
 											</div>
@@ -478,7 +478,8 @@ export default function BookingWidget({ room }: { room: Room }) {
 											const isEndPast = isEndPastSlot(date, slot.endTime, slot.isOvernight);
 											const isActive = isApiActive && !isEndPast;
 											const canInteract = !isPastDateRow && isActive;
-											const isRed = !isApiActive || isStartPast;
+											const isBooked = !isApiActive;
+											const isPastTimeToday = isStartPast && isApiActive;
 											const isDiscount = isInDiscountProgram(formatDate(date));
 											const isWeeklyDiscount = isEligibleForWeeklyDiscount(formatDate(date));
 											const promoAdjustedPrice = isDiscount
@@ -504,14 +505,18 @@ export default function BookingWidget({ room }: { room: Room }) {
 														className={`
 															w-full h-[32px] rounded font-medium text-xs transition-all duration-200 flex items-center justify-center shadow-sm
 																${!canInteract && !isPastDateRow
-																	? 'bg-red-200 text-red-500 border border-transparent cursor-not-allowed shadow-none'
+																	? isBooked
+																		? 'bg-red-200 text-red-500 border border-transparent cursor-not-allowed shadow-none'
+																		: isPastTimeToday
+																			? 'bg-white text-teal-700 border border-teal-200 cursor-not-allowed shadow-none'
+																			: 'bg-white text-teal-700 border border-teal-200 cursor-not-allowed shadow-none'
 																	: isPastDateRow
 																		? 'bg-red-200 text-red-500 border border-transparent cursor-not-allowed shadow-none'
 																		: isSelected
 																			? 'bg-[#D97D48] text-white shadow-md border border-[#D97D48]'
-																			: isRed
-																			? 'bg-red-200 text-red-500 border border-transparent shadow-none'
-																			: 'bg-white text-teal-700 border border-transparent hover:border-transparent hover:shadow-md hover:bg-teal-50'
+																			: isBooked
+																				? 'bg-red-200 text-red-500 border border-transparent shadow-none'
+																				: 'bg-white text-teal-700 border border-transparent hover:border-transparent hover:shadow-md hover:bg-teal-50'
 																}
 															`}
 														style={isTodayRow ? {
@@ -522,7 +527,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 															<span className="font-bold">{priceInK}k</span>
 														) : isPastDateRow && !isApiActive ? (
 															<span className="text-[12px] font-bold">Đã đặt</span>
-														) : !isPastDateRow && !isApiActive ? (
+														) : !isPastDateRow && isBooked ? (
 															<span className="text-[12px] font-bold">Đã đặt</span>
 														) : null}
 													</button>

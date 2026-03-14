@@ -327,31 +327,34 @@ export default function AllRoomsBookingSection() {
 					onNextPage={() => setCurrentDatePage(prev => Math.min(totalPages - 1, prev + 1))}
 				/>
 
-				<motion.div
-					initial={{ opacity: 0, y: 20 }}
-					whileInView={{ opacity: 1, y: 0 }}
-					viewport={{ once: true }}
-					transition={{ delay: 0.1 }}
-				>
-					<BookingCalendarTable
-						dates={dates}
-						sortedRooms={sortedRooms}
-						roomTimeSlotsMap={roomTimeSlotsMap}
+					<motion.div
+						initial={{ opacity: 0, y: 20 }}
+						whileInView={{ opacity: 1, y: 0 }}
+						viewport={{ once: true }}
+						transition={{ delay: 0.1 }}
+					>
+						<div className="mb-4">
+							<BookingLegend />
+						</div>
+
+						<BookingCalendarTable
+							dates={dates}
+							sortedRooms={sortedRooms}
+							roomTimeSlotsMap={roomTimeSlotsMap}
 						roomAvailabilityMap={roomAvailabilityMap}
 						roomTimeSlotsApiMap={roomTimeSlotsApiMap}
 						selectedSlots={selectedSlots}
 						onSlotClick={handleSlotClick}
-						isLoading={isLoading}
-						isLoadingAvailability={isLoadingAvailability}
-					/>
+							isLoading={isLoading}
+							isLoadingAvailability={isLoadingAvailability}
+						/>
 
-					<BookingInfoBanner showDiscountBanner={showDiscountBanner} />
+						<BookingInfoBanner showDiscountBanner={showDiscountBanner} />
 
-					<div className="mt-4 flex flex-col md:flex-row items-center justify-between gap-6">
-						<BookingLegend />
-						<BookingSummaryCard
-							selectedSlots={selectedSlots}
-							pricing={pricing}
+						<div className="mt-4 flex justify-end">
+							<BookingSummaryCard
+								selectedSlots={selectedSlots}
+								pricing={pricing}
 							isCopied={isCopied}
 							onBookNow={handleBookNow}
 						/>
