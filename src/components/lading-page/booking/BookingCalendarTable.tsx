@@ -217,7 +217,9 @@ export default function BookingCalendarTable({
 																${!canInteract && !isPastDateRow
 																	? isBooked
 																		? 'bg-[#CF5B51] text-white border border-transparent cursor-not-allowed shadow-none'
-																		: 'bg-[#CF5B51] text-white border border-transparent cursor-not-allowed shadow-none'
+																		: isPastTimeToday
+																			? 'bg-[#CF5B51] text-white border border-transparent cursor-not-allowed shadow-none'
+																			: 'bg-white text-teal-700 border border-teal-200 cursor-not-allowed shadow-none'
 																	: isPastDateRow
 																		? isBooked
 																			? 'bg-[#CF5B51] text-white border border-transparent cursor-not-allowed shadow-none'
