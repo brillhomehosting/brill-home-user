@@ -12,8 +12,8 @@ export default function HomePage() {
 	return (
 		<div className="w-full">
 			<HeroSection />
-			<RoomsSection />
 			<AllRoomsBookingSection />
+			<RoomsSection />
 			<AboutSection />
 			<AmenitiesSection />
 			{/* <GallerySection /> */}
