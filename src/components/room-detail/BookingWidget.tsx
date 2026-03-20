@@ -53,20 +53,6 @@ const getTimeSlotIcon = (startTime: string, isOvernight: boolean): string => {
 	return '🌙';
 };
 
-// Check if slot is past (for today only)
-const isPastSlot = (date: Date, startTime: string): boolean => {
-	if (!isToday(date)) return false;
-
-	const now = new Date();
-	const timeParts = startTime.split(':');
-	const hours = parseInt(timeParts[0] || '0', 10);
-	const minutes = parseInt(timeParts[1] || '0', 10);
-	const slotTime = new Date();
-	slotTime.setHours(hours, minutes, 0, 0);
-
-	return now > slotTime;
-};
-
 // Check if slot's end time has passed (for today only)
 const isEndPastSlot = (date: Date, endTime: string, isOvernight: boolean): boolean => {
 	if (!isToday(date)) return false;
@@ -473,8 +459,6 @@ export default function BookingWidget({ room }: { room: Room }) {
 											const isSelected = selectedSlots.has(slotKey);
 											const isApiActive = getSlotAvailability(date, slot.id);
 											const isPastDateRow = isDateBeforeToday(date);
-											// Check if slot is past for today
-											const isStartPast = isPastSlot(date, slot.startTime);
 											const isEndPast = isEndPastSlot(date, slot.endTime, slot.isOvernight);
 											const isActive = isApiActive && !isEndPast;
 											const canInteract = !isPastDateRow && isActive;

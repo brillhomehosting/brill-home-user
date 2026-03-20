@@ -5,7 +5,7 @@ import { isEligibleForWeeklyDiscount, toKDisplay } from '@/lib/pricingUtils';
 import { DayAvailability, Room, TimeSlot } from '@/types/room';
 import { Card, Table } from '@mantine/core';
 import Image from 'next/image';
-import { formatDate, getDayLabel, getTimeSlotIcon, isEndPastSlot, isPastSlot, isToday } from './bookingUtils';
+import { formatDate, getDayLabel, getTimeSlotIcon, isEndPastSlot, isToday } from './bookingUtils';
 import LoadingSkeleton from './LoadingSkeleton';
 
 interface BookingCalendarTableProps {
@@ -192,7 +192,6 @@ export default function BookingCalendarTable({
 												const dayData = availabilityData?.find(d => d.date === dateStr);
 												const slotStatus = dayData?.timeSlots?.find(s => s?.timeSlot?.id === slot.id);
 												const isApiActive = slotStatus?.isActive ?? true;
-												const isStartPast = isPastSlot(date, slot.startTime);
 												const isEndPast = isEndPastSlot(date, slot.endTime, slot.isOvernight);
 												const isActive = isApiActive && !isEndPast;
 												const canInteract = !isPastDateRow && isActive;
