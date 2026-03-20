@@ -5,7 +5,7 @@ import { isEligibleForWeeklyDiscount, toKDisplay } from '@/lib/pricingUtils';
 import { DayAvailability, Room, TimeSlot } from '@/types/room';
 import { Card, Table } from '@mantine/core';
 import Image from 'next/image';
-import { formatDate, getDayLabel, getTimeSlotIcon, isEndPastSlot, isPastSlot, isToday } from './bookingUtils';
+import { formatDate, getDayLabel, getTimeSlotIcon, isEndPastSlot, isToday } from './bookingUtils';
 import LoadingSkeleton from './LoadingSkeleton';
 
 interface BookingCalendarTableProps {
@@ -192,13 +192,11 @@ export default function BookingCalendarTable({
 												const dayData = availabilityData?.find(d => d.date === dateStr);
 												const slotStatus = dayData?.timeSlots?.find(s => s?.timeSlot?.id === slot.id);
 												const isApiActive = slotStatus?.isActive ?? true;
-												const isStartPast = isPastSlot(date, slot.startTime);
 												const isEndPast = isEndPastSlot(date, slot.endTime, slot.isOvernight);
 												const isActive = isApiActive && !isEndPast;
 												const canInteract = !isPastDateRow && isActive;
 												const isBooked = !isApiActive;
-												const isPastTimeToday = isStartPast && isApiActive;
-												const baseSlotPrice = roomTimeSlotsApiMap.get(room.id)?.find(s => s.id === slot.id)?.price ?? slot.price;
+													const baseSlotPrice = roomTimeSlotsApiMap.get(room.id)?.find(s => s.id === slot.id)?.price ?? slot.price;
 												const dynamicPrice = baseSlotPrice;
 
 												return (
@@ -214,21 +212,13 @@ export default function BookingCalendarTable({
 															disabled={!canInteract}
 															className={`
                                                                 relative w-full h-[36px] rounded font-medium text-sm transition-all duration-200 flex flex-col items-center justify-center gap-0.5 shadow-sm
-																${!canInteract && !isPastDateRow
-																	? isBooked
+																${isSelected
+																	? 'bg-[#D97D48] text-white shadow-lg border border-[#D97D48]'
+																	: isBooked
 																		? 'bg-[#CF5B51] text-white border border-transparent cursor-not-allowed shadow-none'
-																		: isPastTimeToday
-																			? 'bg-[#CF5B51] text-white border border-transparent cursor-not-allowed shadow-none'
+																		: canInteract
+																			? 'bg-white text-teal-700 border border-teal-200 hover:border-teal-500 hover:shadow-md'
 																			: 'bg-white text-teal-700 border border-teal-200 cursor-not-allowed shadow-none'
-																	: isPastDateRow
-																		? isBooked
-																			? 'bg-[#CF5B51] text-white border border-transparent cursor-not-allowed shadow-none'
-																			: 'bg-white text-teal-700 border border-teal-200 cursor-not-allowed shadow-none'
-																	: isSelected
-																		? 'bg-[#D97D48] text-white shadow-lg border border-[#D97D48]'
-																		: isBooked
-																			? 'bg-[#CF5B51] text-white border border-transparent shadow-none'
-																			: 'bg-white text-teal-700 border border-teal-200 hover:border-teal-500 hover:shadow-md'
 																}
 	                                                            `}
 															style={isTodayRow ? {
