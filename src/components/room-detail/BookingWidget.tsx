@@ -312,7 +312,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 			});
 
 			setTimeout(() => {
-				window.open(`https://m.me/${contactData.facebookPageId}`, '_blank');
+				window.open(`https://m.me/${contactData.messengerId}`, '_blank');
 			}, 600);
 		} catch {
 			// Fallback: try execCommand for older browsers
@@ -336,14 +336,14 @@ export default function BookingWidget({ room }: { room: Room }) {
 				});
 
 				setTimeout(() => {
-					window.open(`https://m.me/${contactData.facebookPageId}`, '_blank');
+					window.open(`https://m.me/${contactData.messengerId}`, '_blank');
 				}, 600);
 			} catch {
 				toast.error('Không thể sao chép. Vui lòng thử lại.', { duration: 3000 });
-				window.open(`https://m.me/${contactData.facebookPageId}`, '_blank');
+				window.open(`https://m.me/${contactData.messengerId}`, '_blank');
 			}
 		}
-	}, [selectedSlots, isCopied, buildMessengerMessage, contactData.facebookPageId]);  // eslint-disable-line react-hooks/exhaustive-deps
+	}, [selectedSlots, isCopied, buildMessengerMessage, contactData.messengerId]);  // eslint-disable-line react-hooks/exhaustive-deps
 
 	const isLoading = isLoadingAvailability;
 

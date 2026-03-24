@@ -264,7 +264,7 @@ export default function AllRoomsBookingSection() {
 			});
 
 			setTimeout(() => {
-				window.open(`https://m.me/${contactData.facebookPageId}`, '_blank');
+				window.open(`https://m.me/${contactData.messengerId}`, '_blank');
 			}, 600);
 		} catch {
 			try {
@@ -287,14 +287,14 @@ export default function AllRoomsBookingSection() {
 				});
 
 				setTimeout(() => {
-					window.open(`https://m.me/${contactData.facebookPageId}`, '_blank');
+					window.open(`https://m.me/${contactData.messengerId}`, '_blank');
 				}, 600);
 			} catch {
 				toast.error('Không thể sao chép. Vui lòng thử lại.', { duration: 3000 });
-				window.open(`https://m.me/${contactData.facebookPageId}`, '_blank');
+				window.open(`https://m.me/${contactData.messengerId}`, '_blank');
 			}
 		}
-	}, [selectedRoomId, selectedSlots, isCopied, buildMessengerMessage]);  // eslint-disable-line react-hooks/exhaustive-deps
+	}, [selectedRoomId, selectedSlots, isCopied, buildMessengerMessage, contactData.messengerId]);  // eslint-disable-line react-hooks/exhaustive-deps
 
 	const sortedRooms = useMemo(() => {
 		if (!rooms) return [];
