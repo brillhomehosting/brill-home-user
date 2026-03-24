@@ -1,9 +1,13 @@
 import { Facebook, Instagram } from "lucide-react";
 
 export const contactData = {
-  facebookPageId: process.env.NEXT_PUBLIC_FACEBOOK_PAGE_ID || "875944355612197",
+  facebookPageId: process.env.NEXT_PUBLIC_FACEBOOK_PAGE_ID || "61585984563658",
+  messengerId: process.env.NEXT_PUBLIC_MESSENGER_ID || "875944355612197",
   phoneNumber: process.env.NEXT_PUBLIC_PHONE_NUMBER || "0939293804",
-  email: "brillhomestay@gmail.com"
+  email: "brillhomestay@gmail.com",
+  instagramUrl:
+    process.env.NEXT_PUBLIC_INSTAGRAM_URL ||
+    "https://www.instagram.com/brillhomestay",
 };
 
 export const socialLinks = [
@@ -24,7 +28,7 @@ export const socialLinks = [
 	},
 	{
 		icon: Instagram,
-		href: "https://www.instagram.com/brillhomestay",
+		href: contactData.instagramUrl,
 		label: "Instagram",
 	},
 ];

@@ -15,7 +15,7 @@ export default function FloatingContactWidget() {
 	const isMobileBookingBarVisible = useBookingUIStore(s => s.isMobileBookingBarVisible);
 
 	const handleMessengerClick = () => {
-		window.open(`https://m.me/${contactData.facebookPageId}`, '_blank');
+		window.open(`https://m.me/${contactData.messengerId}`, '_blank');
 	};
 
 	const handleZaloClick = () => {
