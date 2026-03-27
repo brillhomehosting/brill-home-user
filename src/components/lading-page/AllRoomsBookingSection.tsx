@@ -270,7 +270,9 @@ export default function AllRoomsBookingSection() {
 			});
 		}
 
-		window.open(`https://m.me/${contactData.messengerId}`, '_blank');
+		window.setTimeout(() => {
+			window.open(`https://m.me/${contactData.messengerId}`, '_blank');
+		}, 600);
 	}, [selectedRoomId, selectedSlots, isCopied, buildMessengerMessage, contactData.messengerId]);  // eslint-disable-line react-hooks/exhaustive-deps
 
 	const sortedRooms = useMemo(() => {

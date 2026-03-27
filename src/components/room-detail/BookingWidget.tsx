@@ -1,7 +1,6 @@
 'use client';
 
 import messengerIcon from '@/assets/icon-messenger.png';
-import { BOOKING_MESSENGER_PASTE_NOTE } from '@/constants/booking';
 import { DISCOUNT_PROGRAM_PERCENT, WEEKDAY_SLOT_DISCOUNT } from '@/constants/pricing';
 import { contactData } from '@/data/contact-data';
 import { useTimeSlotAvailability } from '@/hooks/useTimeSlotAvailability';
@@ -11,7 +10,7 @@ import { calculatePricing, getSavingsBadgeLabel, isEligibleForWeeklyDiscount, is
 import { Room, TimeSlot } from '@/types/room';
 import { Card, Table } from '@mantine/core';
 import { motion } from 'framer-motion';
-import { Check, ChevronLeft, ChevronRight, Copy } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -319,7 +318,9 @@ export default function BookingWidget({ room }: { room: Room }) {
 			});
 		}
 
-		window.open(`https://m.me/${contactData.messengerId}`, '_blank');
+		window.setTimeout(() => {
+			window.open(`https://m.me/${contactData.messengerId}`, '_blank');
+		}, 600);
 	}, [selectedSlots, isCopied, buildMessengerMessage, contactData.messengerId]);  // eslint-disable-line react-hooks/exhaustive-deps
 
 	const isLoading = isLoadingAvailability;
@@ -608,12 +609,8 @@ export default function BookingWidget({ room }: { room: Room }) {
 								<Image src={messengerIcon} alt="Messenger" width={24} height={24} />
 								Đặt phòng ngay
 							</>
-						)}
-					</button>
-						<p className="mt-2 flex items-start justify-center gap-1 text-center text-[10px] leading-4 text-stone-500">
-							<Copy className="mt-0.5 h-3 w-3 shrink-0" />
-							<span>{BOOKING_MESSENGER_PASTE_NOTE}</span>
-						</p>
+							)}
+						</button>
 					</motion.div>
 				)}
 
