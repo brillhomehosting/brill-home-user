@@ -1,6 +1,7 @@
 'use client';
 
 import messengerIcon from '@/assets/icon-messenger.png';
+import { BOOKING_MESSENGER_PASTE_NOTE } from '@/constants/booking';
 import { DISCOUNT_PROGRAM_PERCENT, WEEKDAY_SLOT_DISCOUNT } from '@/constants/pricing';
 import { contactData } from '@/data/contact-data';
 import { useTimeSlotAvailability } from '@/hooks/useTimeSlotAvailability';
@@ -627,12 +628,12 @@ export default function BookingWidget({ room }: { room: Room }) {
 							</>
 						)}
 					</button>
-					<p className="text-[10px] text-stone-400 text-center mt-1.5">
-						<Copy className="w-3 h-3 inline mr-1" />
-						Nhấn để sao chép & mở Messenger — dán tin nhắn để đặt phòng
-					</p>
-				</motion.div>
-			)}
+						<p className="mt-2 flex items-start justify-center gap-1 text-center text-[10px] leading-4 text-stone-500">
+							<Copy className="mt-0.5 h-3 w-3 shrink-0" />
+							<span>{BOOKING_MESSENGER_PASTE_NOTE}</span>
+						</p>
+					</motion.div>
+				)}
 
 			{/* Empty State */}
 			{selectedSlots.size === 0 && !isLoading && timeSlots && Array.isArray(timeSlots) && timeSlots.length > 0 && (

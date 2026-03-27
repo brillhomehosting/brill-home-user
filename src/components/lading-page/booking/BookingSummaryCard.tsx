@@ -1,6 +1,7 @@
 'use client';
 
 import messengerIcon from '@/assets/icon-messenger.png';
+import { BOOKING_MESSENGER_PASTE_NOTE } from '@/constants/booking';
 import { getSavingsBadgeLabel, PricingBreakdown, toKDisplay } from '@/lib/pricingUtils';
 import { Card } from '@mantine/core';
 import { motion } from 'framer-motion';
@@ -103,9 +104,9 @@ export default function BookingSummaryCard({
 							</>
 						)}
 					</button>
-					<p className="text-[9px] text-stone-400 mt-1 flex items-center justify-center gap-0.5">
-						<Copy className="w-2.5 h-2.5" />
-						Sao chép & dán vào Messenger
+					<p className="mt-2 flex items-start justify-center gap-1 text-center text-[10px] leading-4 text-stone-500">
+						<Copy className="mt-0.5 h-3 w-3 shrink-0" />
+						<span>{BOOKING_MESSENGER_PASTE_NOTE}</span>
 					</p>
 				</div>
 			</Card>
