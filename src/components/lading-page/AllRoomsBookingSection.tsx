@@ -8,8 +8,7 @@ import { calculatePricing, isInDiscountProgram } from '@/lib/pricingUtils';
 import { useBookingUIStore } from '@/store/bookingUIStore';
 import { TimeSlot } from '@/types/room';
 import { motion } from 'framer-motion';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { toast } from 'sonner';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { contactData } from '../../data/contact-data';
 import BookingCalendarTable from './booking/BookingCalendarTable';
 import BookingInfoBanner from './booking/BookingInfoBanner';
@@ -25,8 +24,6 @@ export default function AllRoomsBookingSection() {
 	const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set());
 	const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
 	const [slotPrices, setSlotPrices] = useState<Map<string, number>>(new Map());
-	const [isCopied, setIsCopied] = useState(false);
-	const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const setMobileBookingBarVisible = useBookingUIStore(s => s.setMobileBookingBarVisible);
 
 	useEffect(() => {
@@ -245,50 +242,13 @@ export default function AllRoomsBookingSection() {
 		return buildBookingMessage({ roomName: selectedRoom.name, groupedByDate, totalAmount: pricing.totalAmount });
 	};
 
-	const handleBookNow = useCallback(async () => {
-		if (!selectedRoomId || selectedSlots.size === 0 || isCopied) return;
-
+	// Open Messenger with booking text pre-filled — synchronous, no Android popup block
+	const handleBookNow = useCallback(() => {
+		if (!selectedRoomId || selectedSlots.size === 0) return;
 		const message = buildMessengerMessage();
 		if (!message) return;
-
-		// Open Messenger synchronously inside user gesture — must happen before any await
-		window.open(`https://m.me/${contactData.messengerId}`, '_blank');
-
-		try {
-			await navigator.clipboard.writeText(message);
-			setIsCopied(true);
-
-			if (copiedTimeoutRef.current) clearTimeout(copiedTimeoutRef.current);
-			copiedTimeoutRef.current = setTimeout(() => setIsCopied(false), 4000);
-
-			toast.success('Đã sao chép thông tin đặt phòng!', {
-				description: 'Dán (Ctrl+V) tin nhắn vào Messenger để gửi cho chúng tôi.',
-				duration: 5000,
-			});
-		} catch {
-			try {
-				const textarea = document.createElement('textarea');
-				textarea.value = message;
-				textarea.style.position = 'fixed';
-				textarea.style.opacity = '0';
-				document.body.appendChild(textarea);
-				textarea.select();
-				document.execCommand('copy');
-				document.body.removeChild(textarea);
-
-				setIsCopied(true);
-				if (copiedTimeoutRef.current) clearTimeout(copiedTimeoutRef.current);
-				copiedTimeoutRef.current = setTimeout(() => setIsCopied(false), 4000);
-
-				toast.success('Đã sao chép thông tin đặt phòng!', {
-					description: 'Dán (Ctrl+V) tin nhắn vào Messenger để gửi cho chúng tôi.',
-					duration: 5000,
-				});
-			} catch {
-				toast.error('Không thể sao chép. Vui lòng thử lại.', { duration: 3000 });
-			}
-		}
-	}, [selectedRoomId, selectedSlots, isCopied, buildMessengerMessage, contactData.messengerId]);  // eslint-disable-line react-hooks/exhaustive-deps
+		window.open(`https://m.me/${contactData.messengerId}?text=${encodeURIComponent(message)}`, '_blank');
+	}, [selectedRoomId, selectedSlots, buildMessengerMessage]);  // eslint-disable-line react-hooks/exhaustive-deps
 
 	const sortedRooms = useMemo(() => {
 		if (!rooms) return [];
@@ -321,35 +281,34 @@ export default function AllRoomsBookingSection() {
 					onNextPage={() => setCurrentDatePage(prev => Math.min(totalPages - 1, prev + 1))}
 				/>
 
-					<motion.div
-						initial={{ opacity: 0, y: 20 }}
-						whileInView={{ opacity: 1, y: 0 }}
-						viewport={{ once: true }}
-						transition={{ delay: 0.1 }}
-					>
-						<div className="mb-4">
-							<BookingLegend />
-						</div>
+				<motion.div
+					initial={{ opacity: 0, y: 20 }}
+					whileInView={{ opacity: 1, y: 0 }}
+					viewport={{ once: true }}
+					transition={{ delay: 0.1 }}
+				>
+					<div className="mb-4">
+						<BookingLegend />
+					</div>
 
-						<BookingCalendarTable
-							dates={dates}
-							sortedRooms={sortedRooms}
-							roomTimeSlotsMap={roomTimeSlotsMap}
+					<BookingCalendarTable
+						dates={dates}
+						sortedRooms={sortedRooms}
+						roomTimeSlotsMap={roomTimeSlotsMap}
 						roomAvailabilityMap={roomAvailabilityMap}
 						roomTimeSlotsApiMap={roomTimeSlotsApiMap}
 						selectedSlots={selectedSlots}
 						onSlotClick={handleSlotClick}
-							isLoading={isLoading}
-							isLoadingAvailability={isLoadingAvailability}
-						/>
+						isLoading={isLoading}
+						isLoadingAvailability={isLoadingAvailability}
+					/>
 
-						<BookingInfoBanner showDiscountBanner={showDiscountBanner} />
+					<BookingInfoBanner showDiscountBanner={showDiscountBanner} />
 
-						<div className="mt-4 flex justify-end">
-							<BookingSummaryCard
-								selectedSlots={selectedSlots}
-								pricing={pricing}
-							isCopied={isCopied}
+					<div className="mt-4 flex justify-end">
+						<BookingSummaryCard
+							selectedSlots={selectedSlots}
+							pricing={pricing}
 							onBookNow={handleBookNow}
 						/>
 					</div>
@@ -361,9 +320,9 @@ export default function AllRoomsBookingSection() {
 			<MobileBookingBar
 				selectedSlots={selectedSlots}
 				pricing={pricing}
-				isCopied={isCopied}
 				onBookNow={handleBookNow}
 			/>
-		</section>
+
+	</section>
 	);
 }
