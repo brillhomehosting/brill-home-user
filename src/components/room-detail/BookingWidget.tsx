@@ -321,7 +321,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 
 		window.setTimeout(() => {
 			window.open(`https://m.me/${contactData.messengerId}`, '_blank');
-		}, 1500);
+		}, 1200);
 	}, [selectedSlots, isCopied, buildMessengerMessage, contactData.messengerId]);  // eslint-disable-line react-hooks/exhaustive-deps
 
 	const isLoading = isLoadingAvailability;
