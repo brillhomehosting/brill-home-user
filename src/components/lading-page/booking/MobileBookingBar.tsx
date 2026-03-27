@@ -1,10 +1,9 @@
 'use client';
 
 import messengerIcon from '@/assets/icon-messenger.png';
-import { BOOKING_MESSENGER_PASTE_NOTE } from '@/constants/booking';
 import { getSavingsBadgeLabel, PricingBreakdown, toKDisplay } from '@/lib/pricingUtils';
 import { motion } from 'framer-motion';
-import { Check, Copy } from 'lucide-react';
+import { Check } from 'lucide-react';
 import Image from 'next/image';
 
 interface MobileBookingBarProps {
@@ -105,10 +104,6 @@ export default function MobileBookingBar({
 					)}
 				</button>
 			</div>
-			<p className="flex items-start justify-center gap-1 px-4 pb-3 text-center text-[10px] leading-4 text-stone-500">
-				<Copy className="mt-0.5 h-3 w-3 shrink-0" />
-				<span>{BOOKING_MESSENGER_PASTE_NOTE}</span>
-			</p>
 		</motion.div>
 	);
 }

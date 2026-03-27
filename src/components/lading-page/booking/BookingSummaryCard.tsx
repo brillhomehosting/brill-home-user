@@ -1,11 +1,10 @@
 'use client';
 
 import messengerIcon from '@/assets/icon-messenger.png';
-import { BOOKING_MESSENGER_PASTE_NOTE } from '@/constants/booking';
 import { getSavingsBadgeLabel, PricingBreakdown, toKDisplay } from '@/lib/pricingUtils';
 import { Card } from '@mantine/core';
 import { motion } from 'framer-motion';
-import { Check, Copy } from 'lucide-react';
+import { Check } from 'lucide-react';
 import Image from 'next/image';
 
 interface BookingSummaryCardProps {
@@ -102,12 +101,8 @@ export default function BookingSummaryCard({
 								<Image src={messengerIcon} alt="Messenger" width={30} height={30} />
 								<span>Đặt ngay</span>
 							</>
-						)}
-					</button>
-					<p className="mt-2 flex items-start justify-center gap-1 text-center text-[10px] leading-4 text-stone-500">
-						<Copy className="mt-0.5 h-3 w-3 shrink-0" />
-						<span>{BOOKING_MESSENGER_PASTE_NOTE}</span>
-					</p>
+							)}
+						</button>
 				</div>
 			</Card>
 		</motion.div>
