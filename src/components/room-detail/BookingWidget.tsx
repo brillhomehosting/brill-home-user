@@ -1,6 +1,7 @@
 'use client';
 
 import messengerIcon from '@/assets/icon-messenger.png';
+import { BOOKING_MESSENGER_PASTE_NOTE } from '@/constants/booking';
 import { DISCOUNT_PROGRAM_PERCENT, WEEKDAY_SLOT_DISCOUNT } from '@/constants/pricing';
 import { contactData } from '@/data/contact-data';
 import { useTimeSlotAvailability } from '@/hooks/useTimeSlotAvailability';
@@ -9,9 +10,10 @@ import { calculatePricing, getSavingsBadgeLabel, isEligibleForWeeklyDiscount, is
 import { Room, TimeSlot } from '@/types/room';
 import { Card, Table } from '@mantine/core';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Copy } from 'lucide-react';
 import Image from 'next/image';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 // Generate dates for next N days
 const generateDates = (count: number) => {
@@ -107,6 +109,8 @@ export default function BookingWidget({ room }: { room: Room }) {
 	const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set());
 	const [currentDatePage, setCurrentDatePage] = useState(0);
 	const [slotPrices, setSlotPrices] = useState<Map<string, number>>(new Map());
+	const [isCopied, setIsCopied] = useState(false);
+	const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	const allDates = generateDates(30);
 	const DATES_PER_PAGE = 7;
@@ -289,13 +293,52 @@ export default function BookingWidget({ room }: { room: Room }) {
 		return buildBookingMessage({ roomName: room.name, groupedByDate, totalAmount });
 	};
 
-	// Open Messenger with booking text pre-filled — synchronous, no Android popup block
-	const handleBookNow = useCallback(() => {
-		if (selectedSlots.size === 0) return;
+	// Copy booking details to clipboard and open Messenger
+	const handleBookNow = useCallback(async () => {
+		if (selectedSlots.size === 0 || isCopied) return;
+
 		const message = buildMessengerMessage();
 		if (!message) return;
-		window.open(`https://m.me/${contactData.messengerId}?text=${encodeURIComponent(message)}`, '_blank');
-	}, [selectedSlots, buildMessengerMessage]);  // eslint-disable-line react-hooks/exhaustive-deps
+
+		// Open Messenger synchronously inside user gesture — must happen before any await
+		window.open(`https://m.me/${contactData.messengerId}`, '_blank');
+
+		try {
+			await navigator.clipboard.writeText(message);
+			setIsCopied(true);
+
+			if (copiedTimeoutRef.current) clearTimeout(copiedTimeoutRef.current);
+			copiedTimeoutRef.current = setTimeout(() => setIsCopied(false), 4000);
+
+			toast.success('Đã sao chép thông tin đặt phòng!', {
+				description: 'Dán (Ctrl+V) tin nhắn vào Messenger để gửi cho chúng tôi.',
+				duration: 5000,
+			});
+		} catch {
+			// Fallback: try execCommand for older browsers
+			try {
+				const textarea = document.createElement('textarea');
+				textarea.value = message;
+				textarea.style.position = 'fixed';
+				textarea.style.opacity = '0';
+				document.body.appendChild(textarea);
+				textarea.select();
+				document.execCommand('copy');
+				document.body.removeChild(textarea);
+
+				setIsCopied(true);
+				if (copiedTimeoutRef.current) clearTimeout(copiedTimeoutRef.current);
+				copiedTimeoutRef.current = setTimeout(() => setIsCopied(false), 4000);
+
+				toast.success('Đã sao chép thông tin đặt phòng!', {
+					description: 'Dán (Ctrl+V) tin nhắn vào Messenger để gửi cho chúng tôi.',
+					duration: 5000,
+				});
+			} catch {
+				toast.error('Không thể sao chép. Vui lòng thử lại.', { duration: 3000 });
+			}
+		}
+	}, [selectedSlots, isCopied, buildMessengerMessage, contactData.messengerId]);  // eslint-disable-line react-hooks/exhaustive-deps
 
 	const isLoading = isLoadingAvailability;
 
@@ -568,14 +611,29 @@ export default function BookingWidget({ room }: { room: Room }) {
 
 					<button
 						onClick={handleBookNow}
-						className="w-full px-4 py-2.5 rounded-lg font-medium text-white transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer hover:opacity-90"
-						style={{ backgroundColor: '#D97D48' }}
+						disabled={isCopied}
+						className={`w-full px-4 py-2.5 rounded-lg font-medium text-white transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${isCopied ? 'bg-green-600 hover:bg-green-600' : 'hover:opacity-90'
+							}`}
+						style={!isCopied ? { backgroundColor: '#D97D48' } : undefined}
 					>
-						<Image src={messengerIcon} alt="Messenger" width={24} height={24} />
-						Đặt phòng ngay
+						{isCopied ? (
+							<>
+								<Check className="w-5 h-5" />
+								Đã sao chép! Dán vào Messenger
+							</>
+						) : (
+							<>
+								<Image src={messengerIcon} alt="Messenger" width={24} height={24} />
+								Đặt phòng ngay
+							</>
+						)}
 					</button>
-				</motion.div>
-			)}
+						<p className="mt-2 flex items-start justify-center gap-1 text-center text-[10px] leading-4 text-stone-500">
+							<Copy className="mt-0.5 h-3 w-3 shrink-0" />
+							<span>{BOOKING_MESSENGER_PASTE_NOTE}</span>
+						</p>
+					</motion.div>
+				)}
 
 			{/* Empty State */}
 			{selectedSlots.size === 0 && !isLoading && timeSlots && Array.isArray(timeSlots) && timeSlots.length > 0 && (
