@@ -272,7 +272,7 @@ export default function AllRoomsBookingSection() {
 
 		window.setTimeout(() => {
 			window.open(`https://m.me/${contactData.messengerId}`, '_blank');
-		}, 600);
+		}, 1000);
 	}, [selectedRoomId, selectedSlots, isCopied, buildMessengerMessage, contactData.messengerId]);  // eslint-disable-line react-hooks/exhaustive-deps
 
 	const sortedRooms = useMemo(() => {
