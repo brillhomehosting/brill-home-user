@@ -251,6 +251,9 @@ export default function AllRoomsBookingSection() {
 		const message = buildMessengerMessage();
 		if (!message) return;
 
+		// Open Messenger synchronously inside user gesture — must happen before any await
+		window.open(`https://m.me/${contactData.messengerId}`, '_blank');
+
 		try {
 			await navigator.clipboard.writeText(message);
 			setIsCopied(true);
@@ -259,13 +262,9 @@ export default function AllRoomsBookingSection() {
 			copiedTimeoutRef.current = setTimeout(() => setIsCopied(false), 4000);
 
 			toast.success('Đã sao chép thông tin đặt phòng!', {
-				description: 'Mở Messenger và dán (Ctrl+V) tin nhắn để gửi cho chúng tôi.',
+				description: 'Dán (Ctrl+V) tin nhắn vào Messenger để gửi cho chúng tôi.',
 				duration: 5000,
 			});
-
-			setTimeout(() => {
-				window.open(`https://m.me/${contactData.messengerId}`, '_blank');
-			}, 600);
 		} catch {
 			try {
 				const textarea = document.createElement('textarea');
@@ -282,16 +281,11 @@ export default function AllRoomsBookingSection() {
 				copiedTimeoutRef.current = setTimeout(() => setIsCopied(false), 4000);
 
 				toast.success('Đã sao chép thông tin đặt phòng!', {
-					description: 'Mở Messenger và dán (Ctrl+V) tin nhắn để gửi cho chúng tôi.',
+					description: 'Dán (Ctrl+V) tin nhắn vào Messenger để gửi cho chúng tôi.',
 					duration: 5000,
 				});
-
-				setTimeout(() => {
-					window.open(`https://m.me/${contactData.messengerId}`, '_blank');
-				}, 600);
 			} catch {
 				toast.error('Không thể sao chép. Vui lòng thử lại.', { duration: 3000 });
-				window.open(`https://m.me/${contactData.messengerId}`, '_blank');
 			}
 		}
 	}, [selectedRoomId, selectedSlots, isCopied, buildMessengerMessage, contactData.messengerId]);  // eslint-disable-line react-hooks/exhaustive-deps
