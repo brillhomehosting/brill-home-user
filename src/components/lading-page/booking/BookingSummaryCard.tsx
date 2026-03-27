@@ -4,17 +4,20 @@ import messengerIcon from '@/assets/icon-messenger.png';
 import { getSavingsBadgeLabel, PricingBreakdown, toKDisplay } from '@/lib/pricingUtils';
 import { Card } from '@mantine/core';
 import { motion } from 'framer-motion';
+import { Check, Copy } from 'lucide-react';
 import Image from 'next/image';
 
 interface BookingSummaryCardProps {
 	selectedSlots: Set<string>;
 	pricing: PricingBreakdown;
+	isCopied: boolean;
 	onBookNow: () => void;
 }
 
 export default function BookingSummaryCard({
 	selectedSlots,
 	pricing,
+	isCopied,
 	onBookNow,
 }: BookingSummaryCardProps) {
 	if (selectedSlots.size === 0) return null;
@@ -83,12 +86,27 @@ export default function BookingSummaryCard({
 					</div>
 					<button
 						onClick={onBookNow}
-						className="w-full px-6 py-2.5 rounded-md font-medium text-white transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer hover:opacity-90"
-						style={{ backgroundColor: '#D97D48' }}
+						disabled={isCopied}
+						className={`w-full px-6 py-2.5 rounded-md font-medium text-white transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${isCopied ? 'bg-green-600 hover:bg-green-600' : 'hover:bg-[#c06b3d]'
+							}`}
+						style={!isCopied ? { backgroundColor: '#D97D48' } : undefined}
 					>
-						<Image src={messengerIcon} alt="Messenger" width={30} height={30} />
-						<span>Đặt ngay</span>
+						{isCopied ? (
+							<>
+								<Check className="w-5 h-5" />
+								<span>Đã sao chép! Dán vào Messenger</span>
+							</>
+						) : (
+							<>
+								<Image src={messengerIcon} alt="Messenger" width={30} height={30} />
+								<span>Đặt ngay</span>
+							</>
+						)}
 					</button>
+					<p className="text-[9px] text-stone-400 mt-1 flex items-center justify-center gap-0.5">
+						<Copy className="w-2.5 h-2.5" />
+						Sao chép & dán vào Messenger
+					</p>
 				</div>
 			</Card>
 		</motion.div>
