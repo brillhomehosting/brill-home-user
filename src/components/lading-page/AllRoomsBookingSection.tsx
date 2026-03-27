@@ -4,6 +4,7 @@ import { useRooms } from '@/hooks/useRooms';
 import { useRoomsAvailability } from '@/hooks/useRoomsAvailability';
 import { useRoomsTimeSlots } from '@/hooks/useRoomsTimeSlots';
 import { buildBookingMessage } from '@/lib/buildBookingMessage';
+import { copyTextToClipboard } from '@/lib/copyToClipboard';
 import { calculatePricing, isInDiscountProgram } from '@/lib/pricingUtils';
 import { useBookingUIStore } from '@/store/bookingUIStore';
 import { TimeSlot } from '@/types/room';
@@ -251,13 +252,10 @@ export default function AllRoomsBookingSection() {
 		const message = buildMessengerMessage();
 		if (!message) return;
 
-		// Open Messenger synchronously inside user gesture — must happen before any await
-		window.open(`https://m.me/${contactData.messengerId}`, '_blank');
+		const copied = await copyTextToClipboard(message);
 
-		try {
-			await navigator.clipboard.writeText(message);
+		if (copied) {
 			setIsCopied(true);
-
 			if (copiedTimeoutRef.current) clearTimeout(copiedTimeoutRef.current);
 			copiedTimeoutRef.current = setTimeout(() => setIsCopied(false), 4000);
 
@@ -265,29 +263,14 @@ export default function AllRoomsBookingSection() {
 				description: 'Dán (Ctrl+V) tin nhắn vào Messenger để gửi cho chúng tôi.',
 				duration: 5000,
 			});
-		} catch {
-			try {
-				const textarea = document.createElement('textarea');
-				textarea.value = message;
-				textarea.style.position = 'fixed';
-				textarea.style.opacity = '0';
-				document.body.appendChild(textarea);
-				textarea.select();
-				document.execCommand('copy');
-				document.body.removeChild(textarea);
-
-				setIsCopied(true);
-				if (copiedTimeoutRef.current) clearTimeout(copiedTimeoutRef.current);
-				copiedTimeoutRef.current = setTimeout(() => setIsCopied(false), 4000);
-
-				toast.success('Đã sao chép thông tin đặt phòng!', {
-					description: 'Dán (Ctrl+V) tin nhắn vào Messenger để gửi cho chúng tôi.',
-					duration: 5000,
-				});
-			} catch {
-				toast.error('Không thể sao chép. Vui lòng thử lại.', { duration: 3000 });
-			}
+		} else {
+			toast.error('Không thể sao chép nội dung booking.', {
+				description: 'Messenger vẫn sẽ được mở, nhưng bạn cần nhập lại hoặc thử sao chép lại sau.',
+				duration: 4000,
+			});
 		}
+
+		window.open(`https://m.me/${contactData.messengerId}`, '_blank');
 	}, [selectedRoomId, selectedSlots, isCopied, buildMessengerMessage, contactData.messengerId]);  // eslint-disable-line react-hooks/exhaustive-deps
 
 	const sortedRooms = useMemo(() => {

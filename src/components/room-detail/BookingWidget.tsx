@@ -6,6 +6,7 @@ import { DISCOUNT_PROGRAM_PERCENT, WEEKDAY_SLOT_DISCOUNT } from '@/constants/pri
 import { contactData } from '@/data/contact-data';
 import { useTimeSlotAvailability } from '@/hooks/useTimeSlotAvailability';
 import { buildBookingMessage } from '@/lib/buildBookingMessage';
+import { copyTextToClipboard } from '@/lib/copyToClipboard';
 import { calculatePricing, getSavingsBadgeLabel, isEligibleForWeeklyDiscount, isInDiscountProgram, toKDisplay } from '@/lib/pricingUtils';
 import { Room, TimeSlot } from '@/types/room';
 import { Card, Table } from '@mantine/core';
@@ -300,13 +301,10 @@ export default function BookingWidget({ room }: { room: Room }) {
 		const message = buildMessengerMessage();
 		if (!message) return;
 
-		// Open Messenger synchronously inside user gesture — must happen before any await
-		window.open(`https://m.me/${contactData.messengerId}`, '_blank');
+		const copied = await copyTextToClipboard(message);
 
-		try {
-			await navigator.clipboard.writeText(message);
+		if (copied) {
 			setIsCopied(true);
-
 			if (copiedTimeoutRef.current) clearTimeout(copiedTimeoutRef.current);
 			copiedTimeoutRef.current = setTimeout(() => setIsCopied(false), 4000);
 
@@ -314,30 +312,14 @@ export default function BookingWidget({ room }: { room: Room }) {
 				description: 'Dán (Ctrl+V) tin nhắn vào Messenger để gửi cho chúng tôi.',
 				duration: 5000,
 			});
-		} catch {
-			// Fallback: try execCommand for older browsers
-			try {
-				const textarea = document.createElement('textarea');
-				textarea.value = message;
-				textarea.style.position = 'fixed';
-				textarea.style.opacity = '0';
-				document.body.appendChild(textarea);
-				textarea.select();
-				document.execCommand('copy');
-				document.body.removeChild(textarea);
-
-				setIsCopied(true);
-				if (copiedTimeoutRef.current) clearTimeout(copiedTimeoutRef.current);
-				copiedTimeoutRef.current = setTimeout(() => setIsCopied(false), 4000);
-
-				toast.success('Đã sao chép thông tin đặt phòng!', {
-					description: 'Dán (Ctrl+V) tin nhắn vào Messenger để gửi cho chúng tôi.',
-					duration: 5000,
-				});
-			} catch {
-				toast.error('Không thể sao chép. Vui lòng thử lại.', { duration: 3000 });
-			}
+		} else {
+			toast.error('Không thể sao chép nội dung booking.', {
+				description: 'Messenger vẫn sẽ được mở, nhưng bạn cần nhập lại hoặc thử sao chép lại sau.',
+				duration: 4000,
+			});
 		}
+
+		window.open(`https://m.me/${contactData.messengerId}`, '_blank');
 	}, [selectedSlots, isCopied, buildMessengerMessage, contactData.messengerId]);  // eslint-disable-line react-hooks/exhaustive-deps
 
 	const isLoading = isLoadingAvailability;
