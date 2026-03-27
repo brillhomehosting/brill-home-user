@@ -34,6 +34,10 @@ export default function AllRoomsBookingSection() {
 		return () => setMobileBookingBarVisible(false);
 	}, [selectedSlots.size, setMobileBookingBarVisible]);
 
+	useEffect(() => {
+		setIsCopied(false);
+	}, [selectedSlots, selectedRoomId]);
+
 	const DATES_PER_PAGE = 7;
 	const allDates = generateDates(30);
 	const totalPages = Math.ceil(allDates.length / DATES_PER_PAGE);

@@ -12,7 +12,7 @@ import { Card, Table } from '@mantine/core';
 import { motion } from 'framer-motion';
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 // Generate dates for next N days
@@ -145,6 +145,10 @@ export default function BookingWidget({ room }: { room: Room }) {
 				return timeA - timeB;
 			});
 	}, [availabilityData]);
+
+	useEffect(() => {
+		setIsCopied(false);
+	}, [selectedSlots]);
 
 	// Get availability status for a specific timeslot on a specific date
 	const getSlotAvailability = (date: Date, slotId: string): boolean => {
@@ -604,7 +608,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 						) : (
 							<>
 								<Image src={messengerIcon} alt="Messenger" width={24} height={24} />
-								Đặt phòng ngay
+								Đặt ngay
 							</>
 							)}
 						</button>
