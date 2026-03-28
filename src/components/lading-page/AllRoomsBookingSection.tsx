@@ -272,7 +272,12 @@ export default function AllRoomsBookingSection() {
 	const handleOpenMessenger = useCallback(() => {
 		const messengerUrl = `https://m.me/${contactData.messengerId}`;
 		setBookingModalOpened(false);
-		const messengerWindow = window.open(messengerUrl, '_blank');
+		const isMobile = /Android|iPhone|iPad|iPod/i.test(window.navigator.userAgent);
+		if (isMobile) {
+			window.location.href = messengerUrl;
+			return;
+		}
+		const messengerWindow = window.open(messengerUrl, '_blank', 'noopener,noreferrer');
 		if (!messengerWindow) {
 			window.location.href = messengerUrl;
 		}
