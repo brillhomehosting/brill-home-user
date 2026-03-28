@@ -1,5 +1,6 @@
 'use client';
 
+import { BookingMessengerModal, type BookingCopyStatus } from '@/components/ui/BookingMessengerModal';
 import { useRooms } from '@/hooks/useRooms';
 import { useRoomsAvailability } from '@/hooks/useRoomsAvailability';
 import { useRoomsTimeSlots } from '@/hooks/useRoomsTimeSlots';
@@ -10,7 +11,6 @@ import { useBookingUIStore } from '@/store/bookingUIStore';
 import { TimeSlot } from '@/types/room';
 import { motion } from 'framer-motion';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { toast } from 'sonner';
 import { contactData } from '../../data/contact-data';
 import BookingCalendarTable from './booking/BookingCalendarTable';
 import BookingInfoBanner from './booking/BookingInfoBanner';
@@ -26,7 +26,9 @@ export default function AllRoomsBookingSection() {
 	const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set());
 	const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
 	const [slotPrices, setSlotPrices] = useState<Map<string, number>>(new Map());
-	const [isCopied, setIsCopied] = useState(false);
+	const [bookingModalOpened, setBookingModalOpened] = useState(false);
+	const [bookingMessage, setBookingMessage] = useState('');
+	const [bookingCopyStatus, setBookingCopyStatus] = useState<BookingCopyStatus>('idle');
 	const setMobileBookingBarVisible = useBookingUIStore(s => s.setMobileBookingBarVisible);
 
 	useEffect(() => {
@@ -215,6 +217,13 @@ export default function AllRoomsBookingSection() {
 	const selectedRoom = rooms?.find(r => r.id === selectedRoomId);
 	const showDiscountBanner = pagedDates.some(d => isInDiscountProgram(formatDate(d)));
 
+	const copyBookingMessage = useCallback(async (message: string) => {
+		setBookingCopyStatus('idle');
+		const copied = await copyTextToClipboard(message);
+		setBookingCopyStatus(copied ? 'success' : 'error');
+		return copied;
+	}, []);
+
 	const buildMessengerMessage = () => {
 		if (!selectedRoom || selectedSlots.size === 0) return '';
 
@@ -245,32 +254,29 @@ export default function AllRoomsBookingSection() {
 		return buildBookingMessage({ roomName: selectedRoom.name, groupedByDate, totalAmount: pricing.totalAmount });
 	};
 
-	const handleBookNow = useCallback(async () => {
-		if (!selectedRoomId || selectedSlots.size === 0 || isCopied) return;
+	const handleBookNow = useCallback(() => {
+		if (!selectedRoomId || selectedSlots.size === 0) return;
 
 		const message = buildMessengerMessage();
 		if (!message) return;
+		setBookingMessage(message);
+		setBookingModalOpened(true);
+		void copyBookingMessage(message);
+	}, [selectedRoomId, selectedSlots, buildMessengerMessage, copyBookingMessage]);
 
-		const copied = await copyTextToClipboard(message);
+	const handleCopyFromModal = useCallback(() => {
+		if (!bookingMessage) return;
+		void copyBookingMessage(bookingMessage);
+	}, [bookingMessage, copyBookingMessage]);
 
-		if (copied) {
-			setIsCopied(true);
-
-			toast.success('Đã sao chép thông tin đặt phòng!', {
-				description: 'Dán (Ctrl+V) tin nhắn vào Messenger để gửi cho chúng tôi.',
-				duration: 5000,
-			});
-		} else {
-			toast.error('Không thể sao chép nội dung booking.', {
-				description: 'Messenger vẫn sẽ được mở, nhưng bạn cần nhập lại hoặc thử sao chép lại sau.',
-				duration: 4000,
-			});
+	const handleOpenMessenger = useCallback(() => {
+		const messengerUrl = `https://m.me/${contactData.messengerId}`;
+		setBookingModalOpened(false);
+		const messengerWindow = window.open(messengerUrl, '_blank');
+		if (!messengerWindow) {
+			window.location.href = messengerUrl;
 		}
-
-		window.setTimeout(() => {
-			window.open(`https://m.me/${contactData.messengerId}`, '_blank');
-		}, 1200);
-	}, [selectedRoomId, selectedSlots, isCopied, buildMessengerMessage, contactData.messengerId]);  // eslint-disable-line react-hooks/exhaustive-deps
+	}, [contactData.messengerId]);
 
 	const sortedRooms = useMemo(() => {
 		if (!rooms) return [];
@@ -331,10 +337,9 @@ export default function AllRoomsBookingSection() {
 							<BookingSummaryCard
 								selectedSlots={selectedSlots}
 								pricing={pricing}
-							isCopied={isCopied}
-							onBookNow={handleBookNow}
-						/>
-					</div>
+								onBookNow={handleBookNow}
+							/>
+						</div>
 
 					{selectedSlots.size > 0 && <div className="h-80 md:hidden" />}
 				</motion.div>
@@ -343,8 +348,16 @@ export default function AllRoomsBookingSection() {
 			<MobileBookingBar
 				selectedSlots={selectedSlots}
 				pricing={pricing}
-				isCopied={isCopied}
 				onBookNow={handleBookNow}
+			/>
+
+			<BookingMessengerModal
+				opened={bookingModalOpened}
+				onClose={() => setBookingModalOpened(false)}
+				message={bookingMessage}
+				copyStatus={bookingCopyStatus}
+				onCopy={handleCopyFromModal}
+				onOpenMessenger={handleOpenMessenger}
 			/>
 		</section>
 	);

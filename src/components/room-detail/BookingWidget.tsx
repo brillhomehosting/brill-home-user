@@ -1,6 +1,7 @@
 'use client';
 
 import messengerIcon from '@/assets/icon-messenger.png';
+import { BookingMessengerModal, type BookingCopyStatus } from '@/components/ui/BookingMessengerModal';
 import { DISCOUNT_PROGRAM_PERCENT, WEEKDAY_SLOT_DISCOUNT } from '@/constants/pricing';
 import { contactData } from '@/data/contact-data';
 import { useTimeSlotAvailability } from '@/hooks/useTimeSlotAvailability';
@@ -10,10 +11,9 @@ import { calculatePricing, getSavingsBadgeLabel, isEligibleForWeeklyDiscount, is
 import { Room, TimeSlot } from '@/types/room';
 import { Card, Table } from '@mantine/core';
 import { motion } from 'framer-motion';
-import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import { useCallback, useMemo, useState } from 'react';
-import { toast } from 'sonner';
 
 // Generate dates for next N days
 const generateDates = (count: number) => {
@@ -109,7 +109,9 @@ export default function BookingWidget({ room }: { room: Room }) {
 	const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set());
 	const [currentDatePage, setCurrentDatePage] = useState(0);
 	const [slotPrices, setSlotPrices] = useState<Map<string, number>>(new Map());
-	const [isCopied, setIsCopied] = useState(false);
+	const [bookingModalOpened, setBookingModalOpened] = useState(false);
+	const [bookingMessage, setBookingMessage] = useState('');
+	const [bookingCopyStatus, setBookingCopyStatus] = useState<BookingCopyStatus>('idle');
 
 	const allDates = generateDates(30);
 	const DATES_PER_PAGE = 7;
@@ -260,6 +262,13 @@ export default function BookingWidget({ room }: { room: Room }) {
 	const showDiscountBanner = pagedDates.some(d => isInDiscountProgram(formatDate(d)));
 	const savingsBadgeLabel = getSavingsBadgeLabel(pricing);
 
+	const copyBookingMessage = useCallback(async (message: string) => {
+		setBookingCopyStatus('idle');
+		const copied = await copyTextToClipboard(message);
+		setBookingCopyStatus(copied ? 'success' : 'error');
+		return copied;
+	}, []);
+
 	// Build Messenger message with booking details
 	const buildMessengerMessage = () => {
 		if (selectedSlots.size === 0) return '';
@@ -292,33 +301,29 @@ export default function BookingWidget({ room }: { room: Room }) {
 		return buildBookingMessage({ roomName: room.name, groupedByDate, totalAmount });
 	};
 
-	// Copy booking details to clipboard and open Messenger
-	const handleBookNow = useCallback(async () => {
-		if (selectedSlots.size === 0 || isCopied) return;
+	const handleBookNow = useCallback(() => {
+		if (selectedSlots.size === 0) return;
 
 		const message = buildMessengerMessage();
 		if (!message) return;
+		setBookingMessage(message);
+		setBookingModalOpened(true);
+		void copyBookingMessage(message);
+	}, [selectedSlots, buildMessengerMessage, copyBookingMessage]);
 
-		const copied = await copyTextToClipboard(message);
+	const handleCopyFromModal = useCallback(() => {
+		if (!bookingMessage) return;
+		void copyBookingMessage(bookingMessage);
+	}, [bookingMessage, copyBookingMessage]);
 
-		if (copied) {
-			setIsCopied(true);
-
-			toast.success('Đã sao chép thông tin đặt phòng!', {
-				description: 'Dán (Ctrl+V) tin nhắn vào Messenger để gửi cho chúng tôi.',
-				duration: 5000,
-			});
-		} else {
-			toast.error('Không thể sao chép nội dung booking.', {
-				description: 'Messenger vẫn sẽ được mở, nhưng bạn cần nhập lại hoặc thử sao chép lại sau.',
-				duration: 4000,
-			});
+	const handleOpenMessenger = useCallback(() => {
+		const messengerUrl = `https://m.me/${contactData.messengerId}`;
+		setBookingModalOpened(false);
+		const messengerWindow = window.open(messengerUrl, '_blank');
+		if (!messengerWindow) {
+			window.location.href = messengerUrl;
 		}
-
-		window.setTimeout(() => {
-			window.open(`https://m.me/${contactData.messengerId}`, '_blank');
-		}, 1200);
-	}, [selectedSlots, isCopied, buildMessengerMessage, contactData.messengerId]);  // eslint-disable-line react-hooks/exhaustive-deps
+	}, [contactData.messengerId]);
 
 	const isLoading = isLoadingAvailability;
 
@@ -591,23 +596,12 @@ export default function BookingWidget({ room }: { room: Room }) {
 
 					<button
 						onClick={handleBookNow}
-						disabled={isCopied}
-						className={`w-full px-4 py-2.5 rounded-lg font-medium text-white transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${isCopied ? 'bg-green-600 hover:bg-green-600' : 'hover:opacity-90'
-							}`}
-						style={!isCopied ? { backgroundColor: '#D97D48' } : undefined}
+						className="w-full px-4 py-2.5 rounded-lg font-medium text-white transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer hover:opacity-90"
+						style={{ backgroundColor: '#D97D48' }}
 					>
-							{isCopied ? (
-								<>
-									<Check className="w-5 h-5" />
-									Đã SAO CHÉP, hãy DÁN khung giờ bạn đã chọn vào messenger
-								</>
-							) : (
-							<>
-								<Image src={messengerIcon} alt="Messenger" width={24} height={24} />
-								Đặt phòng ngay
-							</>
-							)}
-						</button>
+						<Image src={messengerIcon} alt="Messenger" width={24} height={24} />
+						Đặt phòng ngay
+					</button>
 					</motion.div>
 				)}
 
@@ -619,6 +613,15 @@ export default function BookingWidget({ room }: { room: Room }) {
 					</p>
 				</div>
 			)}
+
+			<BookingMessengerModal
+				opened={bookingModalOpened}
+				onClose={() => setBookingModalOpened(false)}
+				message={bookingMessage}
+				copyStatus={bookingCopyStatus}
+				onCopy={handleCopyFromModal}
+				onOpenMessenger={handleOpenMessenger}
+			/>
 		</Card>
 	);
 }
