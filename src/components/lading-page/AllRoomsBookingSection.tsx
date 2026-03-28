@@ -9,7 +9,7 @@ import { calculatePricing, isInDiscountProgram } from '@/lib/pricingUtils';
 import { useBookingUIStore } from '@/store/bookingUIStore';
 import { TimeSlot } from '@/types/room';
 import { motion } from 'framer-motion';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { contactData } from '../../data/contact-data';
 import BookingCalendarTable from './booking/BookingCalendarTable';
@@ -27,7 +27,6 @@ export default function AllRoomsBookingSection() {
 	const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
 	const [slotPrices, setSlotPrices] = useState<Map<string, number>>(new Map());
 	const [isCopied, setIsCopied] = useState(false);
-	const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const setMobileBookingBarVisible = useBookingUIStore(s => s.setMobileBookingBarVisible);
 
 	useEffect(() => {
@@ -256,8 +255,6 @@ export default function AllRoomsBookingSection() {
 
 		if (copied) {
 			setIsCopied(true);
-			if (copiedTimeoutRef.current) clearTimeout(copiedTimeoutRef.current);
-			copiedTimeoutRef.current = setTimeout(() => setIsCopied(false), 4000);
 
 			toast.success('Đã sao chép thông tin đặt phòng!', {
 				description: 'Dán (Ctrl+V) tin nhắn vào Messenger để gửi cho chúng tôi.',
