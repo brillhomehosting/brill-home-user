@@ -1,5 +1,6 @@
 "use client";
 
+import zaloIcon from "@/assets/icon-zalo.png";
 import { Button, Modal, Stack } from "@mantine/core";
 import {
   AlertCircle,
@@ -9,6 +10,7 @@ import {
   MessageCircle,
   X,
 } from "lucide-react";
+import Image from "next/image";
 
 export type BookingCopyStatus = "idle" | "success" | "error";
 
@@ -19,6 +21,7 @@ interface BookingMessengerModalProps {
   copyStatus: BookingCopyStatus;
   onCopy: () => void;
   onOpenMessenger: () => void;
+  onOpenZalo: () => void;
 }
 
 export function BookingMessengerModal({
@@ -28,6 +31,7 @@ export function BookingMessengerModal({
   copyStatus,
   onCopy,
   onOpenMessenger,
+  onOpenZalo,
 }: BookingMessengerModalProps) {
   const statusConfig = {
     idle: {
@@ -68,7 +72,7 @@ export function BookingMessengerModal({
       {/* Header */}
       <div className="mb-5 flex items-center justify-between">
         <span className="text-base font-semibold text-stone-800">
-          Gửi qua Messenger
+          Gửi nội dung booking
         </span>
         <button
           onClick={onClose}
@@ -96,8 +100,8 @@ export function BookingMessengerModal({
             className="text-sm font-medium leading-relaxed"
             style={{ color: "#44403C" }}
           >
-            Dán nội dung bên dưới vào Messenger và bấm gửi để hoàn tất đặt
-            phòng.
+            Dán nội dung bên dưới vào Messenger hoặc Zalo và bấm gửi để hoàn
+            tất đặt phòng.
           </span>
         </div>
 
@@ -131,20 +135,43 @@ export function BookingMessengerModal({
           </button>
         </div>
 
-        {/* Primary CTA */}
-        <Button
-          fullWidth
-          radius="md"
-          size="md"
-          leftSection={<MessageCircle className="h-4 w-4" />}
-          onClick={onOpenMessenger}
-          style={{
-            backgroundColor: "#d97d48",
-            color: "#FFFFFF",
-          }}
-        >
-          Mở Messenger
-        </Button>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Button
+            fullWidth
+            radius="md"
+            size="md"
+            leftSection={<MessageCircle className="h-4 w-4" />}
+            onClick={onOpenMessenger}
+            style={{
+              backgroundColor: "#d97d48",
+              color: "#FFFFFF",
+            }}
+          >
+            Mở Messenger
+          </Button>
+
+          <Button
+            fullWidth
+            radius="md"
+            size="md"
+            leftSection={
+              <Image
+                src={zaloIcon}
+                alt="Zalo"
+                width={16}
+                height={16}
+                className="rounded-sm"
+              />
+            }
+            onClick={onOpenZalo}
+            style={{
+              backgroundColor: "#EAF7F0",
+              color: "#14532D",
+            }}
+          >
+            Mở Zalo
+          </Button>
+        </div>
 
         {/* Close */}
         <Button
