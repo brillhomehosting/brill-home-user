@@ -94,7 +94,7 @@ export default function MobileBookingBar({
 					{isCopied ? (
 						<>
 							<Check className="w-5 h-5" />
-							<span>Đã sao chép! Dán vào Messenger</span>
+							<span>Đã SAO CHÉP, hãy DÁN khung giờ bạn đã chọn vào messenger</span>
 						</>
 					) : (
 						<>

@@ -12,7 +12,7 @@ import { Card, Table } from '@mantine/core';
 import { motion } from 'framer-motion';
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 // Generate dates for next N days
@@ -110,7 +110,6 @@ export default function BookingWidget({ room }: { room: Room }) {
 	const [currentDatePage, setCurrentDatePage] = useState(0);
 	const [slotPrices, setSlotPrices] = useState<Map<string, number>>(new Map());
 	const [isCopied, setIsCopied] = useState(false);
-	const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	const allDates = generateDates(30);
 	const DATES_PER_PAGE = 7;
@@ -161,6 +160,10 @@ export default function BookingWidget({ room }: { room: Room }) {
 		() => calculatePricing(slotPrices, selectedSlots),
 		[slotPrices, selectedSlots],
 	);
+
+	useEffect(() => {
+		setIsCopied(false);
+	}, [selectedSlots]);
 
 	// Build linear list of slots for adjacency checks
 	const getLinearSlots = () => {
@@ -304,8 +307,6 @@ export default function BookingWidget({ room }: { room: Room }) {
 
 		if (copied) {
 			setIsCopied(true);
-			if (copiedTimeoutRef.current) clearTimeout(copiedTimeoutRef.current);
-			copiedTimeoutRef.current = setTimeout(() => setIsCopied(false), 4000);
 
 			toast.success('Đã sao chép thông tin đặt phòng!', {
 				description: 'Dán (Ctrl+V) tin nhắn vào Messenger để gửi cho chúng tôi.',
@@ -320,7 +321,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 
 		window.setTimeout(() => {
 			window.open(`https://m.me/${contactData.messengerId}`, '_blank');
-		}, 600);
+		}, 1200);
 	}, [selectedSlots, isCopied, buildMessengerMessage, contactData.messengerId]);  // eslint-disable-line react-hooks/exhaustive-deps
 
 	const isLoading = isLoadingAvailability;
@@ -599,12 +600,12 @@ export default function BookingWidget({ room }: { room: Room }) {
 							}`}
 						style={!isCopied ? { backgroundColor: '#D97D48' } : undefined}
 					>
-						{isCopied ? (
-							<>
-								<Check className="w-5 h-5" />
-								Đã sao chép! Dán vào Messenger
-							</>
-						) : (
+							{isCopied ? (
+								<>
+									<Check className="w-5 h-5" />
+									Đã SAO CHÉP, hãy DÁN khung giờ bạn đã chọn vào messenger
+								</>
+							) : (
 							<>
 								<Image src={messengerIcon} alt="Messenger" width={24} height={24} />
 								Đặt phòng ngay
