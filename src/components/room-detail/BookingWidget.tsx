@@ -316,19 +316,26 @@ export default function BookingWidget({ room }: { room: Room }) {
 		void copyBookingMessage(bookingMessage);
 	}, [bookingMessage, copyBookingMessage]);
 
-	const handleOpenMessenger = useCallback(() => {
-		const messengerUrl = `https://m.me/${contactData.messengerId}`;
+	const openChatUrl = useCallback((url: string) => {
 		setBookingModalOpened(false);
 		const isMobile = /Android|iPhone|iPad|iPod/i.test(window.navigator.userAgent);
 		if (isMobile) {
-			window.location.href = messengerUrl;
+			window.location.href = url;
 			return;
 		}
-		const messengerWindow = window.open(messengerUrl, '_blank', 'noopener,noreferrer');
-		if (!messengerWindow) {
-			window.location.href = messengerUrl;
+		const chatWindow = window.open(url, '_blank', 'noopener,noreferrer');
+		if (!chatWindow) {
+			window.location.href = url;
 		}
-	}, [contactData.messengerId]);
+	}, []);
+
+	const handleOpenMessenger = useCallback(() => {
+		openChatUrl(`https://m.me/${contactData.messengerId}`);
+	}, [openChatUrl, contactData.messengerId]);
+
+	const handleOpenZalo = useCallback(() => {
+		openChatUrl(`https://zalo.me/${contactData.phoneNumber}`);
+	}, [openChatUrl, contactData.phoneNumber]);
 
 	const isLoading = isLoadingAvailability;
 
@@ -626,6 +633,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 				copyStatus={bookingCopyStatus}
 				onCopy={handleCopyFromModal}
 				onOpenMessenger={handleOpenMessenger}
+				onOpenZalo={handleOpenZalo}
 			/>
 		</Card>
 	);
