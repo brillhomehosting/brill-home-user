@@ -1,7 +1,7 @@
 'use client';
 
 import { Button, Modal, Stack, Text } from '@mantine/core';
-import { AlertCircle, AlertTriangle, CheckCircle2, Copy, MessageCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Copy, MessageCircle } from 'lucide-react';
 
 export type BookingCopyStatus = 'idle' | 'success' | 'error';
 
@@ -59,34 +59,31 @@ export function BookingMessengerModal({
 			}}
 		>
 			<Stack gap="lg">
-				<div className="rounded-2xl border-2 border-orange-200 bg-orange-50 p-4">
+				<div
+					className="rounded-2xl border p-4"
+					style={{
+						borderColor: '#D4A574',
+						backgroundColor: '#FAF3E8',
+					}}
+				>
 					<div className="flex items-start gap-3">
-						<div className="rounded-full bg-orange-100 p-2 text-orange-700">
-							<AlertTriangle className="h-5 w-5" />
+						<div
+							className="rounded-full p-2"
+							style={{
+								backgroundColor: '#F1E0C4',
+								color: '#9A6E3A',
+							}}
+						>
+							<MessageCircle className="h-5 w-5" />
 						</div>
 						<div className="space-y-1">
-							<Text fw={700} size="lg" className="text-orange-900">
+							<Text fw={700} size="lg" style={{ color: '#9A6E3A' }}>
 								Lưu ý quan trọng
 							</Text>
-							<Text size="md" fw={600} className="leading-6 text-orange-800">
+							<Text size="md" fw={600} className="leading-6" style={{ color: '#7B5A31' }}>
 								Sau khi mở Messenger, hãy dán nội dung bên dưới và bấm gửi để hoàn tất đặt phòng.
 							</Text>
 						</div>
-					</div>
-				</div>
-
-				<div className="grid gap-3 sm:grid-cols-3">
-					<div className="rounded-xl border border-stone-200 bg-stone-50 p-3">
-						<Text fw={700} size="sm" className="text-stone-800">Bước 1</Text>
-						<Text size="sm" className="mt-1 leading-5 text-stone-600">Nội dung booking sẽ tự động được copy.</Text>
-					</div>
-					<div className="rounded-xl border border-stone-200 bg-stone-50 p-3">
-						<Text fw={700} size="sm" className="text-stone-800">Bước 2</Text>
-						<Text size="sm" className="mt-1 leading-5 text-stone-600">Bấm nút mở Messenger ở bên dưới.</Text>
-					</div>
-					<div className="rounded-xl border border-stone-200 bg-stone-50 p-3">
-						<Text fw={700} size="sm" className="text-stone-800">Bước 3</Text>
-						<Text size="sm" className="mt-1 leading-5 text-stone-600">Dán nội dung và gửi cho bên booking.</Text>
 					</div>
 				</div>
 
@@ -108,10 +105,13 @@ export function BookingMessengerModal({
 
 				<Button
 					radius="md"
-					color="orange"
 					size="md"
 					leftSection={<MessageCircle className="h-4 w-4" />}
 					onClick={onOpenMessenger}
+					style={{
+						backgroundColor: '#D4A574',
+						color: '#FFFFFF',
+					}}
 				>
 					Mở Messenger
 				</Button>
