@@ -71,16 +71,16 @@ export function BookingMessengerModal({
 							className="rounded-full p-2"
 							style={{
 								backgroundColor: '#F6EBD9',
-								color: '#8B673A',
+								color: '#1C1917',
 							}}
 						>
 							<MessageCircle className="h-5 w-5" />
 						</div>
 						<div className="space-y-1">
-							<Text fw={700} size="lg" style={{ color: '#7A5A33' }}>
+							<Text fw={700} size="lg" style={{ color: '#000000' }}>
 								Lưu ý quan trọng
 							</Text>
-							<Text size="md" fw={600} className="leading-7" style={{ color: '#5F472A' }}>
+							<Text size="md" className="leading-7" style={{ color: '#000000' }}>
 								Sau khi mở Messenger, hãy dán nội dung bên dưới và bấm gửi để hoàn tất đặt phòng.
 							</Text>
 						</div>
@@ -108,9 +108,11 @@ export function BookingMessengerModal({
 					size="md"
 					leftSection={<MessageCircle className="h-4 w-4" />}
 					onClick={onOpenMessenger}
+					variant="default"
 					style={{
-						backgroundColor: '#7A5A33',
-						color: '#FFFFFF',
+						backgroundColor: '#FFFDF8',
+						color: '#1C1917',
+						border: '1px solid #D4A574',
 					}}
 				>
 					Mở Messenger
