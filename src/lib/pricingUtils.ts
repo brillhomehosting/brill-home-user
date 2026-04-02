@@ -1,4 +1,4 @@
-import { COMBO_DISCOUNTS, DISCOUNT_PROGRAM_END, DISCOUNT_PROGRAM_PERCENT, DISCOUNT_PROGRAM_START, WEEKDAY_SLOT_DISCOUNT } from '@/constants/pricing';
+import { COMBO_DISCOUNTS, DISCOUNT_PROGRAM_END, DISCOUNT_PROGRAM_PERCENT, DISCOUNT_PROGRAM_START, WEEKDAY_PROGRAM_END, WEEKDAY_PROGRAM_START, WEEKDAY_SLOT_DISCOUNT } from '@/constants/pricing';
 
 export interface PricingBreakdown {
 	basePrice: number;
@@ -33,7 +33,7 @@ export function isWeekday(dateStr: string): boolean {
 }
 
 export function isEligibleForWeeklyDiscount(dateStr: string): boolean {
-	return isWeekday(dateStr);
+	return isWeekday(dateStr) && dateStr >= WEEKDAY_PROGRAM_START && dateStr <= WEEKDAY_PROGRAM_END;
 }
 
 /** Full pricing breakdown from raw slot prices and selected slot keys.

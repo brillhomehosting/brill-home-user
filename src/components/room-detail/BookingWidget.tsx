@@ -492,7 +492,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 															boxShadow: TODAY_SLOT_BOX_SHADOW,
 														} : undefined}
 														>
-														{!isPastDateRow && isApiActive ? (
+														{!isBooked ? (
 															<span className="font-bold">{priceInK}k</span>
 														) : null}
 														</button>

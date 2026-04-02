@@ -225,7 +225,7 @@ export default function BookingCalendarTable({
 																boxShadow: TODAY_SLOT_BOX_SHADOW,
 															} : undefined}
 														>
-															{!isPastDateRow && isActive && isWeeklyDiscount && !isSelected ? (
+															{isWeeklyDiscount && !isSelected && !isBooked ? (
 																<span className="rounded-full bg-white/95 px-2 py-[1px] text-[10px] font-bold uppercase tracking-wide text-emerald-700 shadow-sm">
 																	-{toKDisplay(WEEKDAY_SLOT_DISCOUNT)}
 																</span>
