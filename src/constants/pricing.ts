@@ -12,5 +12,5 @@ export const COMBO_DISCOUNTS = [
 ];
 
 export const WEEKDAY_SLOT_DISCOUNT = 20_000;
-export const WEEKDAY_PROGRAM_START = '2026-03-01';
-export const WEEKDAY_PROGRAM_END = '2026-03-30';
+export const WEEKDAY_PROGRAM_START = '2026-04-01';
+export const WEEKDAY_PROGRAM_END = '2026-04-24';
