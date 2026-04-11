@@ -14,3 +14,11 @@ export const COMBO_DISCOUNTS = [
 export const WEEKDAY_SLOT_DISCOUNT = 20_000;
 export const WEEKDAY_PROGRAM_START = '2026-04-01';
 export const WEEKDAY_PROGRAM_END = '2026-04-24';
+
+export const HOLIDAY_SURCHARGE_RATE = 0.10;
+
+export const HOLIDAY_DATES: Record<string, string> = {
+	'2025-04-25': 'Lễ Giỗ Tổ',
+	'2025-04-26': 'Lễ Giỗ Tổ',
+	'2025-04-30': 'Lễ 30/4',
+};

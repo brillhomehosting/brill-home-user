@@ -1,4 +1,4 @@
-import { COMBO_DISCOUNTS, DISCOUNT_PROGRAM_END, DISCOUNT_PROGRAM_PERCENT, DISCOUNT_PROGRAM_START, WEEKDAY_PROGRAM_END, WEEKDAY_PROGRAM_START, WEEKDAY_SLOT_DISCOUNT } from '@/constants/pricing';
+import { COMBO_DISCOUNTS, DISCOUNT_PROGRAM_END, DISCOUNT_PROGRAM_PERCENT, DISCOUNT_PROGRAM_START, HOLIDAY_DATES, HOLIDAY_SURCHARGE_RATE, WEEKDAY_PROGRAM_END, WEEKDAY_PROGRAM_START, WEEKDAY_SLOT_DISCOUNT } from '@/constants/pricing';
 
 export interface PricingBreakdown {
 	basePrice: number;
@@ -9,6 +9,8 @@ export interface PricingBreakdown {
 	comboDiscount: number;
 	weekdayDiscountAmount: number;
 	hasWeekdayDiscount: boolean;
+	holidaySurchargeAmount: number;
+	holidayNotes: string[];
 	totalAmount: number;
 	savings: number;
 }
@@ -32,8 +34,16 @@ export function isWeekday(dateStr: string): boolean {
 	return day >= 1 && day <= 5;
 }
 
+export function isHolidayDate(dateStr: string): boolean {
+	return dateStr in HOLIDAY_DATES;
+}
+
+export function getHolidayName(dateStr: string): string | null {
+	return HOLIDAY_DATES[dateStr] ?? null;
+}
+
 export function isEligibleForWeeklyDiscount(dateStr: string): boolean {
-	return isWeekday(dateStr) && dateStr >= WEEKDAY_PROGRAM_START && dateStr <= WEEKDAY_PROGRAM_END;
+	return isWeekday(dateStr) && dateStr >= WEEKDAY_PROGRAM_START && dateStr <= WEEKDAY_PROGRAM_END && !isHolidayDate(dateStr);
 }
 
 /** Full pricing breakdown from raw slot prices and selected slot keys.
@@ -50,6 +60,8 @@ export function calculatePricing(
 	let discountProgramBasePrice = 0;
 	let basePrice = 0;
 	let hasWeekdayDiscount = false;
+	let holidaySurchargeAmount = 0;
+	const holidayNameSet = new Set<string>();
 
 	selectedSlots.forEach(slotKey => {
 		const dateStr = slotKey.split('::')[1];
@@ -61,8 +73,14 @@ export function calculatePricing(
 		if (dateStr && isInDiscountProgram(dateStr)) {
 			discountProgramBasePrice += price;
 		}
+		if (dateStr && isHolidayDate(dateStr)) {
+			holidaySurchargeAmount += Math.round(price * HOLIDAY_SURCHARGE_RATE);
+			const name = getHolidayName(dateStr);
+			if (name) holidayNameSet.add(name);
+		}
 	});
 
+	const holidayNotes = Array.from(holidayNameSet);
 	const hasDiscountProgram = discountProgramBasePrice > 0;
 
 	// Discount program: only on discount-program-day slots
@@ -74,7 +92,7 @@ export function calculatePricing(
 	const subtotalAfterCombo = basePrice - discountAmount - comboDiscount;
 	const weekdayDiscountAmount = hasWeekdayDiscount ? Math.min(WEEKDAY_SLOT_DISCOUNT, subtotalAfterCombo) : 0;
 
-	const totalAmount = subtotalAfterCombo - weekdayDiscountAmount;
+	const totalAmount = subtotalAfterCombo - weekdayDiscountAmount + holidaySurchargeAmount;
 	const savings = discountAmount + comboDiscount + weekdayDiscountAmount;
 
 	return {
@@ -86,6 +104,8 @@ export function calculatePricing(
 		comboDiscount,
 		weekdayDiscountAmount,
 		hasWeekdayDiscount,
+		holidaySurchargeAmount,
+		holidayNotes,
 		totalAmount,
 		savings,
 	};
