@@ -69,10 +69,23 @@ export default function BookingSummaryCard({
 								<span className="text-xs text-green-600">-{toKDisplay(pricing.weekdayDiscountAmount)}</span>
 							</div>
 						)}
+						{pricing.holidaySurchargeAmount > 0 && (
+							<div className="px-3 py-1.5 flex justify-between items-center">
+								<span className="text-xs text-amber-600">
+									Phụ thu {pricing.holidayNotes.join(' & ')} (+10%)
+								</span>
+								<span className="text-xs text-amber-600">+{toKDisplay(pricing.holidaySurchargeAmount)}</span>
+							</div>
+						)}
 						<div className="border-t border-stone-200 px-3 py-2 flex justify-between items-center">
 							<span className="text-xs text-stone-500">Tổng tiền</span>
 							<span className="text-xl font-bold text-[#D97D48]">{toKDisplay(pricing.totalAmount)}</span>
 						</div>
+						{pricing.holidayNotes.map(note => (
+							<div key={note} className="px-3 pb-1 text-[10px] text-amber-600 italic">
+								Đã bao gồm phụ thu {note}
+							</div>
+						))}
 						{pricing.savings > 0 && (
 							<div className="px-3 pb-2 flex justify-end">
 								<span className="text-[10px] font-semibold bg-green-100 text-green-600 px-2 py-0.5 rounded-full">
