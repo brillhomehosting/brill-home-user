@@ -18,7 +18,7 @@ export const WEEKDAY_PROGRAM_END = '2026-04-24';
 export const HOLIDAY_SURCHARGE_RATE = 0.10;
 
 export const HOLIDAY_DATES: Record<string, string> = {
-	'2025-04-25': 'Lễ Giỗ Tổ',
-	'2025-04-26': 'Lễ Giỗ Tổ',
-	'2025-04-30': 'Lễ 30/4',
+	'2026-04-25': 'Lễ Giỗ Tổ',
+	'2026-04-26': 'Lễ Giỗ Tổ',
+	'2026-04-30': 'Lễ 30/4',
 };
