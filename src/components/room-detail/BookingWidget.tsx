@@ -2,12 +2,12 @@
 
 import messengerIcon from '@/assets/icon-messenger.png';
 import { BookingMessengerModal, type BookingCopyStatus } from '@/components/ui/BookingMessengerModal';
-import { DISCOUNT_PROGRAM_PERCENT, WEEKDAY_SLOT_DISCOUNT } from '@/constants/pricing';
+import { DISCOUNT_PROGRAM_PERCENT, HOLIDAY_SURCHARGE_RATE, WEEKDAY_SLOT_DISCOUNT } from '@/constants/pricing';
 import { contactData } from '@/data/contact-data';
 import { useTimeSlotAvailability } from '@/hooks/useTimeSlotAvailability';
 import { buildBookingMessage } from '@/lib/buildBookingMessage';
 import { copyTextToClipboard } from '@/lib/copyToClipboard';
-import { calculatePricing, getSavingsBadgeLabel, isEligibleForWeeklyDiscount, isInDiscountProgram, toKDisplay } from '@/lib/pricingUtils';
+import { calculatePricing, getSavingsBadgeLabel, isEligibleForWeeklyDiscount, isHolidayDate, isInDiscountProgram, toKDisplay } from '@/lib/pricingUtils';
 import { Room, TimeSlot } from '@/types/room';
 import { Card, Table } from '@mantine/core';
 import { motion } from 'framer-motion';
@@ -455,15 +455,17 @@ export default function BookingWidget({ room }: { room: Room }) {
 											const isActive = isApiActive && !isEndPast;
 											const canInteract = !isPastDateRow && isActive;
 											const isBooked = !isApiActive;
-												const isDiscount = isInDiscountProgram(formatDate(date));
-											const isWeeklyDiscount = isEligibleForWeeklyDiscount(formatDate(date));
+												const dateStr = formatDate(date);
+											const isDiscount = isInDiscountProgram(dateStr);
+											const isWeeklyDiscount = isEligibleForWeeklyDiscount(dateStr);
+											const isHoliday = isHolidayDate(dateStr);
 											const promoAdjustedPrice = isDiscount
 												? Math.round(slot.price * (1 - DISCOUNT_PROGRAM_PERCENT))
 												: slot.price;
 											const displayPrice = Math.max(
 												0,
 												promoAdjustedPrice - (isWeeklyDiscount ? WEEKDAY_SLOT_DISCOUNT : 0),
-											);
+											) + (isHoliday ? Math.round(slot.price * HOLIDAY_SURCHARGE_RATE) : 0);
 											const priceInK = Math.round(displayPrice / 1000);
 
 											return (
@@ -596,7 +598,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 						{pricing.holidaySurchargeAmount > 0 && (
 							<div className="px-3 py-1.5 flex justify-between items-center">
 								<span className="text-xs text-amber-600">
-									Phụ thu {pricing.holidayNotes.join(' & ')} (+10%)
+									Đã bao gồm phụ thu {pricing.holidayNotes.join(' & ')}
 								</span>
 								<span className="text-xs text-amber-600">+{toKDisplay(pricing.holidaySurchargeAmount)}</span>
 							</div>
@@ -605,11 +607,6 @@ export default function BookingWidget({ room }: { room: Room }) {
 							<span className="text-xs text-stone-500">Tổng tiền</span>
 							<span className="text-xl font-bold text-[#D97D48]">{toKDisplay(pricing.totalAmount)}</span>
 						</div>
-						{pricing.holidayNotes.map(note => (
-							<div key={note} className="px-3 pb-1 text-[10px] text-amber-600 italic">
-								Đã bao gồm phụ thu {note}
-							</div>
-						))}
 						{pricing.savings > 0 && (
 							<div className="px-3 pb-2 flex justify-end">
 								<span className="text-[10px] font-semibold bg-green-100 text-green-600 px-2 py-0.5 rounded-full">
