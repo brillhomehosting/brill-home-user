@@ -62,6 +62,7 @@ export function calculatePricing(
 	let hasWeekdayDiscount = false;
 	let holidaySurchargeAmount = 0;
 	const holidayNameSet = new Set<string>();
+	const holidaySlotsByDate = new Map<string, number[]>();
 
 	selectedSlots.forEach(slotKey => {
 		const dateStr = slotKey.split('::')[1];
@@ -74,10 +75,20 @@ export function calculatePricing(
 			discountProgramBasePrice += price;
 		}
 		if (dateStr && isHolidayDate(dateStr)) {
-			holidaySurchargeAmount += Math.round(price * HOLIDAY_SURCHARGE_RATE);
+			if (!holidaySlotsByDate.has(dateStr)) holidaySlotsByDate.set(dateStr, []);
+			holidaySlotsByDate.get(dateStr)!.push(price);
 			const name = getHolidayName(dateStr);
 			if (name) holidayNameSet.add(name);
 		}
+	});
+
+	holidaySlotsByDate.forEach((prices) => {
+		const eligible = prices.length === 4
+			? [...prices].sort((a, b) => a - b).slice(0, 3)
+			: prices;
+		eligible.forEach(p => {
+			holidaySurchargeAmount += Math.round(p * HOLIDAY_SURCHARGE_RATE);
+		});
 	});
 
 	const holidayNotes = Array.from(holidayNameSet);
