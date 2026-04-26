@@ -21,4 +21,5 @@ export const HOLIDAY_DATES: Record<string, string> = {
 	'2026-04-25': 'Lễ Giỗ Tổ',
 	'2026-04-26': 'Lễ Giỗ Tổ',
 	'2026-04-30': 'Lễ 30/4',
+	'2026-05-01': 'Lễ 1/5',
 };
