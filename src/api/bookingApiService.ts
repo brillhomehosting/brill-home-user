@@ -1,8 +1,9 @@
-import type { AvailabilityApiResponse } from "@/types/timeslot";
 import type {
 	ActiveDiscountProgramsApiResponse,
 	ComboDiscountsApiResponse,
+	HolidaySurchargeApiResponse,
 } from "@/types/pricing";
+import type { AvailabilityApiResponse } from "@/types/timeslot";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -12,9 +13,8 @@ export interface FetchAvailabilityParams {
 	roomId?: string;
 }
 
-export interface FetchActiveDiscountProgramsParams {
-	roomId?: string;
-	date?: string;
+export interface FetchHolidaySurchargeParams {
+	date: string;
 }
 
 export const bookingApi = {
@@ -38,19 +38,34 @@ export const bookingApi = {
 		return response.json();
 	},
 	fetchComboDiscounts: async (): Promise<ComboDiscountsApiResponse> => {
-		const response = await fetch(`${API_BASE_URL}/api/v1/discount-campaigns/active`);
+		const response = await fetch(`${API_BASE_URL}/api/v1/combo-configs`);
 		return response.json();
 	},
-	fetchActiveDiscountPrograms: async (
-		params: FetchActiveDiscountProgramsParams,
-	): Promise<ActiveDiscountProgramsApiResponse> => {
-		const searchParams = new URLSearchParams();
-		if (params.roomId) searchParams.set("roomId", params.roomId);
-		if (params.date) searchParams.set("date", params.date);
-		const query = searchParams.toString();
-		const response = await fetch(
-			`${API_BASE_URL}/api/v1/discount-campaigns/applicable${query ? `?${query}` : ""}`,
+	fetchActiveDiscountCampaigns:
+		async (): Promise<ActiveDiscountProgramsApiResponse> => {
+			const response = await fetch(
+				`${API_BASE_URL}/api/v1/discount-campaigns/active`,
+			);
+			return response.json();
+		},
+	fetchHolidaySurcharge: async (
+		params: FetchHolidaySurchargeParams,
+	): Promise<HolidaySurchargeApiResponse> => {
+		const searchParams = new URLSearchParams({ date: params.date });
+		const legacyUrl = `${API_BASE_URL}/api/v1/holiday-surcharges/check-date?${searchParams.toString()}`;
+		try {
+			const legacyResponse = await fetch(legacyUrl);
+			const legacyPayload = await legacyResponse.json();
+			if (legacyPayload?.success) {
+				return legacyPayload;
+			}
+		} catch {
+			// Fallback to the newer endpoint format below.
+		}
+
+		const fallbackResponse = await fetch(
+			`${API_BASE_URL}/api/v1/holidays/surcharge?${searchParams.toString()}`,
 		);
-		return response.json();
+		return fallbackResponse.json();
 	},
 };

@@ -1,17 +1,19 @@
 'use client';
 
 import messengerIcon from '@/assets/icon-messenger.png';
+import BookingInfoBanner from '@/components/lading-page/booking/BookingInfoBanner';
 import { contactData } from '@/data/contact-data';
-import { useActiveDiscountPrograms } from '@/hooks/useActiveDiscountPrograms';
+import { useActiveDiscountCampaigns } from '@/hooks/useActiveDiscountCampaigns';
 import { useComboDiscounts } from '@/hooks/useComboDiscounts';
+import { useHolidaySurchargeByDates } from '@/hooks/useHolidaySurchargeByDates';
 import { useSSEAvailability } from '@/hooks/useSSEAvailability';
 import { useTimeSlotAvailability } from '@/hooks/useTimeSlotAvailability';
 import { buildBookingMessage } from '@/lib/buildBookingMessage';
 import { calculatePricing, getComboNotification, getSavingsBadgeLabel, toKDisplay } from '@/lib/pricingUtils';
-import { applySlotSelection, getSelectionContext, LinearSelectableSlot, parseSlotKey } from '@/lib/slotSelection';
+import { applySlotSelection, LinearSelectableSlot, parseSlotKey } from '@/lib/slotSelection';
 import { useAvailabilityStore } from '@/store/availabilityStore';
-import { Room, TimeSlot } from '@/types/room';
 import { PricingSelectedSlot } from '@/types/pricing';
+import { Room, TimeSlot } from '@/types/room';
 import type { SlotStatus } from '@/types/timeslot';
 import { Card, Table } from '@mantine/core';
 import { motion } from 'framer-motion';
@@ -103,10 +105,6 @@ function LoadingSkeleton() {
 	);
 }
 
-function toPercentValue(value: number): number {
-	return value <= 1 ? value * 100 : value;
-}
-
 export default function BookingWidget({ room }: { room: Room }) {
 	const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set());
 	const [currentDatePage, setCurrentDatePage] = useState(0);
@@ -185,11 +183,11 @@ export default function BookingWidget({ room }: { room: Room }) {
 		return linearList;
 	};
 
-	const selectionContext = useMemo(() => getSelectionContext(selectedSlots), [selectedSlots]);
-	const selectedDate = selectionContext?.date ?? null;
-
 	const { data: comboDiscounts = [], isLoading: isLoadingComboDiscounts } = useComboDiscounts();
-	const { data: activeDiscountPrograms = [] } = useActiveDiscountPrograms(room.id, selectedDate);
+	const {
+		data: activeDiscountCampaigns = [],
+		isLoading: isLoadingActiveDiscountCampaigns,
+	} = useActiveDiscountCampaigns();
 
 	const selectedPricingSlots = useMemo((): PricingSelectedSlot[] => {
 		if (selectedSlots.size === 0) return [];
@@ -225,15 +223,34 @@ export default function BookingWidget({ room }: { room: Room }) {
 			.map(({ index, ...slot }) => slot);
 	}, [selectedSlots, slotPrices, timeSlots, availabilityData, pagedDates]); // eslint-disable-line react-hooks/exhaustive-deps
 
+	const selectedDates = useMemo(
+		() => Array.from(new Set(selectedPricingSlots.map((slot) => slot.date))),
+		[selectedPricingSlots],
+	);
+	const { data: holidayByDate, isLoading: isLoadingHolidayByDate } =
+		useHolidaySurchargeByDates(selectedDates);
+	const isPricingConfigLoading =
+		isLoadingComboDiscounts ||
+		isLoadingActiveDiscountCampaigns ||
+		isLoadingHolidayByDate;
+
 	const pricing = useMemo(
 		() => calculatePricing({
 			selectedSlots: selectedPricingSlots,
 			comboDiscounts,
-			activePrograms: activeDiscountPrograms,
+			activePrograms: activeDiscountCampaigns,
+			holidayByDate,
 			roomId: room.id,
 			roomType: room.roomType,
 		}),
-		[selectedPricingSlots, comboDiscounts, activeDiscountPrograms, room.id, room.roomType],
+		[
+			selectedPricingSlots,
+			comboDiscounts,
+			activeDiscountCampaigns,
+			holidayByDate,
+			room.id,
+			room.roomType,
+		],
 	);
 
 	useEffect(() => {
@@ -327,7 +344,15 @@ export default function BookingWidget({ room }: { room: Room }) {
 
 	const comboSummary = getComboNotification(selectedPricingSlots.length, pricing.comboPercent);
 	const savingsBadgeLabel = getSavingsBadgeLabel(pricing);
-	const selectedDateDisplay = selectedDate ? new Date(`${selectedDate}T00:00:00`).toLocaleDateString('vi-VN') : '';
+	const sortedSelectedDates = [...selectedDates].sort((a, b) => a.localeCompare(b));
+	const selectedDateDisplay =
+		sortedSelectedDates.length === 0
+			? ''
+			: sortedSelectedDates.length === 1
+				? new Date(`${sortedSelectedDates[0]}T00:00:00`).toLocaleDateString('vi-VN')
+				: `${new Date(`${sortedSelectedDates[0]}T00:00:00`).toLocaleDateString('vi-VN')} - ${new Date(
+					`${sortedSelectedDates[sortedSelectedDates.length - 1]}T00:00:00`,
+				).toLocaleDateString('vi-VN')} (${sortedSelectedDates.length} ngày)`;
 	const selectedTimeRange = selectedPricingSlots.length > 0
 		? `${selectedPricingSlots[0]?.startTime} - ${selectedPricingSlots[selectedPricingSlots.length - 1]?.endTime}`
 		: '';
@@ -514,24 +539,13 @@ export default function BookingWidget({ room }: { room: Room }) {
 				</div>
 			</div>
 
-			<div className="flex flex-wrap items-center justify-center gap-1.5 py-1.5 px-3 bg-stone-50 border-t border-stone-200 text-[10px] text-stone-500">
-				{isLoadingComboDiscounts ? (
-					<span>Đang tải ưu đãi combo...</span>
-				) : comboDiscounts.length > 0 ? (
-					<>
-						<span>Ưu đãi combo:</span>
-						{[...comboDiscounts]
-							.sort((a, b) => a.minSlots - b.minSlots)
-							.map((tier, index) => (
-								<span key={`${tier.minSlots}-${index}`} className="text-green-600 font-semibold">
-									{tier.minSlots} khung → -{Math.round(toPercentValue(tier.discountPercent))}%
-									{tier.flatDiscount > 0 ? ` và -${toKDisplay(tier.flatDiscount)}` : ''}
-								</span>
-							))}
-					</>
-				) : (
-					<span>Chưa có ưu đãi combo.</span>
-				)}
+			<div className="bg-stone-50 border-t border-stone-200 px-3 pb-2">
+				<BookingInfoBanner
+					comboDiscounts={comboDiscounts}
+					activeDiscountPrograms={activeDiscountCampaigns}
+					isLoading={isLoadingComboDiscounts}
+					isLoadingActiveDiscountPrograms={isLoadingActiveDiscountCampaigns}
+				/>
 			</div>
 
 			{selectedSlots.size > 0 && (
@@ -540,18 +554,6 @@ export default function BookingWidget({ room }: { room: Room }) {
 					animate={{ opacity: 1, height: 'auto' }}
 					className="border-t border-stone-200 p-3"
 				>
-					<div className="mb-3 border border-stone-200 rounded-lg bg-stone-50 p-3">
-						<p className="text-xs text-stone-500">
-							Phòng: <span className="text-stone-700 font-semibold">{room.name}</span>
-						</p>
-						<p className="text-xs text-stone-500 mt-1">
-							Ngày: <span className="text-stone-700 font-semibold">{selectedDateDisplay || 'N/A'}</span>
-						</p>
-						<p className="text-xs text-stone-500 mt-1">
-							Khung giờ: <span className="text-stone-700 font-semibold">{selectedTimeRange || 'N/A'} ({selectedSlots.size} slot)</span>
-						</p>
-					</div>
-
 					<div className="flex justify-between items-center mb-2">
 						<span className="text-xs text-stone-500">
 							Đã chọn:{' '}
@@ -571,17 +573,22 @@ export default function BookingWidget({ room }: { room: Room }) {
 					) : null}
 
 					<div className="mb-3 bg-stone-50 border border-stone-200 rounded-lg overflow-hidden">
-						{selectedPricingSlots.map((slot) => (
-							<div key={slot.key} className="px-3 py-1.5 flex justify-between items-center">
-								<span className="text-xs text-stone-500">{slot.startTime} - {slot.endTime}</span>
-								<span className="text-xs text-stone-700">{toKDisplay(slot.price)}</span>
+						{isPricingConfigLoading && (
+							<div className="px-3 py-1.5 text-[11px] text-stone-500 border-b border-stone-200">
+								Đang cập nhật giá tạm tính...
 							</div>
-						))}
+						)}
 
 						<div className="px-3 py-1.5 flex justify-between items-center border-t border-stone-200">
 							<span className="text-xs text-stone-500">Giá gốc</span>
 							<span className="text-xs text-stone-700">{toKDisplay(pricing.basePrice)}</span>
 						</div>
+						{pricing.holidaySurchargeAmount > 0 && (
+							<div className="px-3 py-1.5 flex justify-between items-center">
+								<span className="text-xs text-amber-700">Phụ thu ngày lễ</span>
+								<span className="text-xs text-amber-700">+{toKDisplay(pricing.holidaySurchargeAmount)}</span>
+							</div>
+						)}
 						{pricing.programDiscountAmount > 0 && (
 							<div className="px-3 py-1.5 flex justify-between items-center">
 								<span className="text-xs text-green-600">
@@ -592,7 +599,11 @@ export default function BookingWidget({ room }: { room: Room }) {
 						)}
 						{pricing.comboDiscountAmount > 0 && (
 							<div className="px-3 py-1.5 flex justify-between items-center">
-								<span className="text-xs text-green-600">Combo liên tiếp (-{Math.round(pricing.comboPercent)}%)</span>
+								<span className="text-xs text-green-600">
+									{pricing.comboPercent > 0
+										? `Combo liên tiếp (-${Math.round(pricing.comboPercent)}%)`
+										: 'Giảm giá combo'}
+								</span>
 								<span className="text-xs text-green-600">-{toKDisplay(pricing.comboDiscountAmount)}</span>
 							</div>
 						)}
@@ -645,3 +656,4 @@ export default function BookingWidget({ room }: { room: Room }) {
 		</Card>
 	);
 }
+

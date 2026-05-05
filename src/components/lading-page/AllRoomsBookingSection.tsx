@@ -1,18 +1,19 @@
 'use client';
 
-import { useActiveDiscountPrograms } from '@/hooks/useActiveDiscountPrograms';
+import { useActiveDiscountCampaigns } from '@/hooks/useActiveDiscountCampaigns';
 import { useComboDiscounts } from '@/hooks/useComboDiscounts';
+import { useHolidaySurchargeByDates } from '@/hooks/useHolidaySurchargeByDates';
 import { useRooms } from '@/hooks/useRooms';
 import { useRoomsAvailability } from '@/hooks/useRoomsAvailability';
 import { useRoomsTimeSlots } from '@/hooks/useRoomsTimeSlots';
 import { useSSEAvailability } from '@/hooks/useSSEAvailability';
 import { buildBookingMessage } from '@/lib/buildBookingMessage';
-import { calculatePricing, getComboNotification } from '@/lib/pricingUtils';
+import { calculatePricing } from '@/lib/pricingUtils';
 import { applySlotSelection, getSelectionContext, LinearSelectableSlot, parseSlotKey } from '@/lib/slotSelection';
 import { useAvailabilityStore } from '@/store/availabilityStore';
 import { useBookingUIStore } from '@/store/bookingUIStore';
-import { TimeSlot } from '@/types/room';
 import { PricingSelectedSlot } from '@/types/pricing';
+import { TimeSlot } from '@/types/room';
 import { motion } from 'framer-motion';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -122,7 +123,6 @@ export default function AllRoomsBookingSection() {
 
 	const selectionContext = useMemo(() => getSelectionContext(selectedSlots), [selectedSlots]);
 	const selectedRoomId = selectionContext?.roomId ?? null;
-	const selectedDate = selectionContext?.date ?? null;
 
 	const selectedRoom = useMemo(
 		() => rooms?.find((room) => room.id === selectedRoomId) ?? null,
@@ -130,7 +130,10 @@ export default function AllRoomsBookingSection() {
 	);
 
 	const { data: comboDiscounts = [], isLoading: isLoadingComboDiscounts } = useComboDiscounts();
-	const { data: activeDiscountPrograms = [] } = useActiveDiscountPrograms(selectedRoomId, selectedDate);
+	const {
+		data: activeDiscountCampaigns = [],
+		isLoading: isLoadingActiveDiscountCampaigns,
+	} = useActiveDiscountCampaigns();
 
 	const selectedPricingSlots = useMemo((): PricingSelectedSlot[] => {
 		if (!selectedRoomId || selectedSlots.size === 0) return [];
@@ -167,15 +170,35 @@ export default function AllRoomsBookingSection() {
 			.map(({ index, ...slot }) => slot);
 	}, [selectedRoomId, selectedSlots, slotPrices, roomTimeSlotsMap, roomAvailabilityMap, pagedDates]); // eslint-disable-line react-hooks/exhaustive-deps
 
+	const selectedDates = useMemo(
+		() => Array.from(new Set(selectedPricingSlots.map((slot) => slot.date))),
+		[selectedPricingSlots],
+	);
+
+	const { data: holidayByDate, isLoading: isLoadingHolidayByDate } =
+		useHolidaySurchargeByDates(selectedDates);
+	const isPricingConfigLoading =
+		isLoadingComboDiscounts ||
+		isLoadingActiveDiscountCampaigns ||
+		isLoadingHolidayByDate;
+
 	const pricing = useMemo(
 		() => calculatePricing({
 			selectedSlots: selectedPricingSlots,
 			comboDiscounts,
-			activePrograms: activeDiscountPrograms,
+			activePrograms: activeDiscountCampaigns,
+			holidayByDate,
 			roomId: selectedRoomId ?? '',
 			roomType: selectedRoom?.roomType ?? null,
 		}),
-		[selectedPricingSlots, comboDiscounts, activeDiscountPrograms, selectedRoomId, selectedRoom?.roomType],
+		[
+			selectedPricingSlots,
+			comboDiscounts,
+			activeDiscountCampaigns,
+			holidayByDate,
+			selectedRoomId,
+			selectedRoom?.roomType,
+		],
 	);
 
 	useEffect(() => {
@@ -287,18 +310,6 @@ export default function AllRoomsBookingSection() {
 		});
 	}, [rooms, roomTimeSlotsMap]);
 
-	const selectedDateDisplay = selectedDate
-		? new Date(`${selectedDate}T00:00:00`).toLocaleDateString('vi-VN')
-		: '';
-	const selectedTimeRange = selectedPricingSlots.length > 0
-		? `${selectedPricingSlots[0]?.startTime} - ${selectedPricingSlots[selectedPricingSlots.length - 1]?.endTime}`
-		: '';
-	const selectedSlotItems = selectedPricingSlots.map((slot) => ({
-		label: `${slot.startTime} - ${slot.endTime}`,
-		price: slot.price,
-	}));
-	const comboNotification = getComboNotification(selectedPricingSlots.length, pricing.comboPercent);
-
 	return (
 		<section id="booking-table" className="py-12 md:py-20">
 			<div className="container mx-auto px-4 max-w-[1400px]">
@@ -334,19 +345,17 @@ export default function AllRoomsBookingSection() {
 					<BookingInfoBanner
 						comboDiscounts={comboDiscounts}
 						isLoading={isLoadingComboDiscounts}
+						activeDiscountPrograms={activeDiscountCampaigns}
+						isLoadingActiveDiscountPrograms={isLoadingActiveDiscountCampaigns}
 					/>
 
 					<div className="mt-4 flex justify-end">
 						<BookingSummaryCard
 							selectedSlots={selectedSlots}
 							pricing={pricing}
+							isPricingLoading={isPricingConfigLoading}
 							isCopied={isCopied}
 							onBookNow={handleBookNow}
-							roomName={selectedRoom?.name ?? ''}
-							selectedDate={selectedDateDisplay}
-							selectedTimeRange={selectedTimeRange}
-							slotItems={selectedSlotItems}
-							comboNotification={comboNotification}
 						/>
 					</div>
 
@@ -357,12 +366,9 @@ export default function AllRoomsBookingSection() {
 			<MobileBookingBar
 				selectedSlots={selectedSlots}
 				pricing={pricing}
+				isPricingLoading={isPricingConfigLoading}
 				isCopied={isCopied}
 				onBookNow={handleBookNow}
-				roomName={selectedRoom?.name ?? ''}
-				selectedDate={selectedDateDisplay}
-				selectedTimeRange={selectedTimeRange}
-				comboNotification={comboNotification}
 			/>
 		</section>
 	);

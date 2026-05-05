@@ -79,9 +79,9 @@ export function applySlotSelection({
 		.map((key) => byKey.get(key))
 		.filter((slot): slot is LinearSelectableSlot => Boolean(slot));
 	const activeRoomId = selectedMeta[0]?.roomId;
-	const activeDate = selectedMeta[0]?.date;
 
-	if (!activeRoomId || !activeDate || clicked.roomId !== activeRoomId || clicked.date !== activeDate) {
+	// Allow multi-day selection as long as slots stay consecutive in the same room.
+	if (!activeRoomId || clicked.roomId !== activeRoomId) {
 		const next = new Set([clickedKey]);
 		return { selectedSlots: next, slotPrices: toSlotPrices(next, byKey) };
 	}

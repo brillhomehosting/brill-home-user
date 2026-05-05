@@ -1,5 +1,5 @@
 import { bookingApi } from "@/api/bookingApiService";
-import type { ComboDiscountTier } from "@/types/pricing";
+import type { ComboDiscountApiItem, ComboDiscountTier } from "@/types/pricing";
 import { useQuery } from "@tanstack/react-query";
 
 function toPercentValue(value: number): number {
@@ -13,17 +13,25 @@ export function useComboDiscounts() {
 		queryFn: async (): Promise<ComboDiscountTier[]> => {
 			const response = await bookingApi.fetchComboDiscounts();
 			if (!response.success) {
-				throw new Error(response.message || "Failed to fetch combo discounts");
+				throw new Error(
+					response.message || "Failed to fetch combo discounts",
+				);
 			}
 
 			return (response.data || [])
-				.map((tier) => ({
+				.filter(
+					(tier: ComboDiscountApiItem) =>
+						tier.isActive && !tier.isDeleted,
+				)
+				.map((tier: ComboDiscountApiItem) => ({
 					minSlots: tier.minSlots,
-					discountPercent: toPercentValue(tier.discountPercent),
-					flatDiscount: tier.flatDiscount,
+					discountPercent: toPercentValue(tier.percentageDiscount),
+					flatDiscount: tier.flatDiscount ?? 0,
 				}))
+				.filter((tier) => tier.minSlots > 0)
 				.sort((a, b) => b.minSlots - a.minSlots);
 		},
 		staleTime: 1000 * 60 * 5,
+		refetchOnWindowFocus: false,
 	});
 }
