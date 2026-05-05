@@ -1,13 +1,18 @@
 'use client';
 
+import { useActiveDiscountCampaigns } from '@/hooks/useActiveDiscountCampaigns';
+import { useComboDiscounts } from '@/hooks/useComboDiscounts';
+import { useHolidaySurchargeByDates } from '@/hooks/useHolidaySurchargeByDates';
 import { useRooms } from '@/hooks/useRooms';
 import { useRoomsAvailability } from '@/hooks/useRoomsAvailability';
 import { useRoomsTimeSlots } from '@/hooks/useRoomsTimeSlots';
 import { useSSEAvailability } from '@/hooks/useSSEAvailability';
 import { buildBookingMessage } from '@/lib/buildBookingMessage';
-import { calculatePricing, isInDiscountProgram } from '@/lib/pricingUtils';
+import { calculatePricing } from '@/lib/pricingUtils';
+import { applySlotSelection, getSelectionContext, LinearSelectableSlot, parseSlotKey } from '@/lib/slotSelection';
 import { useAvailabilityStore } from '@/store/availabilityStore';
 import { useBookingUIStore } from '@/store/bookingUIStore';
+import { PricingSelectedSlot } from '@/types/pricing';
 import { TimeSlot } from '@/types/room';
 import { motion } from 'framer-motion';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -21,11 +26,12 @@ import BookingTableHeader from './booking/BookingTableHeader';
 import MobileBookingBar from './booking/MobileBookingBar';
 import { formatDate, generateDates } from './booking/bookingUtils';
 
+type IndexedPricingSlot = PricingSelectedSlot & { index: number };
+
 export default function AllRoomsBookingSection() {
 	const { data: rooms, isLoading } = useRooms();
 	const [currentDatePage, setCurrentDatePage] = useState(0);
 	const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set());
-	const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
 	const [slotPrices, setSlotPrices] = useState<Map<string, number>>(new Map());
 	const [isCopied, setIsCopied] = useState(false);
 	const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -51,15 +57,12 @@ export default function AllRoomsBookingSection() {
 	const startDate = formatDate(dates[0] || new Date());
 	const endDate = formatDate(dates[dates.length - 1] || new Date());
 
-	// Use new centralized availability API
 	const { data: roomAvailabilityMap, isLoading: isLoadingAvailability } = useRoomsAvailability(startDate, endDate);
 	const { data: roomTimeSlotsApiMap } = useRoomsTimeSlots(rooms);
 
-	// SSE: subscribe to all room IDs for realtime updates
 	const allRoomIds = useMemo(() => (rooms || []).map(r => r.id), [rooms]);
 	useSSEAvailability(allRoomIds);
 
-	// Read slot status from Zustand store
 	const getSlotStatus = useAvailabilityStore(s => s.getSlotStatus);
 
 	const roomTimeSlotsMap = useMemo(() => {
@@ -88,13 +91,12 @@ export default function AllRoomsBookingSection() {
 		return map;
 	}, [rooms, roomAvailabilityMap]);
 
-	// Helper to flatten all slots for a specific room into a linear list (sorted by time)
-	const getLinearSlots = (roomId: string) => {
+	const getLinearSlots = (roomId: string): LinearSelectableSlot[] => {
 		const timeSlots = roomTimeSlotsMap.get(roomId) || [];
 		if (!timeSlots.length) return [];
 
 		const availabilityData = roomAvailabilityMap.get(roomId);
-		const linearList: { key: string; price: number; isAvailable: boolean; date: Date; slotId: string }[] = [];
+		const linearList: LinearSelectableSlot[] = [];
 
 		pagedDates.forEach(date => {
 			const dateStr = formatDate(date);
@@ -102,17 +104,16 @@ export default function AllRoomsBookingSection() {
 
 			timeSlots.forEach(slot => {
 				const slotStatus = dayData?.timeSlots?.find(s => s?.timeSlot?.id === slot.id);
-				// Use Zustand store for realtime status
 				const storeStatus = getSlotStatus(roomId, dateStr, slot.id);
-				const isAvailable = storeStatus === 'AVAILABLE';
 				const dynamicPrice = slotStatus?.timeSlot?.price ?? slot.price;
 
 				linearList.push({
 					key: `${roomId}::${dateStr}::${slot.id}`,
+					roomId,
+					date: dateStr,
+					slotId: slot.id,
 					price: dynamicPrice,
-					isAvailable: isAvailable,
-					date: date,
-					slotId: slot.id
+					isAvailable: storeStatus === 'AVAILABLE',
 				});
 			});
 		});
@@ -120,141 +121,122 @@ export default function AllRoomsBookingSection() {
 		return linearList;
 	};
 
-	const pricing = useMemo(
-		() => calculatePricing(slotPrices, selectedSlots),
-		[slotPrices, selectedSlots],
+	const selectionContext = useMemo(() => getSelectionContext(selectedSlots), [selectedSlots]);
+	const selectedRoomId = selectionContext?.roomId ?? null;
+
+	const selectedRoom = useMemo(
+		() => rooms?.find((room) => room.id === selectedRoomId) ?? null,
+		[rooms, selectedRoomId],
 	);
 
-	const handleSlotClick = (roomId: string, _date: Date, _slotId: string, _price: number) => {
-		if (selectedRoomId && selectedRoomId !== roomId) {
-			const clickedKey = `${roomId}::${formatDate(_date)}::${_slotId}`;
-			setSelectedRoomId(roomId);
-			setSelectedSlots(new Set([clickedKey]));
-			setSlotPrices(new Map([[clickedKey, _price]]));
-			return;
-		}
+	const { data: comboDiscounts = [], isLoading: isLoadingComboDiscounts } = useComboDiscounts();
+	const {
+		data: activeDiscountCampaigns = [],
+		isLoading: isLoadingActiveDiscountCampaigns,
+	} = useActiveDiscountCampaigns();
 
-		if (!selectedRoomId) {
-			setSelectedRoomId(roomId);
-		}
+	const selectedPricingSlots = useMemo((): PricingSelectedSlot[] => {
+		if (!selectedRoomId || selectedSlots.size === 0) return [];
 
-		const clickedKey = `${roomId}::${formatDate(_date)}::${_slotId}`;
+		const linearSlots = getLinearSlots(selectedRoomId);
+		const indexByKey = new Map(linearSlots.map((slot, index) => [slot.key, index]));
+		const priceByKey = new Map(linearSlots.map((slot) => [slot.key, slot.price]));
+		const slotMap = new Map((roomTimeSlotsMap.get(selectedRoomId) || []).map((slot) => [slot.id, slot]));
+
+		return Array.from(selectedSlots)
+			.map((slotKey) => {
+				const parsed = parseSlotKey(slotKey);
+				if (!parsed) return null;
+
+				const slot = slotMap.get(parsed.slotId);
+				if (!slot) return null;
+
+				const indexedSlot: IndexedPricingSlot = {
+					key: slotKey,
+					roomId: parsed.roomId,
+					date: parsed.date,
+					slotId: parsed.slotId,
+					startTime: slot.startTime,
+					endTime: slot.endTime,
+					price: slotPrices.get(slotKey) ?? priceByKey.get(slotKey) ?? slot.price,
+					isOvernight: slot.isOvernight,
+					index: indexByKey.get(slotKey) ?? Number.MAX_SAFE_INTEGER,
+				};
+
+				return indexedSlot;
+			})
+			.filter((slot): slot is IndexedPricingSlot => Boolean(slot))
+			.sort((a, b) => a.index - b.index)
+			.map(({ index, ...slot }) => slot);
+	}, [selectedRoomId, selectedSlots, slotPrices, roomTimeSlotsMap, roomAvailabilityMap, pagedDates]); // eslint-disable-line react-hooks/exhaustive-deps
+
+	const selectedDates = useMemo(
+		() => Array.from(new Set(selectedPricingSlots.map((slot) => slot.date))),
+		[selectedPricingSlots],
+	);
+
+	const { data: holidayByDate, isLoading: isLoadingHolidayByDate } =
+		useHolidaySurchargeByDates(selectedDates);
+	const isPricingConfigLoading =
+		isLoadingComboDiscounts ||
+		isLoadingActiveDiscountCampaigns ||
+		isLoadingHolidayByDate;
+
+	const pricing = useMemo(
+		() => calculatePricing({
+			selectedSlots: selectedPricingSlots,
+			comboDiscounts,
+			activePrograms: activeDiscountCampaigns,
+			holidayByDate,
+			roomId: selectedRoomId ?? '',
+			roomType: selectedRoom?.roomType ?? null,
+		}),
+		[
+			selectedPricingSlots,
+			comboDiscounts,
+			activeDiscountCampaigns,
+			holidayByDate,
+			selectedRoomId,
+			selectedRoom?.roomType,
+		],
+	);
+
+	useEffect(() => {
+		setSelectedSlots(new Set());
+		setSlotPrices(new Map());
+	}, [currentDatePage]);
+
+	const handleSlotClick = (roomId: string, date: Date, slotId: string) => {
 		const linearSlots = getLinearSlots(roomId);
-		const clickedSlotIndex = linearSlots.findIndex(s => s.key === clickedKey);
-
-		if (clickedSlotIndex === -1) return;
-
-		setSelectedSlots(prev => {
-			const newSet = new Set(prev);
-
-			if (newSet.has(clickedKey)) {
-				const selectedIndices = linearSlots
-					.map((s, i) => newSet.has(s.key) ? i : -1)
-					.filter(i => i !== -1);
-
-				const minIdx = Math.min(...selectedIndices);
-				const maxIdx = Math.max(...selectedIndices);
-
-				if (newSet.size === 1) {
-					newSet.clear();
-					setSelectedRoomId(null);
-					setSlotPrices(new Map());
-					return newSet;
-				}
-
-				if (clickedSlotIndex === minIdx || clickedSlotIndex === maxIdx) {
-					newSet.delete(clickedKey);
-					setSlotPrices(prevPrices => {
-						const newPrices = new Map(prevPrices);
-						newPrices.delete(clickedKey);
-						return newPrices;
-					});
-					return newSet;
-				}
-
-				const remainingIndices = selectedIndices.filter(i => i < clickedSlotIndex);
-				const newSetReset = new Set<string>();
-				const newPricesReset = new Map<string, number>();
-
-				remainingIndices.forEach(idx => {
-					const s = linearSlots[idx];
-					if (s) {
-						newSetReset.add(s.key);
-						newPricesReset.set(s.key, s.price);
-					}
-				});
-
-				setSlotPrices(newPricesReset);
-
-				if (newSetReset.size === 0) {
-					setSelectedRoomId(null);
-				}
-
-				return newSetReset;
-			}
-
-			if (newSet.size === 0) {
-				newSet.add(clickedKey);
-				setSlotPrices(new Map([[clickedKey, _price]]));
-				return newSet;
-			}
-
-			const selectedIndices = linearSlots
-				.map((s, i) => newSet.has(s.key) ? i : -1)
-				.filter(i => i !== -1);
-			const minIdx = Math.min(...selectedIndices);
-			const maxIdx = Math.max(...selectedIndices);
-
-			const isAdjacent = clickedSlotIndex === minIdx - 1 || clickedSlotIndex === maxIdx + 1;
-
-			if (isAdjacent) {
-				newSet.add(clickedKey);
-				setSlotPrices(prev => {
-					const newPrices = new Map(prev);
-					newPrices.set(clickedKey, _price);
-					return newPrices;
-				});
-			} else {
-				newSet.clear();
-				newSet.add(clickedKey);
-				setSlotPrices(new Map([[clickedKey, _price]]));
-			}
-
-			return newSet;
+		const clickedKey = `${roomId}::${formatDate(date)}::${slotId}`;
+		const result = applySlotSelection({
+			linearSlots,
+			selectedSlots,
+			clickedKey,
 		});
+
+		setSelectedSlots(result.selectedSlots);
+		setSlotPrices(result.slotPrices);
 	};
 
-	const selectedRoom = rooms?.find(r => r.id === selectedRoomId);
-	const showDiscountBanner = pagedDates.some(d => isInDiscountProgram(formatDate(d)));
-
 	const buildMessengerMessage = () => {
-		if (!selectedRoom || selectedSlots.size === 0) return '';
-
-		const staticSlots = roomTimeSlotsMap.get(selectedRoomId!) || [];
-
-		const slotsInfo = Array.from(selectedSlots).map(slotKey => {
-			const parts = slotKey.split('::');
-			const [, dateStr, slotId] = parts;
-			const date = new Date(dateStr + 'T00:00:00');
-			const price = slotPrices.get(slotKey);
-
-			const timeSlot = staticSlots.find(s => s.id === slotId);
-			const timeRange = timeSlot ? `${timeSlot.startTime} - ${timeSlot.endTime}` : '';
-
-			return {
-				date: date.toLocaleDateString('vi-VN'),
-				timeRange,
-				price: price ? `${price / 1000}k` : ''
-			};
-		});
+		if (!selectedRoom || selectedPricingSlots.length === 0) return '';
 
 		const groupedByDate: Record<string, { timeRange: string; price: string }[]> = {};
-		slotsInfo.forEach(slot => {
-			if (!groupedByDate[slot.date]) groupedByDate[slot.date] = [];
-			groupedByDate[slot.date]!.push({ timeRange: slot.timeRange, price: slot.price });
+		selectedPricingSlots.forEach(slot => {
+			const displayDate = new Date(`${slot.date}T00:00:00`).toLocaleDateString('vi-VN');
+			if (!groupedByDate[displayDate]) groupedByDate[displayDate] = [];
+			groupedByDate[displayDate]!.push({
+				timeRange: `${slot.startTime} - ${slot.endTime}`,
+				price: `${Math.round(slot.price / 1000)}k`,
+			});
 		});
 
-		return buildBookingMessage({ roomName: selectedRoom.name, groupedByDate, totalAmount: pricing.totalAmount });
+		return buildBookingMessage({
+			roomName: selectedRoom.name,
+			groupedByDate,
+			totalAmount: pricing.totalAmount,
+		});
 	};
 
 	const handleBookNow = useCallback(async () => {
@@ -306,7 +288,7 @@ export default function AllRoomsBookingSection() {
 				window.open(`https://m.me/${contactData.messengerId}`, '_blank');
 			}
 		}
-	}, [selectedRoomId, selectedSlots, isCopied, buildMessengerMessage, contactData.messengerId]);  // eslint-disable-line react-hooks/exhaustive-deps
+	}, [selectedRoomId, selectedSlots, isCopied, pricing.totalAmount, selectedPricingSlots, selectedRoom, contactData.messengerId]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	const sortedRooms = useMemo(() => {
 		if (!rooms) return [];
@@ -339,33 +321,39 @@ export default function AllRoomsBookingSection() {
 					onNextPage={() => setCurrentDatePage(prev => Math.min(totalPages - 1, prev + 1))}
 				/>
 
-					<motion.div
-						initial={{ opacity: 0, y: 20 }}
-						whileInView={{ opacity: 1, y: 0 }}
-						viewport={{ once: true }}
-						transition={{ delay: 0.1 }}
-					>
-						<div className="mb-4">
-							<BookingLegend />
-						</div>
+				<motion.div
+					initial={{ opacity: 0, y: 20 }}
+					whileInView={{ opacity: 1, y: 0 }}
+					viewport={{ once: true }}
+					transition={{ delay: 0.1 }}
+				>
+					<div className="mb-4">
+						<BookingLegend />
+					</div>
 
-						<BookingCalendarTable
-							dates={dates}
-							sortedRooms={sortedRooms}
-							roomTimeSlotsMap={roomTimeSlotsMap}
+					<BookingCalendarTable
+						dates={dates}
+						sortedRooms={sortedRooms}
+						roomTimeSlotsMap={roomTimeSlotsMap}
 						roomTimeSlotsApiMap={roomTimeSlotsApiMap}
 						selectedSlots={selectedSlots}
 						onSlotClick={handleSlotClick}
-							isLoading={isLoading}
-							isLoadingAvailability={isLoadingAvailability}
-						/>
+						isLoading={isLoading}
+						isLoadingAvailability={isLoadingAvailability}
+					/>
 
-						<BookingInfoBanner showDiscountBanner={showDiscountBanner} />
+					<BookingInfoBanner
+						comboDiscounts={comboDiscounts}
+						isLoading={isLoadingComboDiscounts}
+						activeDiscountPrograms={activeDiscountCampaigns}
+						isLoadingActiveDiscountPrograms={isLoadingActiveDiscountCampaigns}
+					/>
 
-						<div className="mt-4 flex justify-end">
-							<BookingSummaryCard
-								selectedSlots={selectedSlots}
-								pricing={pricing}
+					<div className="mt-4 flex justify-end">
+						<BookingSummaryCard
+							selectedSlots={selectedSlots}
+							pricing={pricing}
+							isPricingLoading={isPricingConfigLoading}
 							isCopied={isCopied}
 							onBookNow={handleBookNow}
 						/>
@@ -378,6 +366,7 @@ export default function AllRoomsBookingSection() {
 			<MobileBookingBar
 				selectedSlots={selectedSlots}
 				pricing={pricing}
+				isPricingLoading={isPricingConfigLoading}
 				isCopied={isCopied}
 				onBookNow={handleBookNow}
 			/>

@@ -1,7 +1,6 @@
 'use client';
 
-import { WEEKDAY_SLOT_DISCOUNT } from '@/constants/pricing';
-import { isEligibleForWeeklyDiscount, toKDisplay } from '@/lib/pricingUtils';
+import { toKDisplay } from '@/lib/pricingUtils';
 import { useAvailabilityStore } from '@/store/availabilityStore';
 import { Room, TimeSlot } from '@/types/room';
 import type { SlotStatus } from '@/types/timeslot';
@@ -222,7 +221,6 @@ export default function BookingCalendarTable({
 												const isSelected = selectedSlots.has(slotKey);
 												const dateStr = formatDate(date);
 												const isPastDateRow = isDateBeforeToday(date);
-												const isWeeklyDiscount = isEligibleForWeeklyDiscount(dateStr);
 
 												// Use Zustand store for realtime status
 												const slotStatus = getStoreSlotStatus(room.id, dateStr, slot.id);
@@ -264,13 +262,7 @@ export default function BookingCalendarTable({
 															) : slotStatus === 'BOOKED' ? (
 																isPastDateRow ? null : <span className="text-[10px] font-semibold">Đã đặt</span>
 															) : !isPastDateRow && isAvailable && !isEndPast ? (
-																<>
-																	{isWeeklyDiscount && !isSelected ? (
-																		<span className="rounded-full bg-white/95 px-2 py-[1px] text-[10px] font-bold uppercase tracking-wide text-emerald-700 shadow-sm">
-																			-{toKDisplay(WEEKDAY_SLOT_DISCOUNT)}
-																		</span>
-																	) : null}
-																</>
+																<span className="text-[11px] font-bold">{toKDisplay(dynamicPrice)}</span>
 															) : null}
 														</button>
 													</Table.Td>
