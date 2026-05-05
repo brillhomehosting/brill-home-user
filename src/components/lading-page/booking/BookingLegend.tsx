@@ -9,10 +9,14 @@ export default function BookingLegend() {
 				<div className="w-3 h-3 rounded-full bg-[#D97D48]"></div>
 				<span className="text-xs text-stone-600">Đang chọn</span>
 			</div>
-				<div className="flex items-center gap-2">
-					<div className="w-3 h-3 rounded-full bg-red-400"></div>
-					<span className="text-xs text-stone-600">Đã đặt</span>
-				</div>
+			<div className="flex items-center gap-2">
+				<div className="w-3 h-3 rounded-full bg-amber-400"></div>
+				<span className="text-xs text-stone-600">Đang giữ chỗ</span>
+			</div>
+			<div className="flex items-center gap-2">
+				<div className="w-3 h-3 rounded-full bg-red-400"></div>
+				<span className="text-xs text-stone-600">Đã đặt</span>
+			</div>
 		</div>
 	);
 }

@@ -3,10 +3,13 @@
 import messengerIcon from '@/assets/icon-messenger.png';
 import { DISCOUNT_PROGRAM_PERCENT, WEEKDAY_SLOT_DISCOUNT } from '@/constants/pricing';
 import { contactData } from '@/data/contact-data';
+import { useSSEAvailability } from '@/hooks/useSSEAvailability';
 import { useTimeSlotAvailability } from '@/hooks/useTimeSlotAvailability';
 import { buildBookingMessage } from '@/lib/buildBookingMessage';
 import { calculatePricing, getSavingsBadgeLabel, isEligibleForWeeklyDiscount, isInDiscountProgram, toKDisplay } from '@/lib/pricingUtils';
+import { useAvailabilityStore } from '@/store/availabilityStore';
 import { Room, TimeSlot } from '@/types/room';
+import type { SlotStatus } from '@/types/timeslot';
 import { Card, Table } from '@mantine/core';
 import { motion } from 'framer-motion';
 import { Check, ChevronLeft, ChevronRight, Copy } from 'lucide-react';
@@ -130,6 +133,12 @@ export default function BookingWidget({ room }: { room: Room }) {
 	// Use availability API only (contains full time slot info)
 	const { data: availabilityData, isLoading: isLoadingAvailability } = useTimeSlotAvailability(room.id, startDate, endDate);
 
+	// SSE: subscribe to this room for realtime updates
+	useSSEAvailability([room.id]);
+
+	// Read slot status from Zustand store for realtime SSE updates
+	const getStoreSlotStatus = useAvailabilityStore(s => s.getSlotStatus);
+
 	// Derive unique time slots from availability data
 	const timeSlots = useMemo(() => {
 		if (!availabilityData || !Array.isArray(availabilityData) || availabilityData.length === 0) return [];
@@ -146,14 +155,10 @@ export default function BookingWidget({ room }: { room: Room }) {
 			});
 	}, [availabilityData]);
 
-	// Get availability status for a specific timeslot on a specific date
-	const getSlotAvailability = (date: Date, slotId: string): boolean => {
-		if (!availabilityData || !Array.isArray(availabilityData)) return true;
+	// Get slot status using Zustand store (realtime via SSE)
+	const getSlotStatusForDate = (date: Date, slotId: string): SlotStatus => {
 		const dateStr = formatDate(date);
-		const dayData = availabilityData.find(d => d.date === dateStr);
-		if (!dayData) return true;
-		const slotStatus = dayData.timeSlots.find(s => s.timeSlot.id === slotId);
-		return slotStatus?.isActive ?? true;
+		return getStoreSlotStatus(room.id, dateStr, slotId);
 	};
 
 	const pricing = useMemo(
@@ -457,12 +462,13 @@ export default function BookingWidget({ room }: { room: Room }) {
 										{timeSlots.map((slot: TimeSlot) => {
 											const slotKey = `${room.id}::${formatDate(date)}::${slot.id}`;
 											const isSelected = selectedSlots.has(slotKey);
-											const isApiActive = getSlotAvailability(date, slot.id);
+											const slotStatus = getSlotStatusForDate(date, slot.id);
 											const isPastDateRow = isDateBeforeToday(date);
 											const isEndPast = isEndPastSlot(date, slot.endTime, slot.isOvernight);
-											const isActive = isApiActive && !isEndPast;
-											const canInteract = !isPastDateRow && isActive;
-											const isBooked = !isApiActive;
+											const isAvailable = slotStatus === 'AVAILABLE' && !isEndPast;
+											const canInteract = !isPastDateRow && isAvailable;
+											const isBooked = slotStatus === 'BOOKED';
+											const isHolding = slotStatus === 'HOLDING';
 												const isDiscount = isInDiscountProgram(formatDate(date));
 											const isWeeklyDiscount = isEligibleForWeeklyDiscount(formatDate(date));
 											const promoAdjustedPrice = isDiscount
@@ -489,18 +495,24 @@ export default function BookingWidget({ room }: { room: Room }) {
 																w-full h-[32px] rounded font-medium text-xs transition-all duration-200 flex flex-col items-center justify-center gap-0.5 shadow-sm
 																${isSelected
 																	? 'bg-[#D97D48] text-white shadow-md border border-[#D97D48]'
-																	: isBooked
-																		? 'bg-[#CF5B51] text-white border border-transparent cursor-not-allowed shadow-none'
-																		: canInteract
-																			? 'bg-white text-teal-700 border border-teal-200 hover:border-teal-500 hover:shadow-md'
-																			: 'bg-white text-teal-700 border border-teal-200 cursor-not-allowed shadow-none'
+																	: isHolding
+																		? 'bg-amber-50 text-amber-700 border border-amber-300 cursor-not-allowed shadow-none'
+																		: isBooked
+																			? 'bg-[#CF5B51] text-white border border-transparent cursor-not-allowed shadow-none'
+																			: canInteract
+																				? 'bg-white text-teal-700 border border-teal-200 hover:border-teal-500 hover:shadow-md'
+																				: 'bg-white text-teal-700 border border-teal-200 cursor-not-allowed shadow-none'
 																}
 															`}
 														style={isTodayRow ? {
 															boxShadow: TODAY_SLOT_BOX_SHADOW,
 														} : undefined}
 														>
-														{!isPastDateRow && isApiActive ? (
+														{isHolding ? (
+															<span className="text-[10px] font-semibold">Đang giữ</span>
+														) : isBooked && !isPastDateRow ? (
+															<span className="text-[10px] font-semibold">Đã đặt</span>
+														) : !isPastDateRow && isAvailable ? (
 															<span className="font-bold">{priceInK}k</span>
 														) : null}
 														</button>
@@ -524,6 +536,10 @@ export default function BookingWidget({ room }: { room: Room }) {
 				<div className="flex items-center gap-1.5">
 					<div className="w-3 h-3 rounded-full bg-[#D97D48]"></div>
 					<span className="text-[10px] text-stone-600">Đang chọn</span>
+				</div>
+				<div className="flex items-center gap-1.5">
+					<div className="w-3 h-3 rounded-full bg-amber-400"></div>
+					<span className="text-[10px] text-stone-600">Đang giữ</span>
 				</div>
 				<div className="flex items-center gap-1.5">
 					<div className="w-3 h-3 rounded-full bg-red-400"></div>

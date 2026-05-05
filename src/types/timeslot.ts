@@ -1,5 +1,8 @@
 import { ApiResponse, BaseEntity } from ".";
 
+// Slot status for availability
+export type SlotStatus = 'AVAILABLE' | 'HOLDING' | 'BOOKED';
+
 // TimeSlot types for availability
 export interface TimeSlot extends BaseEntity {
 	roomId: string;
@@ -11,7 +14,10 @@ export interface TimeSlot extends BaseEntity {
 
 export interface TimeSlotWithStatus {
 	timeSlot: TimeSlot;
-	isActive: boolean;
+	isAvailable: boolean;
+	bookingId: string | null;
+	// Derived status: AVAILABLE when isAvailable=true, BOOKED when false, HOLDING via SSE
+	status?: SlotStatus;
 }
 
 export interface DayAvailability {
@@ -19,5 +25,22 @@ export interface DayAvailability {
 	timeSlots: TimeSlotWithStatus[];
 }
 
+// New centralized availability response
+export interface RoomAvailability {
+	roomId: string;
+	timeslots: DayAvailability[];
+}
+
+export type AvailabilityApiResponse = ApiResponse<RoomAvailability[]>;
+
+// SSE event payload
+export interface SSEAvailabilityEvent {
+	roomId: string;
+	date: string;
+	timeSlotId: string;
+	status: SlotStatus;
+}
+
+// Legacy types kept for backward compatibility
 export type RoomTimeSlotsApiResponse = ApiResponse<TimeSlot[]>;
 export type TimeSlotAvailabilityApiResponse = ApiResponse<DayAvailability[]>;

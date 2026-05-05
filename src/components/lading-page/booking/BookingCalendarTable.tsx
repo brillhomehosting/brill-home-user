@@ -2,7 +2,9 @@
 
 import { WEEKDAY_SLOT_DISCOUNT } from '@/constants/pricing';
 import { isEligibleForWeeklyDiscount, toKDisplay } from '@/lib/pricingUtils';
-import { DayAvailability, Room, TimeSlot } from '@/types/room';
+import { useAvailabilityStore } from '@/store/availabilityStore';
+import { Room, TimeSlot } from '@/types/room';
+import type { SlotStatus } from '@/types/timeslot';
 import { Card, Table } from '@mantine/core';
 import Image from 'next/image';
 import { formatDate, getDayLabel, getTimeSlotIcon, isEndPastSlot, isToday } from './bookingUtils';
@@ -12,7 +14,6 @@ interface BookingCalendarTableProps {
 	dates: Date[];
 	sortedRooms: Room[];
 	roomTimeSlotsMap: Map<string, TimeSlot[]>;
-	roomAvailabilityMap: Map<string, DayAvailability[]>;
 	roomTimeSlotsApiMap: Map<string, TimeSlot[]>;
 	selectedSlots: Set<string>;
 	onSlotClick: (roomId: string, date: Date, slotId: string, price: number) => void;
@@ -31,17 +32,51 @@ const isDateBeforeToday = (date: Date) => {
 	return compareDate < today;
 };
 
+/** Get slot style classes based on status */
+function getSlotClasses(status: SlotStatus, isSelected: boolean, canInteract: boolean, isTodayRow: boolean): {
+	className: string;
+	style?: React.CSSProperties;
+} {
+	if (isSelected) {
+		return {
+			className: 'bg-[#D97D48] text-white shadow-lg border border-[#D97D48]',
+			style: isTodayRow ? { boxShadow: TODAY_SLOT_BOX_SHADOW } : undefined,
+		};
+	}
+
+	switch (status) {
+		case 'HOLDING':
+			return {
+				className: 'bg-amber-50 text-amber-700 border border-amber-300 cursor-not-allowed shadow-none',
+			};
+		case 'BOOKED':
+			return {
+				className: 'bg-[#CF5B51] text-white border border-transparent cursor-not-allowed shadow-none',
+			};
+		case 'AVAILABLE':
+		default:
+			return {
+				className: canInteract
+					? 'bg-white text-teal-700 border border-teal-200 hover:border-teal-500 hover:shadow-md'
+					: 'bg-white text-teal-700 border border-teal-200 cursor-not-allowed shadow-none',
+				style: isTodayRow ? { boxShadow: TODAY_SLOT_BOX_SHADOW } : undefined,
+			};
+	}
+}
+
 export default function BookingCalendarTable({
 	dates,
 	sortedRooms,
 	roomTimeSlotsMap,
-	roomAvailabilityMap,
 	roomTimeSlotsApiMap,
 	selectedSlots,
 	onSlotClick,
 	isLoading,
 	isLoadingAvailability,
 }: BookingCalendarTableProps) {
+	// Read slot status from Zustand store for realtime updates
+	const getStoreSlotStatus = useAvailabilityStore(s => s.getSlotStatus);
+
 	return (
 		<Card
 			shadow="sm"
@@ -176,7 +211,6 @@ export default function BookingCalendarTable({
 										{/* Room Slots */}
 										{sortedRooms?.map((room, roomIdx) => {
 											const timeSlots = roomTimeSlotsMap.get(room.id) || [];
-											const availabilityData = roomAvailabilityMap.get(room.id);
 											const cellBg = roomIdx % 2 === 0 ? '#F5F0E8' : '#FFFFFF';
 
 											if (timeSlots.length === 0) {
@@ -189,15 +223,23 @@ export default function BookingCalendarTable({
 												const dateStr = formatDate(date);
 												const isPastDateRow = isDateBeforeToday(date);
 												const isWeeklyDiscount = isEligibleForWeeklyDiscount(dateStr);
-												const dayData = availabilityData?.find(d => d.date === dateStr);
-												const slotStatus = dayData?.timeSlots?.find(s => s?.timeSlot?.id === slot.id);
-												const isApiActive = slotStatus?.isActive ?? true;
+
+												// Use Zustand store for realtime status
+												const slotStatus = getStoreSlotStatus(room.id, dateStr, slot.id);
+
 												const isEndPast = isEndPastSlot(date, slot.endTime, slot.isOvernight);
-												const isActive = isApiActive && !isEndPast;
-												const canInteract = !isPastDateRow && isActive;
-												const isBooked = !isApiActive;
-													const baseSlotPrice = roomTimeSlotsApiMap.get(room.id)?.find(s => s.id === slot.id)?.price ?? slot.price;
+												const isAvailable = slotStatus === 'AVAILABLE';
+												const canInteract = !isPastDateRow && isAvailable && !isEndPast;
+
+												const baseSlotPrice = roomTimeSlotsApiMap.get(room.id)?.find(s => s.id === slot.id)?.price ?? slot.price;
 												const dynamicPrice = baseSlotPrice;
+
+												const { className: slotClasses, style: slotStyle } = getSlotClasses(
+													slotStatus,
+													isSelected,
+													canInteract,
+													isTodayRow,
+												);
 
 												return (
 													<Table.Td
@@ -212,23 +254,23 @@ export default function BookingCalendarTable({
 															disabled={!canInteract}
 															className={`
                                                                 relative w-full h-[36px] rounded font-medium text-sm transition-all duration-200 flex flex-col items-center justify-center gap-0.5 shadow-sm
-																${isSelected
-																	? 'bg-[#D97D48] text-white shadow-lg border border-[#D97D48]'
-																	: isBooked
-																		? 'bg-[#CF5B51] text-white border border-transparent cursor-not-allowed shadow-none'
-																		: canInteract
-																			? 'bg-white text-teal-700 border border-teal-200 hover:border-teal-500 hover:shadow-md'
-																			: 'bg-white text-teal-700 border border-teal-200 cursor-not-allowed shadow-none'
-																}
+																${slotClasses}
 	                                                            `}
-															style={isTodayRow ? {
-																boxShadow: TODAY_SLOT_BOX_SHADOW,
-															} : undefined}
+															style={slotStyle}
 														>
-															{!isPastDateRow && isActive && isWeeklyDiscount && !isSelected ? (
-																<span className="rounded-full bg-white/95 px-2 py-[1px] text-[10px] font-bold uppercase tracking-wide text-emerald-700 shadow-sm">
-																	-{toKDisplay(WEEKDAY_SLOT_DISCOUNT)}
-																</span>
+															{/* Slot content based on status */}
+															{slotStatus === 'HOLDING' ? (
+																<span className="text-[10px] font-semibold">Đang giữ</span>
+															) : slotStatus === 'BOOKED' ? (
+																isPastDateRow ? null : <span className="text-[10px] font-semibold">Đã đặt</span>
+															) : !isPastDateRow && isAvailable && !isEndPast ? (
+																<>
+																	{isWeeklyDiscount && !isSelected ? (
+																		<span className="rounded-full bg-white/95 px-2 py-[1px] text-[10px] font-bold uppercase tracking-wide text-emerald-700 shadow-sm">
+																			-{toKDisplay(WEEKDAY_SLOT_DISCOUNT)}
+																		</span>
+																	) : null}
+																</>
 															) : null}
 														</button>
 													</Table.Td>

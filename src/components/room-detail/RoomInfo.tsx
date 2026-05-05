@@ -144,7 +144,7 @@ export default function RoomInfo({ room }: { room: Room }) {
 			<div>
 				<h3 className="font-serif text-xl font-medium text-foreground mb-4">Tiện nghi có sẵn</h3>
 				<div className="flex flex-wrap gap-3">
-					{[...room.amenities]
+					{[...(room.amenities || [])]
 						.sort((a, b) => (b.isHighlight ? 1 : 0) - (a.isHighlight ? 1 : 0))
 						.map((amenity, index) => (
 							<div
