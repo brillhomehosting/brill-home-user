@@ -344,18 +344,6 @@ export default function BookingWidget({ room }: { room: Room }) {
 
 	const comboSummary = getComboNotification(selectedPricingSlots.length, pricing.comboPercent);
 	const savingsBadgeLabel = getSavingsBadgeLabel(pricing);
-	const sortedSelectedDates = [...selectedDates].sort((a, b) => a.localeCompare(b));
-	const selectedDateDisplay =
-		sortedSelectedDates.length === 0
-			? ''
-			: sortedSelectedDates.length === 1
-				? new Date(`${sortedSelectedDates[0]}T00:00:00`).toLocaleDateString('vi-VN')
-				: `${new Date(`${sortedSelectedDates[0]}T00:00:00`).toLocaleDateString('vi-VN')} - ${new Date(
-					`${sortedSelectedDates[sortedSelectedDates.length - 1]}T00:00:00`,
-				).toLocaleDateString('vi-VN')} (${sortedSelectedDates.length} ngày)`;
-	const selectedTimeRange = selectedPricingSlots.length > 0
-		? `${selectedPricingSlots[0]?.startTime} - ${selectedPricingSlots[selectedPricingSlots.length - 1]?.endTime}`
-		: '';
 
 	const isLoading = isLoadingAvailability;
 
