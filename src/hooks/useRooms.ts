@@ -29,31 +29,3 @@ export function useRoomsPaginated() {
 	});
 }
 
-// Hook to get time slot availability for a specific room
-export function useTimeSlotAvailability(
-	roomId: string | undefined,
-	startDate: string,
-	endDate: string,
-) {
-	return useQuery({
-		queryKey: ["timeSlotAvailability", roomId, startDate, endDate],
-		queryFn: async () => {
-			if (!roomId) {
-				throw new Error("Room ID is required");
-			}
-			const response = await roomsApi.fetchTimeSlotAvailability(
-				roomId,
-				startDate,
-				endDate,
-			);
-			if (!response.success) {
-				throw new Error(
-					response.message ||
-						"Failed to fetch time slot availability",
-				);
-			}
-			return response.data;
-		},
-		enabled: !!roomId && !!startDate && !!endDate,
-	});
-}

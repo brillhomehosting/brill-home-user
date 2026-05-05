@@ -3,8 +3,10 @@
 import { useRooms } from '@/hooks/useRooms';
 import { useRoomsAvailability } from '@/hooks/useRoomsAvailability';
 import { useRoomsTimeSlots } from '@/hooks/useRoomsTimeSlots';
+import { useSSEAvailability } from '@/hooks/useSSEAvailability';
 import { buildBookingMessage } from '@/lib/buildBookingMessage';
 import { calculatePricing, isInDiscountProgram } from '@/lib/pricingUtils';
+import { useAvailabilityStore } from '@/store/availabilityStore';
 import { useBookingUIStore } from '@/store/bookingUIStore';
 import { TimeSlot } from '@/types/room';
 import { motion } from 'framer-motion';
@@ -49,8 +51,16 @@ export default function AllRoomsBookingSection() {
 	const startDate = formatDate(dates[0] || new Date());
 	const endDate = formatDate(dates[dates.length - 1] || new Date());
 
-	const { data: roomAvailabilityMap, isLoading: isLoadingAvailability } = useRoomsAvailability(rooms, startDate, endDate);
+	// Use new centralized availability API
+	const { data: roomAvailabilityMap, isLoading: isLoadingAvailability } = useRoomsAvailability(startDate, endDate);
 	const { data: roomTimeSlotsApiMap } = useRoomsTimeSlots(rooms);
+
+	// SSE: subscribe to all room IDs for realtime updates
+	const allRoomIds = useMemo(() => (rooms || []).map(r => r.id), [rooms]);
+	useSSEAvailability(allRoomIds);
+
+	// Read slot status from Zustand store
+	const getSlotStatus = useAvailabilityStore(s => s.getSlotStatus);
 
 	const roomTimeSlotsMap = useMemo(() => {
 		const map = new Map<string, TimeSlot[]>();
@@ -84,7 +94,7 @@ export default function AllRoomsBookingSection() {
 		if (!timeSlots.length) return [];
 
 		const availabilityData = roomAvailabilityMap.get(roomId);
-		const linearList: { key: string; price: number; isActive: boolean; date: Date; slotId: string }[] = [];
+		const linearList: { key: string; price: number; isAvailable: boolean; date: Date; slotId: string }[] = [];
 
 		pagedDates.forEach(date => {
 			const dateStr = formatDate(date);
@@ -92,13 +102,15 @@ export default function AllRoomsBookingSection() {
 
 			timeSlots.forEach(slot => {
 				const slotStatus = dayData?.timeSlots?.find(s => s?.timeSlot?.id === slot.id);
-				const isActive = slotStatus?.isActive ?? true;
+				// Use Zustand store for realtime status
+				const storeStatus = getSlotStatus(roomId, dateStr, slot.id);
+				const isAvailable = storeStatus === 'AVAILABLE';
 				const dynamicPrice = slotStatus?.timeSlot?.price ?? slot.price;
 
 				linearList.push({
 					key: `${roomId}::${dateStr}::${slot.id}`,
 					price: dynamicPrice,
-					isActive: isActive,
+					isAvailable: isAvailable,
 					date: date,
 					slotId: slot.id
 				});
@@ -341,7 +353,6 @@ export default function AllRoomsBookingSection() {
 							dates={dates}
 							sortedRooms={sortedRooms}
 							roomTimeSlotsMap={roomTimeSlotsMap}
-						roomAvailabilityMap={roomAvailabilityMap}
 						roomTimeSlotsApiMap={roomTimeSlotsApiMap}
 						selectedSlots={selectedSlots}
 						onSlotClick={handleSlotClick}

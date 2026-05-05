@@ -160,7 +160,7 @@ const MantineRoomCard = ({ room, typeLabel, typeColor }: { room: Room, typeLabel
 
 							{/* Amenities */}
 							<Group gap="xs" mb="lg">
-								{[...room.amenities]
+								{[...(room.amenities || [])]
 									.sort((a, b) => (b.isHighlight ? 1 : 0) - (a.isHighlight ? 1 : 0))
 									.slice(0, 4)
 									.map(am => (
@@ -175,8 +175,8 @@ const MantineRoomCard = ({ room, typeLabel, typeColor }: { room: Room, typeLabel
 											</div>
 										</Tooltip>
 									))}
-								{room.amenities.length > 4 && (
-									<Text size="xs" c="dimmed" className="px-1">+{room.amenities.length - 4}</Text>
+								{(room.amenities || []).length > 4 && (
+									<Text size="xs" c="dimmed" className="px-1">+{(room.amenities || []).length - 4}</Text>
 								)}
 							</Group>
 						</div>
