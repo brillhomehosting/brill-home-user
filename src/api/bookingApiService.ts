@@ -1,4 +1,8 @@
 import type { AvailabilityApiResponse } from "@/types/timeslot";
+import type {
+	ActiveDiscountProgramsApiResponse,
+	ComboDiscountsApiResponse,
+} from "@/types/pricing";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -6,6 +10,11 @@ export interface FetchAvailabilityParams {
 	startDate: string;
 	endDate: string;
 	roomId?: string;
+}
+
+export interface FetchActiveDiscountProgramsParams {
+	roomId?: string;
+	date?: string;
 }
 
 export const bookingApi = {
@@ -25,6 +34,22 @@ export const bookingApi = {
 		}
 		const response = await fetch(
 			`${API_BASE_URL}/api/v1/bookings/availability?${searchParams.toString()}`,
+		);
+		return response.json();
+	},
+	fetchComboDiscounts: async (): Promise<ComboDiscountsApiResponse> => {
+		const response = await fetch(`${API_BASE_URL}/api/v1/discount-campaigns/active`);
+		return response.json();
+	},
+	fetchActiveDiscountPrograms: async (
+		params: FetchActiveDiscountProgramsParams,
+	): Promise<ActiveDiscountProgramsApiResponse> => {
+		const searchParams = new URLSearchParams();
+		if (params.roomId) searchParams.set("roomId", params.roomId);
+		if (params.date) searchParams.set("date", params.date);
+		const query = searchParams.toString();
+		const response = await fetch(
+			`${API_BASE_URL}/api/v1/discount-campaigns/applicable${query ? `?${query}` : ""}`,
 		);
 		return response.json();
 	},

@@ -1,29 +1,30 @@
-import { COMBO_DISCOUNTS, DISCOUNT_PROGRAM_END, DISCOUNT_PROGRAM_PERCENT, DISCOUNT_PROGRAM_START, WEEKDAY_SLOT_DISCOUNT } from '@/constants/pricing';
+import type {
+	ActiveDiscountProgram,
+	AppliedProgramDiscount,
+	ComboDiscountTier,
+	PricingPreviewBreakdown,
+	PricingSelectedSlot,
+} from "@/types/pricing";
 
-export interface PricingBreakdown {
-	basePrice: number;
-	hasDiscountProgram: boolean;
-	discountPercent: number;
-	discountAmount: number;
-	comboPercent: number;
-	comboDiscount: number;
-	weekdayDiscountAmount: number;
-	hasWeekdayDiscount: boolean;
-	totalAmount: number;
-	savings: number;
+export interface CalculatePricingParams {
+	selectedSlots: PricingSelectedSlot[];
+	comboDiscounts: ComboDiscountTier[];
+	activePrograms: ActiveDiscountProgram[];
+	roomId: string;
+	roomType?: string | null;
 }
 
-/** Returns true if the given YYYY-MM-DD string falls within the discount program range. */
-export function isInDiscountProgram(dateStr: string): boolean {
-	return dateStr >= DISCOUNT_PROGRAM_START && dateStr <= DISCOUNT_PROGRAM_END;
+function toPercentValue(value: number): number {
+	if (!Number.isFinite(value)) return 0;
+	return value <= 1 ? value * 100 : value;
 }
 
-/** Returns the combo discount percent for a given slot count (0 if no discount). */
-export function getComboPercent(slotCount: number): number {
-	for (const tier of COMBO_DISCOUNTS) {
-		if (slotCount >= tier.minSlots) return tier.percent;
-	}
-	return 0;
+function toPercentRate(value: number): number {
+	return toPercentValue(value) / 100;
+}
+
+function sumPrices(slots: PricingSelectedSlot[]): number {
+	return slots.reduce((total, slot) => total + slot.price, 0);
 }
 
 export function isWeekday(dateStr: string): boolean {
@@ -32,66 +33,144 @@ export function isWeekday(dateStr: string): boolean {
 	return day >= 1 && day <= 5;
 }
 
-export function isEligibleForWeeklyDiscount(dateStr: string): boolean {
-	return isWeekday(dateStr);
+function matchesProgram(
+	program: ActiveDiscountProgram,
+	params: CalculatePricingParams,
+	selectedDate: string,
+): boolean {
+	if (program.status !== "ACTIVE") return false;
+	if (selectedDate < program.startDate || selectedDate > program.endDate) return false;
+
+	switch (program.type) {
+		case "ALL":
+			return true;
+		case "ROOM":
+			return Boolean(program.targetRoomId && program.targetRoomId === params.roomId);
+		case "ROOM_TYPE":
+			return Boolean(program.targetRoomType && params.roomType && program.targetRoomType === params.roomType);
+		case "WEEK_DAY":
+			if (program.targetWeekDaySlot === null) return false;
+			return isWeekday(selectedDate) === program.targetWeekDaySlot;
+		case "SLOT_TYPE":
+			if (program.targetOvernightSlot === null) return false;
+			return params.selectedSlots.some((slot) => slot.isOvernight === program.targetOvernightSlot);
+		default:
+			return false;
+	}
 }
 
-/** Full pricing breakdown from raw slot prices and selected slot keys.
- *
- * Slots are split into two independent groups:
- * - Discount-program slots (dates within the program range): program % applied to their subtotal only.
- * - Combo discount is applied by total selected slot count across the booking.
- * - Weekday program discount applies once per booking if any selected slot is eligible.
- */
-export function calculatePricing(
-	slotPrices: Map<string, number>,
-	selectedSlots: Set<string>,
-): PricingBreakdown {
-	let discountProgramBasePrice = 0;
-	let basePrice = 0;
-	let hasWeekdayDiscount = false;
+function getProgramMatchingSlots(
+	program: ActiveDiscountProgram,
+	slots: PricingSelectedSlot[],
+): PricingSelectedSlot[] {
+	if (program.type === "SLOT_TYPE") {
+		if (program.targetOvernightSlot === null) return [];
+		return slots.filter((slot) => slot.isOvernight === program.targetOvernightSlot);
+	}
+	return slots;
+}
 
-	selectedSlots.forEach(slotKey => {
-		const dateStr = slotKey.split('::')[1];
-		const price = slotPrices.get(slotKey) ?? 0;
-		if (dateStr && isEligibleForWeeklyDiscount(dateStr)) {
-			hasWeekdayDiscount = true;
+function calculateProgramDiscountAmount(
+	program: ActiveDiscountProgram,
+	slots: PricingSelectedSlot[],
+): number {
+	const matchedSlots = getProgramMatchingSlots(program, slots);
+	if (matchedSlots.length === 0) return 0;
+
+	if (program.discountType === "FIXED_AMOUNT") {
+		return Math.max(0, Math.round(program.discountValue * matchedSlots.length));
+	}
+
+	const programBase = sumPrices(matchedSlots);
+	return Math.max(0, Math.round(programBase * toPercentRate(program.discountValue)));
+}
+
+function resolveBestProgram(params: CalculatePricingParams): AppliedProgramDiscount | null {
+	const selectedDate = params.selectedSlots[0]?.date;
+	if (!selectedDate) return null;
+
+	let best: AppliedProgramDiscount | null = null;
+	for (const program of params.activePrograms) {
+		if (!matchesProgram(program, params, selectedDate)) continue;
+		const discountAmount = calculateProgramDiscountAmount(program, params.selectedSlots);
+		if (discountAmount <= 0) continue;
+		if (!best || discountAmount > best.discountAmount) {
+			best = { program, discountAmount };
 		}
-		basePrice += price;
-		if (dateStr && isInDiscountProgram(dateStr)) {
-			discountProgramBasePrice += price;
-		}
+	}
+
+	return best;
+}
+
+function resolveComboTier(
+	slotCount: number,
+	comboDiscounts: ComboDiscountTier[],
+): ComboDiscountTier | null {
+	if (slotCount <= 0 || comboDiscounts.length === 0) return null;
+	const sorted = [...comboDiscounts].sort((a, b) => b.minSlots - a.minSlots);
+	return sorted.find((tier) => slotCount >= tier.minSlots) ?? null;
+}
+
+export function calculatePricing({
+	selectedSlots,
+	comboDiscounts,
+	activePrograms,
+	roomId,
+	roomType,
+}: CalculatePricingParams): PricingPreviewBreakdown {
+	if (selectedSlots.length === 0) {
+		return {
+			basePrice: 0,
+			programDiscountAmount: 0,
+			comboPercent: 0,
+			comboPercentAmount: 0,
+			comboFlatDiscount: 0,
+			comboDiscountAmount: 0,
+			totalAmount: 0,
+			savings: 0,
+			appliedProgram: null,
+			appliedComboTier: null,
+		};
+	}
+
+	const basePrice = sumPrices(selectedSlots);
+	const bestProgram = resolveBestProgram({
+		selectedSlots,
+		comboDiscounts,
+		activePrograms,
+		roomId,
+		roomType,
 	});
+	const programDiscountAmount = Math.min(basePrice, bestProgram?.discountAmount ?? 0);
+	const afterProgramPrice = Math.max(0, basePrice - programDiscountAmount);
 
-	const hasDiscountProgram = discountProgramBasePrice > 0;
+	const comboTier = resolveComboTier(selectedSlots.length, comboDiscounts);
+	const comboPercent = comboTier ? toPercentValue(comboTier.discountPercent) : 0;
+	const comboFlatDiscount = comboTier?.flatDiscount ?? 0;
+	const comboPercentAmount = Math.round(afterProgramPrice * toPercentRate(comboPercent));
+	const comboDiscountAmount = Math.min(
+		afterProgramPrice,
+		Math.max(0, comboPercentAmount + comboFlatDiscount),
+	);
 
-	// Discount program: only on discount-program-day slots
-	const discountPercent = hasDiscountProgram ? DISCOUNT_PROGRAM_PERCENT : 0;
-	const discountAmount = Math.round(discountProgramBasePrice * discountPercent);
-
-	const comboPercent = selectedSlots.size > 0 ? getComboPercent(selectedSlots.size) : 0;
-	const comboDiscount = Math.round(basePrice * comboPercent);
-	const subtotalAfterCombo = basePrice - discountAmount - comboDiscount;
-	const weekdayDiscountAmount = hasWeekdayDiscount ? Math.min(WEEKDAY_SLOT_DISCOUNT, subtotalAfterCombo) : 0;
-
-	const totalAmount = subtotalAfterCombo - weekdayDiscountAmount;
-	const savings = discountAmount + comboDiscount + weekdayDiscountAmount;
+	const totalAmount = afterProgramPrice - comboDiscountAmount;
+	const savings = programDiscountAmount + comboDiscountAmount;
 
 	return {
 		basePrice,
-		hasDiscountProgram,
-		discountPercent,
-		discountAmount,
+		programDiscountAmount,
 		comboPercent,
-		comboDiscount,
-		weekdayDiscountAmount,
-		hasWeekdayDiscount,
+		comboPercentAmount,
+		comboFlatDiscount,
+		comboDiscountAmount,
 		totalAmount,
 		savings,
+		appliedProgram: bestProgram,
+		appliedComboTier: comboTier,
 	};
 }
 
-/** Convert raw VND to display string, rounded to nearest integer. 200000 → "200k", 228650 → "229k" */
+/** Convert raw VND to display string, rounded to nearest integer. 200000 -> "200k", 228650 -> "229k" */
 export function toKDisplay(amountVND: number): string {
 	return `${Math.round(amountVND / 1000)}k`;
 }
@@ -99,18 +178,25 @@ export function toKDisplay(amountVND: number): string {
 /** Badge label for combo discount, e.g. "Combo -5%". Returns null if no discount. */
 export function comboBadgeLabel(comboPercent: number): string | null {
 	if (comboPercent <= 0) return null;
-	return `Combo -${Math.round(comboPercent * 100)}%`;
+	return `Combo -${Math.round(comboPercent)}%`;
 }
 
-export function getSavingsBadgeLabel(pricing: PricingBreakdown): string | null {
-	const hasPromo = pricing.discountPercent > 0;
-	const hasCombo = pricing.comboPercent > 0;
-	const hasWeekday = pricing.weekdayDiscountAmount > 0;
-	const activeDiscountCount = [hasPromo, hasCombo, hasWeekday].filter(Boolean).length;
+export function getSavingsBadgeLabel(pricing: PricingPreviewBreakdown): string | null {
+	const hasProgram = pricing.programDiscountAmount > 0;
+	const hasCombo = pricing.comboDiscountAmount > 0;
+	const activeDiscountCount = [hasProgram, hasCombo].filter(Boolean).length;
 
 	if (activeDiscountCount === 0) return null;
 	if (activeDiscountCount > 1) return `Nhiều ưu đãi · Tiết kiệm ${toKDisplay(pricing.savings)}`;
-	if (hasPromo) return `Khuyến mãi -${Math.round(pricing.discountPercent * 100)}%`;
-	if (hasCombo) return `Combo -${Math.round(pricing.comboPercent * 100)}%`;
-	return `ƯĐ tuần -${toKDisplay(pricing.weekdayDiscountAmount)}`;
+	if (hasProgram && pricing.appliedProgram) return pricing.appliedProgram.program.name;
+	if (hasCombo) return comboBadgeLabel(pricing.comboPercent);
+	return null;
+}
+
+export function getComboNotification(
+	slotCount: number,
+	comboPercent: number,
+): string | null {
+	if (slotCount < 2 || comboPercent <= 0) return null;
+	return `Đặt ${slotCount} khung giờ liên tiếp - Giảm ${Math.round(comboPercent)}%`;
 }
