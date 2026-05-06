@@ -1,7 +1,7 @@
 import { toKDisplay } from "@/lib/pricingUtils";
 import type { ActiveDiscountProgram, ComboDiscountTier } from "@/types/pricing";
 import { motion } from "framer-motion";
-import { Sparkles, Gift, Zap, Star } from "lucide-react";
+import { Sparkles, Zap, Star } from "lucide-react";
 
 interface BookingInfoBannerProps {
 	comboDiscounts: ComboDiscountTier[];
