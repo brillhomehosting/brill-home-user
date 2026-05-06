@@ -63,14 +63,42 @@ export default function BookingSummaryCard({
 								<span className="text-xs text-amber-700">+{toKDisplay(pricing.holidaySurchargeAmount)}</span>
 							</div>
 						)}
-						{pricing.programDiscountAmount > 0 && (
-							<div className="px-3 py-1.5 flex justify-between items-center">
-								<span className="text-xs text-green-600">
-									{pricing.appliedProgram?.program.name || 'Giảm giá chương trình'}
-								</span>
-								<span className="text-xs text-green-600">-{toKDisplay(pricing.programDiscountAmount)}</span>
-							</div>
-						)}
+						{pricing.programDiscountAmount > 0 && (() => {
+							// Group discount by program ID → hiển thị từng campaign riêng
+							const programGroups = new Map<string, { name: string; amount: number }>();
+							pricing.dailyBreakdown.forEach(day => {
+								if (day.appliedProgram && day.programDiscountAmount > 0) {
+									const id = day.appliedProgram.program.id;
+									const existing = programGroups.get(id);
+									if (existing) {
+										existing.amount += day.programDiscountAmount;
+									} else {
+										programGroups.set(id, {
+											name: day.appliedProgram.program.name,
+											amount: day.programDiscountAmount,
+										});
+									}
+								}
+							});
+
+							if (programGroups.size > 1) {
+								return Array.from(programGroups.values()).map(({ name, amount }) => (
+									<div key={name} className="px-3 py-1.5 flex justify-between items-center">
+										<span className="text-xs text-green-600">{name}</span>
+										<span className="text-xs text-green-600">-{toKDisplay(amount)}</span>
+									</div>
+								));
+							}
+
+							return (
+								<div className="px-3 py-1.5 flex justify-between items-center">
+									<span className="text-xs text-green-600">
+										{pricing.appliedProgram?.program.name || 'Giảm giá chương trình'}
+									</span>
+									<span className="text-xs text-green-600">-{toKDisplay(pricing.programDiscountAmount)}</span>
+								</div>
+							);
+						})()}
 						{pricing.comboDiscountAmount > 0 && (
 							<div className="px-3 py-1.5 flex justify-between items-center">
 								<span className="text-xs text-green-600">

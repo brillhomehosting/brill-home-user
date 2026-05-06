@@ -1,9 +1,12 @@
 'use client';
 
 import BookingWidget from '@/components/room-detail/BookingWidget';
+import BookingInfoBanner from '@/components/lading-page/booking/BookingInfoBanner';
 import RoomHero from '@/components/room-detail/RoomHero';
 import RoomInfo from '@/components/room-detail/RoomInfo';
 import { ImagePreviewModal } from '@/components/ui/ImagePreviewModal';
+import { useActiveDiscountCampaigns } from '@/hooks/useActiveDiscountCampaigns';
+import { useComboDiscounts } from '@/hooks/useComboDiscounts';
 import { useRoom } from '@/hooks/useRoom';
 import { Center, Container, Skeleton, Stack, Text } from '@mantine/core';
 import { useState } from 'react';
@@ -13,13 +16,16 @@ export default function RoomDetailClient({ roomId }: { roomId: string }) {
 	const [imageModalOpened, setImageModalOpened] = useState(false);
 	const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
+	const { data: comboDiscounts = [], isLoading: isLoadingComboDiscounts } = useComboDiscounts();
+	const { data: activeDiscountCampaigns = [], isLoading: isLoadingActiveDiscountCampaigns } = useActiveDiscountCampaigns();
+
 	// Loading state
 	if (isLoading) {
 		return (
 			<div className="min-h-screen bg-background mt-16">
 				<Container size="xl" className="py-8">
 					<Skeleton height={400} radius="md" mb="xl" />
-					<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+					<div className="grid grid-cols-1 lg:grid-cols-3 gap-2 md:gap-8">
 						<div className="lg:col-span-2">
 							<Skeleton height={50} width="60%" mb="md" />
 							<Skeleton height={20} width="40%" mb="xl" />
@@ -73,14 +79,22 @@ export default function RoomDetailClient({ roomId }: { roomId: string }) {
 
 				{/* Main Content */}
 				<Container size="xl" className="pb-16">
-					<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+					<div className="grid grid-cols-1 lg:grid-cols-3 gap-2 md:gap-8">
 						{/* Mobile: Booking Widget First */}
 						<div id="booking-widget" className="lg:hidden order-first">
 							<BookingWidget room={room} />
 						</div>
 
 						{/* Left Column - Main Content (65%) */}
-						<RoomInfo room={room} />
+						<div className="lg:col-span-2 flex flex-col gap-6 -mt-2 lg:mt-0">
+							<BookingInfoBanner 
+								comboDiscounts={comboDiscounts}
+								activeDiscountPrograms={activeDiscountCampaigns}
+								isLoading={isLoadingComboDiscounts}
+								isLoadingActiveDiscountPrograms={isLoadingActiveDiscountCampaigns}
+							/>
+							<RoomInfo room={room} />
+						</div>
 
 						{/* Right Column - Sticky Sidebar (35%) */}
 						<div className="lg:col-span-1 lg:block hidden">

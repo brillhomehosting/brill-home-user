@@ -340,6 +340,7 @@ export default function AllRoomsBookingSection() {
 						onSlotClick={handleSlotClick}
 						isLoading={isLoading}
 						isLoadingAvailability={isLoadingAvailability}
+						activeDiscountCampaigns={activeDiscountCampaigns}
 					/>
 
 					<BookingInfoBanner

@@ -1,7 +1,6 @@
 'use client';
 
 import messengerIcon from '@/assets/icon-messenger.png';
-import BookingInfoBanner from '@/components/lading-page/booking/BookingInfoBanner';
 import { contactData } from '@/data/contact-data';
 import { useActiveDiscountCampaigns } from '@/hooks/useActiveDiscountCampaigns';
 import { useComboDiscounts } from '@/hooks/useComboDiscounts';
@@ -9,7 +8,7 @@ import { useHolidaySurchargeByDates } from '@/hooks/useHolidaySurchargeByDates';
 import { useSSEAvailability } from '@/hooks/useSSEAvailability';
 import { useTimeSlotAvailability } from '@/hooks/useTimeSlotAvailability';
 import { buildBookingMessage } from '@/lib/buildBookingMessage';
-import { calculatePricing, getComboNotification, getSavingsBadgeLabel, toKDisplay } from '@/lib/pricingUtils';
+import { calculatePricing, getSavingsBadgeLabel, toKDisplay, resolveBestProgramForDate, toPercentValue } from '@/lib/pricingUtils';
 import { applySlotSelection, LinearSelectableSlot, parseSlotKey } from '@/lib/slotSelection';
 import { useAvailabilityStore } from '@/store/availabilityStore';
 import { PricingSelectedSlot } from '@/types/pricing';
@@ -253,6 +252,41 @@ export default function BookingWidget({ room }: { room: Room }) {
 		],
 	);
 
+	const getSlotBadgeText = useCallback((date: Date, slot: TimeSlot): string | null => {
+		if (!activeDiscountCampaigns || activeDiscountCampaigns.length === 0) return null;
+		const dateStr = formatDate(date);
+		const singleSlot: PricingSelectedSlot = {
+			key: 'temp',
+			roomId: room.id,
+			date: dateStr,
+			slotId: slot.id,
+			price: slot.price,
+			isOvernight: slot.isOvernight,
+			startTime: slot.startTime,
+			endTime: slot.endTime,
+		};
+
+		const bestProgram = resolveBestProgramForDate(
+			[singleSlot],
+			dateStr,
+			room.id,
+			room.roomType,
+			activeDiscountCampaigns,
+			0,
+			slot.price,
+		);
+
+		if (bestProgram && bestProgram.program) {
+			const prog = bestProgram.program;
+			if (prog.discountType === 'PERCENTAGE') {
+				return `-${Math.round(toPercentValue(prog.discountValue))}%`;
+			} else {
+				return `-${toKDisplay(prog.discountValue)}`;
+			}
+		}
+		return null;
+	}, [activeDiscountCampaigns, room.id, room.roomType]);
+
 	useEffect(() => {
 		setSelectedSlots(new Set());
 		setSlotPrices(new Map());
@@ -342,7 +376,6 @@ export default function BookingWidget({ room }: { room: Room }) {
 		}
 	}, [selectedSlots, isCopied, pricing.totalAmount, selectedPricingSlots, contactData.messengerId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-	const comboSummary = getComboNotification(selectedPricingSlots.length, pricing.comboPercent);
 	const savingsBadgeLabel = getSavingsBadgeLabel(pricing);
 
 	const isLoading = isLoadingAvailability;
@@ -392,11 +425,11 @@ export default function BookingWidget({ room }: { room: Room }) {
 						<Table.Thead>
 							<Table.Tr>
 								<Table.Th
-									className="sticky left-0 z-30 p-0! min-w-[60px]"
+									className="sticky left-0 z-30 p-0! min-w-[46px] sm:min-w-[60px]"
 									style={{ backgroundColor: '#FAF9F6', borderRight: '1px solid #E7E5E4' }}
 								>
-									<div className="flex items-center justify-center h-full w-full py-2 bg-[#FAF9F6]">
-										<span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">
+									<div className="flex items-center justify-center h-full w-full py-1.5 sm:py-2 bg-[#FAF9F6]">
+										<span className="text-[9px] sm:text-[10px] font-bold text-stone-500 uppercase tracking-wider">
 											Ngày
 										</span>
 									</div>
@@ -404,14 +437,14 @@ export default function BookingWidget({ room }: { room: Room }) {
 								{timeSlots.map((slot: TimeSlot) => (
 									<Table.Th
 										key={slot.id}
-										className="text-center min-w-[70px] p-1.5"
+										className="text-center min-w-[54px] sm:min-w-[70px] p-1 sm:p-1.5"
 										style={{ backgroundColor: '#FAF9F6' }}
 									>
 										<div className="flex flex-col items-center gap-0.5">
-											<span className="text-[10px] font-semibold text-stone-600">
+											<span className="text-[8px] sm:text-[10px] font-semibold text-stone-600 leading-tight">
 												{slot.startTime}-{slot.endTime}
 											</span>
-											<span className="text-[10px] opacity-70">
+											<span className="text-[9px] sm:text-[10px] opacity-70">
 												{getTimeSlotIcon(slot.startTime, slot.isOvernight)} {toKDisplay(slot.price)}
 											</span>
 										</div>
@@ -433,15 +466,15 @@ export default function BookingWidget({ room }: { room: Room }) {
 											}}
 										>
 											<div className={`
-												flex flex-col items-center justify-center py-2 px-1 h-full
-												${isTodayRow ? 'border-l-3 border-l-[#D97D48]' : 'border-l-3 border-l-transparent'}
+												flex flex-col items-center justify-center py-1 px-0.5 sm:py-2 sm:px-1 h-full
+												${isTodayRow ? 'border-l-2 sm:border-l-3 border-l-[#D97D48]' : 'border-l-2 sm:border-l-3 border-l-transparent'}
 											`}
 												style={isTodayRow ? { boxShadow: TODAY_ROW_BOX_SHADOW } : undefined}
 											>
-												<span className={`text-[10px] font-bold uppercase tracking-wide ${isTodayRow ? 'text-[#D97D48]' : 'text-stone-500'}`} suppressHydrationWarning>
+												<span className={`text-[8px] sm:text-[10px] font-bold uppercase tracking-wide ${isTodayRow ? 'text-[#D97D48]' : 'text-stone-500'}`} suppressHydrationWarning>
 													{isTodayRow ? 'Nay' : getDayLabel(date)}
 												</span>
-												<span className={`text-xs font-semibold ${isTodayRow ? 'text-[#D97D48]' : 'text-stone-600'}`} suppressHydrationWarning>
+												<span className={`text-[9px] sm:text-xs font-semibold ${isTodayRow ? 'text-[#D97D48]' : 'text-stone-600'}`} suppressHydrationWarning>
 													{date.getDate()}/{date.getMonth() + 1}
 												</span>
 											</div>
@@ -457,14 +490,15 @@ export default function BookingWidget({ room }: { room: Room }) {
 											const canInteract = !isPastDateRow && isAvailable;
 											const isBooked = slotStatus === 'BOOKED';
 											const isHolding = slotStatus === 'HOLDING';
+											const badgeText = canInteract ? getSlotBadgeText(date, slot) : null;
 
-											const dayData = availabilityData?.find(day => day.date === formatDate(date));
-											const dynamicPrice = dayData?.timeSlots?.find(s => s.timeSlot.id === slot.id)?.timeSlot?.price ?? slot.price;
+											// const dayData = availabilityData?.find(day => day.date === formatDate(date));
+											// const dynamicPrice = dayData?.timeSlots?.find(s => s.timeSlot.id === slot.id)?.timeSlot?.price ?? slot.price;
 
 											return (
 												<Table.Td
 													key={slot.id}
-													className="text-center p-1.5 align-middle"
+													className="text-center p-0.5 sm:p-1.5 align-middle relative"
 													style={{
 														backgroundColor: isTodayRow ? '#FAFAF8' : '#FFFFFF',
 													}}
@@ -473,7 +507,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 														onClick={() => canInteract && handleSlotClick(date, slot.id)}
 														disabled={!canInteract}
 														className={`
-															w-full h-[32px] rounded font-medium text-xs transition-all duration-200 flex flex-col items-center justify-center gap-0.5 shadow-sm
+															w-full h-[22px] sm:h-[32px] rounded font-medium text-[10px] sm:text-xs transition-all duration-200 flex flex-col items-center justify-center shadow-sm relative
 															${isSelected
 																? 'bg-[#D97D48] text-white shadow-md border border-[#D97D48]'
 																: isHolding
@@ -489,13 +523,22 @@ export default function BookingWidget({ room }: { room: Room }) {
 															boxShadow: TODAY_SLOT_BOX_SHADOW,
 														} : undefined}
 													>
-														{isHolding ? (
+														{/* {isHolding ? (
 															<span className="text-[10px] font-semibold">Đang giữ</span>
 														) : isBooked && !isPastDateRow ? (
 															<span className="text-[10px] font-semibold">Đã đặt</span>
 														) : !isPastDateRow && isAvailable ? (
 															<span className="font-bold">{toKDisplay(dynamicPrice)}</span>
-														) : null}
+														) : null} */}
+														{badgeText && (
+															<div className={`absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 px-1 py-0.5 rounded shadow-sm z-10 whitespace-nowrap text-[6px] sm:text-[8px] font-bold ${
+																isSelected 
+																	? 'bg-white text-[#D97D48]' 
+																	: 'bg-[#046B5A] text-white'
+															}`}>
+																{badgeText}
+															</div>
+														)}
 													</button>
 												</Table.Td>
 											);
@@ -527,15 +570,6 @@ export default function BookingWidget({ room }: { room: Room }) {
 				</div>
 			</div>
 
-			<div className="bg-stone-50 border-t border-stone-200 px-3 pb-2">
-				<BookingInfoBanner
-					comboDiscounts={comboDiscounts}
-					activeDiscountPrograms={activeDiscountCampaigns}
-					isLoading={isLoadingComboDiscounts}
-					isLoadingActiveDiscountPrograms={isLoadingActiveDiscountCampaigns}
-				/>
-			</div>
-
 			{selectedSlots.size > 0 && (
 				<motion.div
 					initial={{ opacity: 0, height: 0 }}
@@ -554,12 +588,6 @@ export default function BookingWidget({ room }: { room: Room }) {
 						) : null}
 					</div>
 
-					{comboSummary ? (
-						<div className="mb-3 rounded-md bg-emerald-50 px-2.5 py-2 text-[11px] font-semibold text-emerald-700 border border-emerald-200">
-							{comboSummary}
-						</div>
-					) : null}
-
 					<div className="mb-3 bg-stone-50 border border-stone-200 rounded-lg overflow-hidden">
 						{isPricingConfigLoading && (
 							<div className="px-3 py-1.5 text-[11px] text-stone-500 border-b border-stone-200">
@@ -577,14 +605,42 @@ export default function BookingWidget({ room }: { room: Room }) {
 								<span className="text-xs text-amber-700">+{toKDisplay(pricing.holidaySurchargeAmount)}</span>
 							</div>
 						)}
-						{pricing.programDiscountAmount > 0 && (
-							<div className="px-3 py-1.5 flex justify-between items-center">
-								<span className="text-xs text-green-600">
-									{pricing.appliedProgram?.program.name || 'Giảm giá chương trình'}
-								</span>
-								<span className="text-xs text-green-600">-{toKDisplay(pricing.programDiscountAmount)}</span>
-							</div>
-						)}
+						{pricing.programDiscountAmount > 0 && (() => {
+							// Group discount by program ID → hiển thị từng campaign riêng
+							const programGroups = new Map<string, { name: string; amount: number }>();
+							pricing.dailyBreakdown.forEach(day => {
+								if (day.appliedProgram && day.programDiscountAmount > 0) {
+									const id = day.appliedProgram.program.id;
+									const existing = programGroups.get(id);
+									if (existing) {
+										existing.amount += day.programDiscountAmount;
+									} else {
+										programGroups.set(id, {
+											name: day.appliedProgram.program.name,
+											amount: day.programDiscountAmount,
+										});
+									}
+								}
+							});
+
+							if (programGroups.size > 1) {
+								return Array.from(programGroups.values()).map(({ name, amount }) => (
+									<div key={name} className="px-3 py-1.5 flex justify-between items-center">
+										<span className="text-xs text-green-600">{name}</span>
+										<span className="text-xs text-green-600">-{toKDisplay(amount)}</span>
+									</div>
+								));
+							}
+
+							return (
+								<div className="px-3 py-1.5 flex justify-between items-center">
+									<span className="text-xs text-green-600">
+										{pricing.appliedProgram?.program.name || 'Giảm giá chương trình'}
+									</span>
+									<span className="text-xs text-green-600">-{toKDisplay(pricing.programDiscountAmount)}</span>
+								</div>
+							);
+						})()}
 						{pricing.comboDiscountAmount > 0 && (
 							<div className="px-3 py-1.5 flex justify-between items-center">
 								<span className="text-xs text-green-600">
