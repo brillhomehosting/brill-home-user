@@ -1,7 +1,7 @@
 import { toKDisplay } from "@/lib/pricingUtils";
 import type { ActiveDiscountProgram, ComboDiscountTier } from "@/types/pricing";
 import { motion } from "framer-motion";
-import { Sparkles, Gift } from "lucide-react";
+import { Sparkles, Gift, Zap, Star } from "lucide-react";
 
 interface BookingInfoBannerProps {
 	comboDiscounts: ComboDiscountTier[];
@@ -60,51 +60,140 @@ export default function BookingInfoBanner({
 		}
 	};
 
+	// Hàm tạo style cho từng loại program
+	const getProgramStyle = (program: ActiveDiscountProgram, index: number) => {
+		let typeText = 'ƯU ĐÃI';
+		if (program.type === 'WEEK_DAY') typeText = 'THEO NGÀY';
+		else if (program.type === 'ROOM' || program.type === 'ROOM_TYPE') typeText = 'PHÒNG';
+		else if (program.type === 'SLOT_TYPE') typeText = 'GIỜ VÀNG';
+		else if (program.type === 'ALL') typeText = 'ĐẶC BIỆT';
+
+		const styles = [
+			{
+				bg: 'bg-gradient-to-br from-rose-50 to-white border-rose-100',
+				badgeBg: 'bg-[#E11D48]',
+				textColor: 'text-[#E11D48]',
+				watermarkColor: 'text-rose-200/40',
+				Icon: Zap
+			},
+			{
+				bg: 'bg-gradient-to-br from-teal-50 to-white border-teal-100',
+				badgeBg: 'bg-[#0D9488]',
+				textColor: 'text-[#0D9488]',
+				watermarkColor: 'text-teal-200/40',
+				Icon: Star
+			},
+			{
+				bg: 'bg-gradient-to-br from-amber-50 to-white border-amber-100',
+				badgeBg: 'bg-[#D97706]',
+				textColor: 'text-[#D97706]',
+				watermarkColor: 'text-amber-200/40',
+				Icon: Sparkles
+			}
+		];
+		return { ...styles[index % styles.length], badgeText: typeText };
+	};
 
 	return (
 		<motion.div 
 			variants={containerVariants}
 			initial="hidden"
 			animate="visible"
-			className="mt-3 flex flex-col gap-2.5 rounded-xl border border-emerald-100 bg-gradient-to-br from-emerald-50/80 via-white to-stone-50/80 p-3 shadow-sm backdrop-blur-md"
+			className="mt-2 sm:mt-4 flex flex-col w-full overflow-hidden"
 		>
-			{/* Combos */}
+			{/* Section: Combo Khung Giờ */}
 			{sortedTiers.length > 0 && (
-				<div className="flex items-start gap-2">
-					<div className="flex mt-0.5 items-center justify-center shrink-0 w-5 h-5 rounded-full bg-emerald-100 text-emerald-600">
-						<Sparkles className="w-3 h-3" />
+				<div className="sm:mb-3">
+					<div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-3 px-1">
+						<div className="flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded bg-[#E5F2F0] text-[#087B65]">
+							<Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+						</div>
+						<span className="font-bold text-[#087B65] text-xs sm:text-sm tracking-wide">Combo Khung Giờ</span>
 					</div>
-					<div className="flex flex-wrap items-center gap-1.5 flex-1">
-						<span className="text-[11px] font-bold text-emerald-800 mr-1 uppercase tracking-wide">Combo Khung Giờ</span>
+					
+					{/* Horizontal Scroll Container */}
+					<div className="flex gap-2 sm:gap-3 overflow-x-auto pb-3 sm:pb-4 pt-1 px-1">
 						{sortedTiers.map((tier, idx) => (
-							<span 
+							<div 
 								key={idx} 
-								className="rounded-full border border-emerald-200/60 bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 shadow-sm transition-all hover:shadow hover:bg-white"
+								className="relative min-w-[140px] sm:min-w-[220px] max-w-[160px] sm:max-w-[240px] bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-stone-100 p-2 sm:p-3 flex flex-col shrink-0"
 							>
-								{tier.minSlots} khung <span className="mx-1 text-emerald-400">→</span> -{Math.round(toPercentValue(tier.discountPercent))}%
-								{tier.flatDiscount > 0 && ` & -${toKDisplay(tier.flatDiscount)}`}
-							</span>
+								{/* Tag góc phải trên */}
+								<div className="absolute top-0 right-0 bg-[#046B5A] text-white font-bold text-[10px] sm:text-sm px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-bl-xl rounded-tr-xl shadow-sm z-10">
+									-{Math.round(toPercentValue(tier.discountPercent))}%
+								</div>
+								
+								{/* Ticket Tag nhỏ - Ẩn trên mobile */}
+								<div className="hidden sm:flex items-center gap-1 bg-[#E5F2F0] text-[#087B65] w-max px-1.5 sm:px-2 py-0.5 rounded text-[7px] sm:text-[9px] font-bold uppercase tracking-wider mb-1.5 sm:mb-2">
+									<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M9 9h6"/><path d="M9 15h6"/></svg>
+									<span>COMBO</span>
+								</div>
+								
+								<h4 className="font-bold text-stone-800 text-[11px] sm:text-sm mb-0.5 sm:mb-1 line-clamp-1 pr-7 sm:pr-12">
+									Combo {tier.minSlots} khung
+								</h4>
+								<p className="text-[9px] sm:text-[11px] text-stone-500 font-medium mb-1 sm:mb-3 line-clamp-2 sm:line-clamp-none">
+									Đặt từ <strong className="text-stone-700">{tier.minSlots}</strong> khung liên tiếp giảm <strong className="text-[#087B65]">{Math.round(toPercentValue(tier.discountPercent))}%</strong>
+								</p>
+								
+								{/* Chú thích cuối card - Ẩn trên mobile */}
+								<div className="mt-auto pt-2 border-t border-stone-50 border-dashed hidden sm:flex items-center gap-1.5 text-stone-400 text-[8px] sm:text-[10px] font-medium">
+									<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+									<span>Áp dụng mọi khung giờ</span>
+								</div>
+							</div>
 						))}
 					</div>
 				</div>
 			)}
 
-			{/* Active Programs */}
+			{/* Section: Chương Trình Ưu Đãi */}
 			{campaignItems.length > 0 && (
-				<div className="flex items-start gap-2">
-					<div className="flex mt-0.5 items-center justify-center shrink-0 w-5 h-5 rounded-full bg-amber-100 text-amber-600">
-						<Gift className="w-3 h-3" />
+				<div className="mt-1 sm:mt-0">
+					<div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-3 px-1">
+						<div className="flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded bg-[#FDECEB] text-[#A82035]">
+							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="sm:w-3.5 sm:h-3.5"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/></svg>
+						</div>
+						<span className="font-bold text-[#A82035] text-xs sm:text-sm tracking-wide">Chương Trình Ưu Đãi</span>
 					</div>
-					<div className="flex flex-wrap items-center gap-1.5 flex-1">
-						<span className="text-[11px] font-bold text-amber-800 mr-1 uppercase tracking-wide">Đang Diễn Ra</span>
-						{campaignItems.map((program) => (
-							<span 
-								key={program.id} 
-								className="rounded-full border border-amber-200/60 bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-amber-700 shadow-sm transition-all hover:shadow hover:bg-white"
-							>
-								{program.name}: <span className="font-bold">{getProgramDiscountLabel(program)}</span>
-							</span>
-						))}
+					
+					{/* Horizontal Scroll Container */}
+					<div className="flex gap-2 sm:gap-3 overflow-x-auto pb-3 sm:pb-4 pt-1 px-1">
+						{campaignItems.map((program, idx) => {
+							const style = getProgramStyle(program, idx);
+							const Watermark = style.Icon as any;
+							
+							return (
+								<div 
+									key={program.id} 
+									className={`relative min-w-[120px] sm:min-w-[200px] max-w-[140px] sm:max-w-[220px] rounded-xl border p-1.5 sm:p-3 flex flex-col shrink-0 overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.03)] ${style.bg}`}
+								>
+									{/* Watermark icon - Ẩn trên mobile để đỡ rối */}
+									<Watermark 
+										className={`absolute -right-3 -bottom-3 hidden sm:block w-14 h-14 sm:w-20 sm:h-20 rotate-12 ${style.watermarkColor}`} 
+										strokeWidth={1.5} 
+									/>
+									
+									{/* Badge top-left */}
+									<div className={`${style.badgeBg} text-white text-[7px] sm:text-[9px] font-bold uppercase px-1.5 sm:px-2 py-0.5 rounded w-max mb-1 sm:mb-3 tracking-widest relative z-10 shadow-sm`}>
+										{style.badgeText}
+									</div>
+									
+									<h4 className="font-bold text-stone-800 text-[11px] sm:text-[13px] mb-0 sm:mb-1 line-clamp-1 relative z-10">
+										{program.name}
+									</h4>
+									
+									<div className="flex items-baseline gap-1 sm:gap-1.5 relative z-10 mt-1">
+										<span className={`text-[15px] sm:text-xl font-black tracking-tight ${style.textColor}`}>
+											{getProgramDiscountLabel(program)}
+										</span>
+										<span className="text-[8px] sm:text-[10px] font-bold text-stone-500 uppercase tracking-widest">
+											{program.discountType === "PERCENTAGE" ? "GIẢM" : "TIỀN MẶT"}
+										</span>
+									</div>
+								</div>
+							);
+						})}
 					</div>
 				</div>
 			)}

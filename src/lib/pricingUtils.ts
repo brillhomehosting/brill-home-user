@@ -18,7 +18,7 @@ export interface CalculatePricingParams {
 	roomType?: string | null;
 }
 
-function toPercentValue(value: number): number {
+export function toPercentValue(value: number): number {
 	if (!Number.isFinite(value)) return 0;
 	return value <= 1 ? value * 100 : value;
 }
@@ -84,10 +84,17 @@ function getMatchedSlots(
 	}
 }
 
-function applyHolidaySurcharge(
-	basePrice: number,
+/**
+ * Tính phụ thu ngày lễ theo từng slot (cộng dồn).
+ * Nếu trong ngày có đúng 4 slot → chỉ tính phụ thu cho 3 slot có giá cao nhất.
+ * Với loại FIXED_AMOUNT → mỗi slot được cộng thêm một khoản cố định như nhau.
+ */
+function applyHolidaySurchargePerSlot(
+	daySlots: PricingSelectedSlot[],
 	surcharge: HolidaySurchargeInfo | undefined,
 ): { holidaySurchargeAmount: number; priceAfterSurcharge: number; isHoliday: boolean; holidayName: string | null } {
+	const basePrice = daySlots.reduce((sum, s) => sum + s.price, 0);
+
 	if (!surcharge?.isHoliday || surcharge.surchargeValue <= 0) {
 		return {
 			holidaySurchargeAmount: 0,
@@ -97,12 +104,30 @@ function applyHolidaySurcharge(
 		};
 	}
 
-	let holidaySurchargeAmount = 0;
-	const surchargeType = (surcharge.surchargeType || "PERCENTAGE") as SurchargeType;
-	if (surchargeType === "PERCENTAGE") {
-		holidaySurchargeAmount = Math.round(basePrice * toPercentRate(surcharge.surchargeValue));
+	// Xác định những slot nào sẽ được tính phụ thu
+	// Nếu có đúng 4 slot trong ngày → chỉ lấy 3 slot có giá cao nhất
+	const FULL_DAY_SLOTS = 4;
+	const MAX_SURCHARGE_SLOTS = 3;
+	let slotsForSurcharge: PricingSelectedSlot[];
+	if (daySlots.length >= FULL_DAY_SLOTS) {
+		slotsForSurcharge = [...daySlots]
+			.sort((a, b) => b.price - a.price)
+			.slice(0, MAX_SURCHARGE_SLOTS);
 	} else {
-		holidaySurchargeAmount = Math.max(0, Math.round(surcharge.surchargeValue));
+		slotsForSurcharge = [...daySlots];
+	}
+
+	const surchargeType = (surcharge.surchargeType || "PERCENTAGE") as SurchargeType;
+	let holidaySurchargeAmount = 0;
+
+	if (surchargeType === "PERCENTAGE") {
+		// Cộng dồn phụ thu từng slot trong danh sách được áp dụng
+		holidaySurchargeAmount = slotsForSurcharge.reduce((sum, slot) => {
+			return sum + Math.round(slot.price * toPercentRate(surcharge.surchargeValue));
+		}, 0);
+	} else {
+		// FIXED_AMOUNT: mỗi slot áp dụng đúng 1 lần khoản cố định
+		holidaySurchargeAmount = Math.max(0, Math.round(surcharge.surchargeValue * slotsForSurcharge.length));
 	}
 
 	return {
@@ -113,7 +138,7 @@ function applyHolidaySurcharge(
 	};
 }
 
-function resolveBestProgramForDate(
+export function resolveBestProgramForDate(
 	daySlots: PricingSelectedSlot[],
 	date: string,
 	roomId: string,
@@ -197,16 +222,12 @@ function buildDailyBreakdown({
 }): PricingDailyBreakdown {
 	const basePrice = sumPrices(daySlots);
 
-	let holidayRate = 0;
-	if (holidayInfo?.isHoliday) {
-		if (holidayInfo.surchargeType === "PERCENTAGE") {
-			holidayRate = toPercentRate(holidayInfo.surchargeValue);
-		} else if (basePrice > 0) {
-			holidayRate = holidayInfo.surchargeValue / basePrice;
-		}
-	}
-	const holidayStep = applyHolidaySurcharge(basePrice, holidayInfo);
+	// Tính phụ thu ngày lễ per-slot (và giới hạn 3 slot nếu chọn đủ 4 slot)
+	const holidayStep = applyHolidaySurchargePerSlot(daySlots, holidayInfo);
 	const priceAfterSurcharge = holidayStep.priceAfterSurcharge;
+
+	// holidayRate dùng để tính discount program dựa theo giá sau phụ thu
+	const holidayRate = basePrice > 0 ? holidayStep.holidaySurchargeAmount / basePrice : 0;
 
 	const appliedProgram = resolveBestProgramForDate(
 		daySlots,
@@ -225,7 +246,8 @@ function buildDailyBreakdown({
 	const comboTier = resolveComboTier(slotCount, comboDiscounts);
 	const comboPercent = comboTier ? toPercentValue(comboTier.discountPercent) : 0;
 	const comboFlatDiscount = comboTier?.flatDiscount ?? 0;
-	const comboPercentAmount = Math.round(priceAfterDiscount * toPercentRate(comboPercent));
+	// Backend tính combo dựa trên basePrice (giá gốc, trước holiday surcharge và discount program)
+	const comboPercentAmount = Math.round(basePrice * toPercentRate(comboPercent));
 	const comboDiscountAmount = Math.min(
 		priceAfterDiscount,
 		Math.max(0, comboPercentAmount + comboFlatDiscount),
@@ -318,6 +340,16 @@ export function calculatePricing({
 		? Math.min(...comboDays.map((day) => day.comboPercent))
 		: 0;
 
+	// Nếu nhiều ngày áp dụng các program khác nhau → không hiển thị tên cụ thể
+	const uniqueProgramIds = new Set(
+		dailyBreakdown
+			.map((day) => day.appliedProgram?.program.id)
+			.filter(Boolean)
+	);
+	const displayAppliedProgram = uniqueProgramIds.size <= 1
+		? (firstProgramDay?.appliedProgram ?? null)
+		: null;
+
 	return {
 		basePrice,
 		holidaySurchargeAmount,
@@ -328,7 +360,7 @@ export function calculatePricing({
 		comboDiscountAmount,
 		totalAmount,
 		savings,
-		appliedProgram: firstProgramDay?.appliedProgram ?? null,
+		appliedProgram: displayAppliedProgram,
 		appliedComboTier: firstComboDay?.appliedComboTier ?? null,
 		dailyBreakdown,
 	};
@@ -354,9 +386,3 @@ export function getSavingsBadgeLabel(pricing: PricingPreviewBreakdown): string |
 	if (hasCombo) return comboBadgeLabel(pricing.comboPercent) ?? "Giảm giá combo";
 	return null;
 }
-
-export function getComboNotification(slotCount: number, comboPercent: number): string | null {
-	if (slotCount < 2 || comboPercent <= 0) return null;
-	return `Đặt ${slotCount} khung giờ liên tiếp - Giảm ${Math.round(comboPercent)}%`;
-}
-

@@ -1,11 +1,13 @@
 'use client';
 
-import { toKDisplay } from '@/lib/pricingUtils';
+import { resolveBestProgramForDate, toKDisplay, toPercentValue } from '@/lib/pricingUtils';
 import { useAvailabilityStore } from '@/store/availabilityStore';
+import { ActiveDiscountProgram, PricingSelectedSlot } from '@/types/pricing';
 import { Room, TimeSlot } from '@/types/room';
 import type { SlotStatus } from '@/types/timeslot';
 import { Card, Table } from '@mantine/core';
 import Image from 'next/image';
+import { useCallback } from 'react';
 import { formatDate, getDayLabel, getTimeSlotIcon, isEndPastSlot, isToday } from './bookingUtils';
 import LoadingSkeleton from './LoadingSkeleton';
 
@@ -18,6 +20,7 @@ interface BookingCalendarTableProps {
 	onSlotClick: (roomId: string, date: Date, slotId: string, price: number) => void;
 	isLoading: boolean;
 	isLoadingAvailability: boolean;
+	activeDiscountCampaigns?: ActiveDiscountProgram[];
 }
 
 const TODAY_ROW_BOX_SHADOW = '0 0 18px rgba(154,52,18,0.24), 0 0 30px rgba(251,146,60,0.18)';
@@ -72,9 +75,45 @@ export default function BookingCalendarTable({
 	onSlotClick,
 	isLoading,
 	isLoadingAvailability,
+	activeDiscountCampaigns = [],
 }: BookingCalendarTableProps) {
 	// Read slot status from Zustand store for realtime updates
 	const getStoreSlotStatus = useAvailabilityStore(s => s.getSlotStatus);
+
+	const getSlotBadgeText = useCallback((roomId: string, roomType: string | undefined | null, date: Date, slotId: string, slotPrice: number): string | null => {
+		if (!activeDiscountCampaigns || activeDiscountCampaigns.length === 0) return null;
+		const dateStr = formatDate(date);
+		const singleSlot: PricingSelectedSlot = {
+			key: 'temp',
+			roomId: roomId,
+			date: dateStr,
+			slotId: slotId,
+			price: slotPrice,
+			isOvernight: false, // It doesn't affect program matching in most cases, or we can get it from roomTimeSlotsMap
+			startTime: '00:00',
+			endTime: '00:00',
+		};
+
+		const bestProgram = resolveBestProgramForDate(
+			[singleSlot],
+			dateStr,
+			roomId,
+			roomType,
+			activeDiscountCampaigns,
+			0,
+			slotPrice,
+		);
+
+		if (bestProgram && bestProgram.program) {
+			const prog = bestProgram.program;
+			if (prog.discountType === 'PERCENTAGE') {
+				return `-${Math.round(toPercentValue(prog.discountValue))}%`;
+			} else {
+				return `-${toKDisplay(prog.discountValue)}`;
+			}
+		}
+		return null;
+	}, [activeDiscountCampaigns]);
 
 	return (
 		<Card
@@ -99,11 +138,11 @@ export default function BookingCalendarTable({
 							<Table.Tr>
 								<Table.Th
 									rowSpan={2}
-									className="sticky left-0 z-30 p-0! min-w-[80px]"
+									className="sticky left-0 z-30 p-0! min-w-[54px] sm:min-w-[80px]"
 									style={{ backgroundColor: '#FAF9F6', borderRight: '1px solid #E7E5E4' }}
 								>
-									<div className="flex items-center justify-center h-full w-full py-4 bg-[#FAF9F6]">
-										<span className="text-[10px] md:text-xs font-bold text-stone-500 uppercase tracking-widest">
+									<div className="flex items-center justify-center h-full w-full py-2 sm:py-4 bg-[#FAF9F6]">
+										<span className="text-[9px] sm:text-[10px] md:text-xs font-bold text-stone-500 uppercase tracking-widest">
 											Ngày
 										</span>
 									</div>
@@ -119,7 +158,7 @@ export default function BookingCalendarTable({
 											className="text-center p-0!"
 											style={{ backgroundColor: roomBg }}
 										>
-											<div className="relative h-32 w-full border-b border-stone-200 overflow-hidden group">
+											<div className="relative h-20 sm:h-32 w-full border-b border-stone-200 overflow-hidden group">
 												{room.images?.[0]?.url && (
 													<>
 														<Image
@@ -156,22 +195,25 @@ export default function BookingCalendarTable({
 											</Table.Th>
 										);
 									}
-									return timeSlots.map((slot) => (
-										<Table.Th
-											key={slot.id}
-											className="text-center min-w-[90px] p-2"
-											style={{ backgroundColor: roomBg }}
-										>
-											<div className="flex flex-col items-center gap-1">
-												<span className="text-xs font-semibold text-stone-600 bg-white/50 px-1.5 py-0.5 rounded">
-													{slot.startTime}-{slot.endTime}
-												</span>
-												<span className="text-xs opacity-70">
-													{getTimeSlotIcon(slot.startTime, slot.isOvernight)}
-												</span>
-											</div>
-										</Table.Th>
-									));
+									return timeSlots.map((slot) => {
+										const displayPrice = roomTimeSlotsApiMap.get(room.id)?.find(s => s.id === slot.id)?.price ?? slot.price;
+										return (
+											<Table.Th
+												key={slot.id}
+												className="text-center min-w-[60px] sm:min-w-[90px] p-1 sm:p-2"
+												style={{ backgroundColor: roomBg }}
+											>
+												<div className="flex flex-col items-center gap-0.5 sm:gap-1">
+													<span className="text-[9px] sm:text-xs font-semibold text-stone-600 bg-white/50 px-1 sm:px-1.5 py-0.5 rounded leading-tight">
+														{slot.startTime}-{slot.endTime}
+													</span>
+													<span className="text-[9px] sm:text-[10px] opacity-70">
+														{getTimeSlotIcon(slot.startTime, slot.isOvernight)} {toKDisplay(displayPrice)}
+													</span>
+												</div>
+											</Table.Th>
+										);
+									});
 								})}
 							</Table.Tr>
 						</Table.Thead>
@@ -193,18 +235,18 @@ export default function BookingCalendarTable({
 												}}
 											>
 												<div className={`
-	                                                flex flex-col items-center justify-center py-3 px-2 h-full
-	                                                ${isTodayRow ? 'border-l-4 border-l-[#D97D48]' : 'border-l-4 border-l-transparent'}
+	                                                flex flex-col items-center justify-center py-1 px-1 sm:py-3 sm:px-2 h-full
+	                                                ${isTodayRow ? 'border-l-2 sm:border-l-4 border-l-[#D97D48]' : 'border-l-2 sm:border-l-4 border-l-transparent'}
 	                                            `}
 													style={isTodayRow ? { boxShadow: TODAY_ROW_BOX_SHADOW } : undefined}
 												>
-												<span className={`text-xs font-bold uppercase tracking-wide mb-0.5 ${isTodayRow ? 'text-[#D97D48]' : 'text-stone-500'}`} suppressHydrationWarning>
-													{isTodayRow ? 'Hôm nay' : getDayLabel(date)}
-												</span>
-													<span className={`text-sm font-semibold ${isTodayRow ? 'text-[#D97D48]' : 'text-stone-600'}`} suppressHydrationWarning>
+													<span className={`text-[9px] sm:text-xs font-bold uppercase tracking-wide mb-0 sm:mb-0.5 ${isTodayRow ? 'text-[#D97D48]' : 'text-stone-500'}`} suppressHydrationWarning>
+														{isTodayRow ? 'Nay' : getDayLabel(date)}
+													</span>
+													<span className={`text-[10px] sm:text-sm font-semibold ${isTodayRow ? 'text-[#D97D48]' : 'text-stone-600'}`} suppressHydrationWarning>
 														{date.getDate()}/{date.getMonth() + 1}
 													</span>
-											</div>
+												</div>
 										</Table.Td>
 
 										{/* Room Slots */}
@@ -231,6 +273,7 @@ export default function BookingCalendarTable({
 
 												const baseSlotPrice = roomTimeSlotsApiMap.get(room.id)?.find(s => s.id === slot.id)?.price ?? slot.price;
 												const dynamicPrice = baseSlotPrice;
+												const badgeText = canInteract ? getSlotBadgeText(room.id, room.roomType, date, slot.id, dynamicPrice) : null;
 
 												const { className: slotClasses, style: slotStyle } = getSlotClasses(
 													slotStatus,
@@ -242,7 +285,7 @@ export default function BookingCalendarTable({
 												return (
 													<Table.Td
 														key={slot.id}
-														className="text-center p-2 align-middle"
+														className="text-center p-0.5 sm:p-2 align-middle"
 														style={{
 															backgroundColor: isTodayRow ? '#FAFAF8' : cellBg,
 														}}
@@ -251,19 +294,26 @@ export default function BookingCalendarTable({
 															onClick={() => canInteract && onSlotClick(room.id, date, slot.id, dynamicPrice)}
 															disabled={!canInteract}
 															className={`
-                                                                relative w-full h-[36px] rounded font-medium text-sm transition-all duration-200 flex flex-col items-center justify-center gap-0.5 shadow-sm
+																relative w-full h-[24px] sm:h-[36px] rounded font-medium text-xs sm:text-sm transition-all duration-200 flex flex-col items-center justify-center shadow-sm
 																${slotClasses}
-	                                                            `}
+															`}
 															style={slotStyle}
 														>
 															{/* Slot content based on status */}
 															{slotStatus === 'HOLDING' ? (
-																<span className="text-[10px] font-semibold">Đang giữ</span>
-															) : slotStatus === 'BOOKED' ? (
-																isPastDateRow ? null : <span className="text-[10px] font-semibold">Đã đặt</span>
-															) : !isPastDateRow && isAvailable && !isEndPast ? (
-																<span className="text-[11px] font-bold">{toKDisplay(dynamicPrice)}</span>
+																<span className="text-[10px] font-semibold text-stone-500">Đang giữ</span>
+															) : slotStatus === 'BOOKED' && !isPastDateRow ? (
+																<span className="text-[10px] font-semibold text-stone-500">Đã đặt</span>
 															) : null}
+															{badgeText && (
+																<div className={`absolute -top-1 -right-1 sm:-top-1.5 sm:-right-1.5 px-1 py-0.5 rounded shadow-sm z-10 whitespace-nowrap text-[6px] sm:text-[7px] font-bold ${
+																	isSelected 
+																		? 'bg-white text-[#D97D48]' 
+																		: 'bg-[#046B5A] text-white'
+																}`}>
+																	{badgeText}
+																</div>
+															)}
 														</button>
 													</Table.Td>
 												);
