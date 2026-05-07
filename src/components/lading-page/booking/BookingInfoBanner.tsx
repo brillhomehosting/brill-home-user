@@ -169,72 +169,24 @@ export default function BookingInfoBanner({
 				variants={containerVariants}
 				initial="hidden"
 				animate="visible"
-				className="mt-2 sm:mt-4 flex flex-col w-full overflow-hidden"
+				className="flex flex-col w-full overflow-hidden"
 			>
-				{/* Section: Combo Khung Giờ */}
+				{/* Summary Bar: Ưu đãi Combo */}
 				{sortedTiers.length > 0 && (
-					<div className="sm:mb-3">
-						<div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-3 px-1">
-							<div className="flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded bg-[#E5F2F0] text-[#087B65]">
-								<Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-							</div>
-							<span className="font-bold text-[#087B65] text-xs sm:text-sm tracking-wide">Combo Khung Giờ</span>
-						</div>
+					<div className="px-1 mb-3">
+						<div className="flex items-center justify-center gap-1.5 py-1.5 px-3 bg-white border border-stone-200 rounded-lg text-[10px] text-stone-500">
+							<span className="text-stone-400 text-[10px] sm:text-[12px] font-medium whitespace-nowrap">Ưu đãi combo:</span>
 
-						{/* Horizontal Scroll Container */}
-						<div className="pt-1 px-1">
-							<Swiper
-								modules={[Autoplay, FreeMode, Pagination]}
-								spaceBetween={8}
-								slidesPerView="auto"
-								freeMode={true}
-								loop={true}
-								pagination={{ clickable: true }}
-								autoplay={{
-									delay: isDesktop ? 3500 : 2500,
-									disableOnInteraction: false,
-									pauseOnMouseEnter: isDesktop,
-								}}
-								breakpoints={{
-									640: { spaceBetween: 12 }
-								}}
-								className="overflow-visible! mb-8"
-							>
-								{sortedTiers.map((tier, idx) => (
-									<SwiperSlide key={idx} className="w-auto! h-auto! flex">
-										<div className="relative min-w-[140px] sm:min-w-[220px] max-w-[160px] sm:max-w-[240px] w-full bg-white rounded-lg shadow-lg border border-stone-100 p-3 sm:p-3 flex flex-col shrink-0 h-full">
-											{/* Tag góc phải trên */}
-											<div className="absolute top-0 right-0 bg-[#046B5A] text-white font-bold text-[10px] sm:text-sm px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-bl-xl rounded-tr-lg shadow-sm z-10">
-												-{Math.round(toPercentValue(tier.discountPercent))}%
-											</div>
-
-											{/* Ticket Tag nhỏ - Ẩn trên mobile */}
-											<div className="hidden sm:flex items-center gap-1 bg-[#E5F2F0] text-[#087B65] w-max px-1.5 sm:px-2 py-0.5 rounded text-[7px] sm:text-[9px] font-bold uppercase tracking-wider mb-1.5 sm:mb-2">
-												<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" /><path d="M9 9h6" /><path d="M9 15h6" /></svg>
-												<span>COMBO</span>
-											</div>
-
-											<h4 className="font-bold text-stone-800 text-[11px] sm:text-sm mb-0.5 sm:mb-1 line-clamp-1 pr-7 sm:pr-12">
-												Combo {tier.minSlots} khung
-											</h4>
-											<p className="text-[9px] sm:text-[10px] text-stone-500 font-medium mb-1 sm:mb-3 leading-relaxed">
-												Đặt từ{" "}
-												<strong>{tier.minSlots}</strong>
-												{" "}khung liên tiếp giảm{" "}
-												<strong className="text-[#087B65]">
-													{Math.round(toPercentValue(tier.discountPercent))}%
-												</strong>
-											</p>
-
-											{/* Chú thích cuối card - Ẩn trên mobile */}
-											<div className="mt-auto pt-2 border-t border-stone-50 border-dashed hidden sm:flex items-center gap-1.5 text-stone-400 text-[8px] sm:text-[10px] font-medium">
-												<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-												<span>Áp dụng mọi khung giờ</span>
-											</div>
-										</div>
-									</SwiperSlide>
-								))}
-							</Swiper>
+							{sortedTiers.map((tier, idx) => (
+								<>
+									<span className="text-green-600 font-semibold">
+										{tier.minSlots} khung  → {Math.round(toPercentValue(tier.discountPercent))}%
+									</span>
+									{idx < sortedTiers.length - 1 && (
+										<span >|</span>
+									)}
+								</>
+							))}
 						</div>
 					</div>
 				)}

@@ -86,7 +86,7 @@ export default function RoomDetailClient({ roomId }: { roomId: string }) {
 						</div>
 
 						{/* Left Column - Main Content (65%) */}
-						<div className="lg:col-span-2 flex flex-col gap-6 -mt-2 lg:mt-0">
+						<div className="lg:col-span-2 flex flex-col gap-6 mt-1 lg:mt-0">
 							<BookingInfoBanner 
 								comboDiscounts={comboDiscounts}
 								activeDiscountPrograms={activeDiscountCampaigns}
