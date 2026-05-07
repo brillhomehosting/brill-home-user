@@ -4,14 +4,12 @@ import messengerIcon from '@/assets/icon-messenger.png';
 import { getSavingsBadgeLabel, toKDisplay } from '@/lib/pricingUtils';
 import type { PricingPreviewBreakdown } from '@/types/pricing';
 import { motion } from 'framer-motion';
-import { Check, Copy } from 'lucide-react';
 import Image from 'next/image';
 
 interface MobileBookingBarProps {
 	selectedSlots: Set<string>;
 	pricing: PricingPreviewBreakdown;
 	isPricingLoading?: boolean;
-	isCopied: boolean;
 	onBookNow: () => void;
 }
 
@@ -19,7 +17,6 @@ export default function MobileBookingBar({
 	selectedSlots,
 	pricing,
 	isPricingLoading = false,
-	isCopied,
 	onBookNow,
 }: MobileBookingBarProps) {
 	if (selectedSlots.size === 0) return null;
@@ -62,7 +59,7 @@ export default function MobileBookingBar({
 						</div>
 					)}
 					{pricing.programDiscountAmount > 0 && (() => {
-						// Group discount by program ID → hiển thị từng campaign riêng
+						// Group discount by program ID -> hiển thị từng campaign riêng
 						const programGroups = new Map<string, { name: string; amount: number }>();
 						pricing.dailyBreakdown.forEach(day => {
 							if (day.appliedProgram && day.programDiscountAmount > 0) {
@@ -122,26 +119,15 @@ export default function MobileBookingBar({
 
 				<button
 					onClick={onBookNow}
-					disabled={isCopied}
-					className={`w-full px-6 py-2.5 rounded-lg font-medium text-white transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${isCopied ? 'bg-green-600' : 'hover:opacity-90'}`}
-					style={!isCopied ? { backgroundColor: '#D97D48' } : undefined}
+					className="w-full px-6 py-2.5 rounded-lg font-medium text-white transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer hover:opacity-90"
+					style={{ backgroundColor: '#D97D48' }}
 				>
-					{isCopied ? (
-						<>
-							<Check className="w-5 h-5" />
-							<span>Đã sao chép! Dán vào Messenger</span>
-						</>
-					) : (
-						<>
-							<Image src={messengerIcon} alt="Messenger" width={26} height={26} />
-							<span>Đặt ngay</span>
-						</>
-					)}
+					<Image src={messengerIcon} alt="Messenger" width={26} height={26} />
+					<span>Đặt ngay</span>
 				</button>
 			</div>
-			<p className="text-[9px] text-stone-400 text-center pb-3 flex items-center justify-center gap-0.5">
-				<Copy className="w-2.5 h-2.5" />
-				Sao chép & dán vào Messenger
+			<p className="text-[9px] text-stone-400 text-center pb-3">
+				Mở popup để copy nội dung và chọn app gửi tin
 			</p>
 		</motion.div>
 	);

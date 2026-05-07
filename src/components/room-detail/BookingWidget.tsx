@@ -1,14 +1,14 @@
 'use client';
 
 import messengerIcon from '@/assets/icon-messenger.png';
-import { contactData } from '@/data/contact-data';
+import BookingSendModal from '@/components/ui/BookingMessengerModal';
 import { useActiveDiscountCampaigns } from '@/hooks/useActiveDiscountCampaigns';
 import { useComboDiscounts } from '@/hooks/useComboDiscounts';
 import { useHolidaySurchargeByDates } from '@/hooks/useHolidaySurchargeByDates';
 import { useSSEAvailability } from '@/hooks/useSSEAvailability';
 import { useTimeSlotAvailability } from '@/hooks/useTimeSlotAvailability';
 import { buildBookingMessage } from '@/lib/buildBookingMessage';
-import { calculatePricing, getSavingsBadgeLabel, toKDisplay, resolveBestProgramForDate, toPercentValue } from '@/lib/pricingUtils';
+import { calculatePricing, getSavingsBadgeLabel, resolveBestProgramForDate, toKDisplay, toPercentValue } from '@/lib/pricingUtils';
 import { applySlotSelection, LinearSelectableSlot, parseSlotKey } from '@/lib/slotSelection';
 import { useAvailabilityStore } from '@/store/availabilityStore';
 import { PricingSelectedSlot } from '@/types/pricing';
@@ -16,10 +16,9 @@ import { Room, TimeSlot } from '@/types/room';
 import type { SlotStatus } from '@/types/timeslot';
 import { Card, Table } from '@mantine/core';
 import { motion } from 'framer-motion';
-import { Check, ChevronLeft, ChevronRight, Copy } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { toast } from 'sonner';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 type IndexedPricingSlot = PricingSelectedSlot & { index: number };
 
@@ -108,8 +107,8 @@ export default function BookingWidget({ room }: { room: Room }) {
 	const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set());
 	const [currentDatePage, setCurrentDatePage] = useState(0);
 	const [slotPrices, setSlotPrices] = useState<Map<string, number>>(new Map());
-	const [isCopied, setIsCopied] = useState(false);
-	const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const [isSendModalOpen, setIsSendModalOpen] = useState(false);
+	const [bookingMessage, setBookingMessage] = useState('');
 
 	const allDates = generateDates(30);
 	const DATES_PER_PAGE = 7;
@@ -325,56 +324,13 @@ export default function BookingWidget({ room }: { room: Room }) {
 		});
 	};
 
-	const handleBookNow = useCallback(async () => {
-		if (selectedSlots.size === 0 || isCopied) return;
-
+	const handleBookNow = () => {
+		if (selectedSlots.size === 0) return;
 		const message = buildMessengerMessage();
 		if (!message) return;
-
-		try {
-			await navigator.clipboard.writeText(message);
-			setIsCopied(true);
-
-			if (copiedTimeoutRef.current) clearTimeout(copiedTimeoutRef.current);
-			copiedTimeoutRef.current = setTimeout(() => setIsCopied(false), 4000);
-
-			toast.success('Đã sao chép thông tin đặt phòng!', {
-				description: 'Mở Messenger và dán (Ctrl+V) tin nhắn để gửi cho chúng tôi.',
-				duration: 5000,
-			});
-
-			setTimeout(() => {
-				window.open(`https://m.me/${contactData.messengerId}`, '_blank');
-			}, 600);
-		} catch {
-			try {
-				const textarea = document.createElement('textarea');
-				textarea.value = message;
-				textarea.style.position = 'fixed';
-				textarea.style.opacity = '0';
-				document.body.appendChild(textarea);
-				textarea.select();
-				document.execCommand('copy');
-				document.body.removeChild(textarea);
-
-				setIsCopied(true);
-				if (copiedTimeoutRef.current) clearTimeout(copiedTimeoutRef.current);
-				copiedTimeoutRef.current = setTimeout(() => setIsCopied(false), 4000);
-
-				toast.success('Đã sao chép thông tin đặt phòng!', {
-					description: 'Mở Messenger và dán (Ctrl+V) tin nhắn để gửi cho chúng tôi.',
-					duration: 5000,
-				});
-
-				setTimeout(() => {
-					window.open(`https://m.me/${contactData.messengerId}`, '_blank');
-				}, 600);
-			} catch {
-				toast.error('Không thể sao chép. Vui lòng thử lại.', { duration: 3000 });
-				window.open(`https://m.me/${contactData.messengerId}`, '_blank');
-			}
-		}
-	}, [selectedSlots, isCopied, pricing.totalAmount, selectedPricingSlots, contactData.messengerId]); // eslint-disable-line react-hooks/exhaustive-deps
+		setBookingMessage(message);
+		setIsSendModalOpen(true);
+	};
 
 	const savingsBadgeLabel = getSavingsBadgeLabel(pricing);
 
@@ -531,11 +487,10 @@ export default function BookingWidget({ room }: { room: Room }) {
 															<span className="font-bold">{toKDisplay(dynamicPrice)}</span>
 														) : null} */}
 														{badgeText && (
-															<div className={`absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 px-1 py-0.5 rounded shadow-sm z-10 whitespace-nowrap text-[6px] sm:text-[8px] font-bold ${
-																isSelected 
-																	? 'bg-white text-[#D97D48]' 
+															<div className={`absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 px-1 py-0.5 rounded shadow-sm z-10 whitespace-nowrap text-[6px] sm:text-[8px] font-bold ${isSelected
+																	? 'bg-white text-[#D97D48]'
 																	: 'bg-[#046B5A] text-white'
-															}`}>
+																}`}>
 																{badgeText}
 															</div>
 														)}
@@ -666,26 +621,14 @@ export default function BookingWidget({ room }: { room: Room }) {
 
 					<button
 						onClick={handleBookNow}
-						disabled={isCopied}
-						className={`w-full px-4 py-2.5 rounded-lg font-medium text-white transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${isCopied ? 'bg-green-600 hover:bg-green-600' : 'hover:opacity-90'
-							}`}
-						style={!isCopied ? { backgroundColor: '#D97D48' } : undefined}
+						className="w-full px-4 py-2.5 rounded-lg font-medium text-white transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer hover:opacity-90"
+						style={{ backgroundColor: '#D97D48' }}
 					>
-						{isCopied ? (
-							<>
-								<Check className="w-5 h-5" />
-								Đã sao chép! Dán vào Messenger
-							</>
-						) : (
-							<>
-								<Image src={messengerIcon} alt="Messenger" width={24} height={24} />
-								Đặt phòng ngay
-							</>
-						)}
+						<Image src={messengerIcon} alt="Messenger" width={24} height={24} />
+						Đặt phòng ngay
 					</button>
 					<p className="text-[10px] text-stone-400 text-center mt-1.5">
-						<Copy className="w-3 h-3 inline mr-1" />
-						Nhấn để sao chép & mở Messenger — dán tin nhắn để đặt phòng
+						Mở popup để copy nội dung và chọn app gửi tin
 					</p>
 				</motion.div>
 			)}
@@ -697,6 +640,12 @@ export default function BookingWidget({ room }: { room: Room }) {
 					</p>
 				</div>
 			)}
+
+			<BookingSendModal
+				opened={isSendModalOpen}
+				onClose={() => setIsSendModalOpen(false)}
+				bookingMessage={bookingMessage}
+			/>
 		</Card>
 	);
 }
