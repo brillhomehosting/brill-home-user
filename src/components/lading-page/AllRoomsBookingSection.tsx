@@ -343,21 +343,27 @@ export default function AllRoomsBookingSection() {
 						activeDiscountCampaigns={activeDiscountCampaigns}
 					/>
 
-					<BookingInfoBanner
-						comboDiscounts={comboDiscounts}
-						isLoading={isLoadingComboDiscounts}
-						activeDiscountPrograms={activeDiscountCampaigns}
-						isLoadingActiveDiscountPrograms={isLoadingActiveDiscountCampaigns}
-					/>
+					<div className="mt-6 grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 lg:gap-8 items-start">
+						{/* Banner ưu đãi sẽ chiếm phần không gian bên trái và có thể cuộn ngang */}
+						<div className="w-full min-w-0 overflow-hidden">
+							<BookingInfoBanner
+								comboDiscounts={comboDiscounts}
+								isLoading={isLoadingComboDiscounts}
+								activeDiscountPrograms={activeDiscountCampaigns}
+								isLoadingActiveDiscountPrograms={isLoadingActiveDiscountCampaigns}
+							/>
+						</div>
 
-					<div className="mt-4 flex justify-end">
-						<BookingSummaryCard
-							selectedSlots={selectedSlots}
-							pricing={pricing}
-							isPricingLoading={isPricingConfigLoading}
-							isCopied={isCopied}
-							onBookNow={handleBookNow}
-						/>
+						{/* Ô tính tiền sẽ nằm cố định ở bên phải */}
+						<div className="w-full">
+							<BookingSummaryCard
+								selectedSlots={selectedSlots}
+								pricing={pricing}
+								isPricingLoading={isPricingConfigLoading}
+								isCopied={isCopied}
+								onBookNow={handleBookNow}
+							/>
+						</div>
 					</div>
 
 					{selectedSlots.size > 0 && <div className="h-80 md:hidden" />}

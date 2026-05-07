@@ -1,7 +1,32 @@
 import { toKDisplay } from "@/lib/pricingUtils";
 import type { ActiveDiscountProgram, ComboDiscountTier } from "@/types/pricing";
+import { useMediaQuery } from "@mantine/hooks";
 import { motion } from "framer-motion";
-import { Sparkles, Zap, Star } from "lucide-react";
+import { Sparkles, Star, Zap } from "lucide-react";
+import 'swiper/css';
+import 'swiper/css/pagination';
+import { Autoplay, FreeMode, Pagination } from 'swiper/modules';
+import { Swiper, SwiperSlide } from 'swiper/react';
+
+const customSwiperStyles = `
+  .swiper-pagination-bullet {
+    background-color: #d6d3d1 !important;
+    opacity: 0.6 !important;
+  }
+  .swiper-pagination-bullet-active {
+    background-color: #78716c !important;
+    opacity: 1 !important;
+  }
+  .swiper-pagination {
+    bottom: -24px !important;
+  }
+  @media (max-width: 640px) {
+    .swiper-pagination-bullet {
+      width: 5.5px !important;
+      height: 5.5px !important;
+    }
+  }
+`;
 
 interface BookingInfoBannerProps {
 	comboDiscounts: ComboDiscountTier[];
@@ -29,7 +54,7 @@ export default function BookingInfoBanner({
 }: BookingInfoBannerProps) {
 	if (isLoading || isLoadingActiveDiscountPrograms) {
 		return (
-			<motion.div 
+			<motion.div
 				initial={{ opacity: 0, y: 10 }}
 				animate={{ opacity: 1, y: 0 }}
 				className="mt-2 rounded-xl border border-stone-200 bg-white/50 backdrop-blur-sm px-4 py-3 text-center text-[11px] text-stone-500 animate-pulse shadow-sm"
@@ -53,12 +78,14 @@ export default function BookingInfoBanner({
 
 	const containerVariants = {
 		hidden: { opacity: 0, y: 10 },
-		visible: { 
-			opacity: 1, 
+		visible: {
+			opacity: 1,
 			y: 0,
-			transition: { staggerChildren: 0.1, duration: 0.4 } 
+			transition: { staggerChildren: 0.1, duration: 0.4 }
 		}
 	};
+
+	const isDesktop = useMediaQuery('(min-width: 640px)', false, { getInitialValueInEffect: false }) ?? false;
 
 	// Hàm tạo style cho từng loại program
 	const getProgramStyle = (program: ActiveDiscountProgram, index: number) => {
@@ -72,6 +99,8 @@ export default function BookingInfoBanner({
 			{
 				bg: 'bg-gradient-to-br from-rose-50 to-white border-rose-100',
 				badgeBg: 'bg-[#E11D48]',
+				badgeLightBg: 'bg-rose-100',
+				badgeTextColor: 'text-rose-600',
 				textColor: 'text-[#E11D48]',
 				watermarkColor: 'text-rose-200/40',
 				Icon: Zap
@@ -79,6 +108,8 @@ export default function BookingInfoBanner({
 			{
 				bg: 'bg-gradient-to-br from-teal-50 to-white border-teal-100',
 				badgeBg: 'bg-[#0D9488]',
+				badgeLightBg: 'bg-teal-100',
+				badgeTextColor: 'text-teal-600',
 				textColor: 'text-[#0D9488]',
 				watermarkColor: 'text-teal-200/40',
 				Icon: Star
@@ -86,6 +117,8 @@ export default function BookingInfoBanner({
 			{
 				bg: 'bg-gradient-to-br from-amber-50 to-white border-amber-100',
 				badgeBg: 'bg-[#D97706]',
+				badgeLightBg: 'bg-amber-100',
+				badgeTextColor: 'text-amber-600',
 				textColor: 'text-[#D97706]',
 				watermarkColor: 'text-amber-200/40',
 				Icon: Sparkles
@@ -94,109 +127,186 @@ export default function BookingInfoBanner({
 		return { ...styles[index % styles.length], badgeText: typeText };
 	};
 
-	return (
-		<motion.div 
-			variants={containerVariants}
-			initial="hidden"
-			animate="visible"
-			className="mt-2 sm:mt-4 flex flex-col w-full overflow-hidden"
-		>
-			{/* Section: Combo Khung Giờ */}
-			{sortedTiers.length > 0 && (
-				<div className="sm:mb-3">
-					<div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-3 px-1">
-						<div className="flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded bg-[#E5F2F0] text-[#087B65]">
-							<Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-						</div>
-						<span className="font-bold text-[#087B65] text-xs sm:text-sm tracking-wide">Combo Khung Giờ</span>
-					</div>
-					
-					{/* Horizontal Scroll Container */}
-					<div className="flex gap-2 sm:gap-3 overflow-x-auto pb-3 sm:pb-4 pt-1 px-1">
-						{sortedTiers.map((tier, idx) => (
-							<div 
-								key={idx} 
-								className="relative min-w-[140px] sm:min-w-[220px] max-w-[160px] sm:max-w-[240px] bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-stone-100 p-2 sm:p-3 flex flex-col shrink-0"
-							>
-								{/* Tag góc phải trên */}
-								<div className="absolute top-0 right-0 bg-[#046B5A] text-white font-bold text-[10px] sm:text-sm px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-bl-xl rounded-tr-xl shadow-sm z-10">
-									-{Math.round(toPercentValue(tier.discountPercent))}%
-								</div>
-								
-								{/* Ticket Tag nhỏ - Ẩn trên mobile */}
-								<div className="hidden sm:flex items-center gap-1 bg-[#E5F2F0] text-[#087B65] w-max px-1.5 sm:px-2 py-0.5 rounded text-[7px] sm:text-[9px] font-bold uppercase tracking-wider mb-1.5 sm:mb-2">
-									<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M9 9h6"/><path d="M9 15h6"/></svg>
-									<span>COMBO</span>
-								</div>
-								
-								<h4 className="font-bold text-stone-800 text-[11px] sm:text-sm mb-0.5 sm:mb-1 line-clamp-1 pr-7 sm:pr-12">
-									Combo {tier.minSlots} khung
-								</h4>
-								<p className="text-[9px] sm:text-[11px] text-stone-500 font-medium mb-1 sm:mb-3 line-clamp-2 sm:line-clamp-none">
-									Đặt từ <strong className="text-stone-700">{tier.minSlots}</strong> khung liên tiếp giảm <strong className="text-[#087B65]">{Math.round(toPercentValue(tier.discountPercent))}%</strong>
-								</p>
-								
-								{/* Chú thích cuối card - Ẩn trên mobile */}
-								<div className="mt-auto pt-2 border-t border-stone-50 border-dashed hidden sm:flex items-center gap-1.5 text-stone-400 text-[8px] sm:text-[10px] font-medium">
-									<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-									<span>Áp dụng mọi khung giờ</span>
-								</div>
-							</div>
-						))}
-					</div>
-				</div>
-			)}
+	// Hàm tạo mô tả cho từng loại program
+	// Hàm tạo mô tả cho từng loại program
+	const getProgramDescription = (program: ActiveDiscountProgram) => {
+		if (program.type === 'ROOM' && program.targetRoomName) {
+			return `Áp dụng riêng cho ${program.targetRoomName}`;
+		}
 
-			{/* Section: Chương Trình Ưu Đãi */}
-			{campaignItems.length > 0 && (
-				<div className="mt-1 sm:mt-0">
-					<div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-3 px-1">
-						<div className="flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded bg-[#FDECEB] text-[#A82035]">
-							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="sm:w-3.5 sm:h-3.5"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/></svg>
+		if (program.type === 'ROOM_TYPE' && program.targetRoomType) {
+			const typeMap: Record<string, string> = {
+				'VIP': 'phòng VIP',
+				'STANDARD': 'phòng Tiêu chuẩn',
+				'NORMAL': 'phòng Thường',
+				'PREMIUM': 'phòng Cao cấp'
+			};
+			const typeName = typeMap[program.targetRoomType.toUpperCase()] || program.targetRoomType;
+			return `Ưu đãi dành riêng cho hạng ${typeName}`;
+		}
+
+		if (program.type === 'WEEK_DAY') {
+			if (program.targetWeekDay === true) return 'Áp dụng cho các ngày trong tuần (Thứ 2 - Thứ 6)';
+			if (program.targetWeekDay === false) return 'Ưu đãi đặc biệt cho kỳ nghỉ cuối tuần (Thứ 7, CN)';
+			return 'Ưu đãi dành cho khách hàng đặt theo ngày';
+		}
+
+		if (program.type === 'SLOT_TYPE') {
+			if (program.targetOvernightSlot === true) return 'Ưu đãi đặc biệt khi đặt phòng qua đêm';
+			if (program.targetOvernightSlot === false) return 'Giảm giá sâu cho các khung giờ ban ngày';
+			return 'Giảm giá sâu khi đặt vào các khung giờ vàng';
+		}
+
+		if (program.type === 'ALL') return 'Chương trình ưu đãi áp dụng cho tất cả hạng phòng';
+
+		return 'Ưu đãi hấp dẫn dành cho bạn';
+	};
+
+	return (
+		<>
+			<style>{customSwiperStyles}</style>
+			<motion.div
+				variants={containerVariants}
+				initial="hidden"
+				animate="visible"
+				className="mt-2 sm:mt-4 flex flex-col w-full overflow-hidden"
+			>
+				{/* Section: Combo Khung Giờ */}
+				{sortedTiers.length > 0 && (
+					<div className="sm:mb-3">
+						<div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-3 px-1">
+							<div className="flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded bg-[#E5F2F0] text-[#087B65]">
+								<Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+							</div>
+							<span className="font-bold text-[#087B65] text-xs sm:text-sm tracking-wide">Combo Khung Giờ</span>
 						</div>
-						<span className="font-bold text-[#A82035] text-xs sm:text-sm tracking-wide">Chương Trình Ưu Đãi</span>
+
+						{/* Horizontal Scroll Container */}
+						<div className="pt-1 px-1">
+							<Swiper
+								modules={[Autoplay, FreeMode, Pagination]}
+								spaceBetween={8}
+								slidesPerView="auto"
+								freeMode={true}
+								loop={true}
+								pagination={{ clickable: true }}
+								autoplay={{
+									delay: isDesktop ? 3500 : 2500,
+									disableOnInteraction: false,
+									pauseOnMouseEnter: isDesktop,
+								}}
+								breakpoints={{
+									640: { spaceBetween: 12 }
+								}}
+								className="overflow-visible! mb-8"
+							>
+								{sortedTiers.map((tier, idx) => (
+									<SwiperSlide key={idx} className="w-auto! h-auto! flex">
+										<div className="relative min-w-[140px] sm:min-w-[220px] max-w-[160px] sm:max-w-[240px] w-full bg-white rounded-lg shadow-lg border border-stone-100 p-3 sm:p-3 flex flex-col shrink-0 h-full">
+											{/* Tag góc phải trên */}
+											<div className="absolute top-0 right-0 bg-[#046B5A] text-white font-bold text-[10px] sm:text-sm px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-bl-xl rounded-tr-lg shadow-sm z-10">
+												-{Math.round(toPercentValue(tier.discountPercent))}%
+											</div>
+
+											{/* Ticket Tag nhỏ - Ẩn trên mobile */}
+											<div className="hidden sm:flex items-center gap-1 bg-[#E5F2F0] text-[#087B65] w-max px-1.5 sm:px-2 py-0.5 rounded text-[7px] sm:text-[9px] font-bold uppercase tracking-wider mb-1.5 sm:mb-2">
+												<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" /><path d="M9 9h6" /><path d="M9 15h6" /></svg>
+												<span>COMBO</span>
+											</div>
+
+											<h4 className="font-bold text-stone-800 text-[11px] sm:text-sm mb-0.5 sm:mb-1 line-clamp-1 pr-7 sm:pr-12">
+												Combo {tier.minSlots} khung
+											</h4>
+											<p className="text-[9px] sm:text-[10px] text-stone-500 font-medium mb-1 sm:mb-3 leading-relaxed">
+												Đặt từ{" "}
+												<strong>{tier.minSlots}</strong>
+												{" "}khung liên tiếp giảm{" "}
+												<strong className="text-[#087B65]">
+													{Math.round(toPercentValue(tier.discountPercent))}%
+												</strong>
+											</p>
+
+											{/* Chú thích cuối card - Ẩn trên mobile */}
+											<div className="mt-auto pt-2 border-t border-stone-50 border-dashed hidden sm:flex items-center gap-1.5 text-stone-400 text-[8px] sm:text-[10px] font-medium">
+												<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+												<span>Áp dụng mọi khung giờ</span>
+											</div>
+										</div>
+									</SwiperSlide>
+								))}
+							</Swiper>
+						</div>
 					</div>
-					
-					{/* Horizontal Scroll Container */}
-					<div className="flex gap-2 sm:gap-3 overflow-x-auto pb-3 sm:pb-4 pt-1 px-1">
-						{campaignItems.map((program, idx) => {
-							const style = getProgramStyle(program, idx);
-							const Watermark = style.Icon as any;
-							
-							return (
-								<div 
-									key={program.id} 
-									className={`relative min-w-[120px] sm:min-w-[200px] max-w-[140px] sm:max-w-[220px] rounded-xl border p-1.5 sm:p-3 flex flex-col shrink-0 overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.03)] ${style.bg}`}
-								>
-									{/* Watermark icon - Ẩn trên mobile để đỡ rối */}
-									<Watermark 
-										className={`absolute -right-3 -bottom-3 hidden sm:block w-14 h-14 sm:w-20 sm:h-20 rotate-12 ${style.watermarkColor}`} 
-										strokeWidth={1.5} 
-									/>
-									
-									{/* Badge top-left */}
-									<div className={`${style.badgeBg} text-white text-[7px] sm:text-[9px] font-bold uppercase px-1.5 sm:px-2 py-0.5 rounded w-max mb-1 sm:mb-3 tracking-widest relative z-10 shadow-sm`}>
-										{style.badgeText}
-									</div>
-									
-									<h4 className="font-bold text-stone-800 text-[11px] sm:text-[13px] mb-0 sm:mb-1 line-clamp-1 relative z-10">
-										{program.name}
-									</h4>
-									
-									<div className="flex items-baseline gap-1 sm:gap-1.5 relative z-10 mt-1">
-										<span className={`text-[15px] sm:text-xl font-black tracking-tight ${style.textColor}`}>
-											{getProgramDiscountLabel(program)}
-										</span>
-										<span className="text-[8px] sm:text-[10px] font-bold text-stone-500 uppercase tracking-widest">
-											{program.discountType === "PERCENTAGE" ? "GIẢM" : "TIỀN MẶT"}
-										</span>
-									</div>
-								</div>
-							);
-						})}
+				)}
+				{/* Section: Chương Trình Ưu Đãi */}
+				{campaignItems.length > 0 && (
+					<div className="mt-1 sm:mt-0">
+						<div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-3 px-1">
+							<div className="flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded bg-[#FDECEB] text-[#A82035]">
+								<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="sm:w-3.5 sm:h-3.5"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" /></svg>
+							</div>
+							<span className="font-bold text-[#A82035] text-xs sm:text-sm tracking-wide">Chương Trình Ưu Đãi</span>
+						</div>
+
+						{/* Horizontal Scroll Container */}
+						<div className="pt-1 px-1">
+							<Swiper
+								modules={[Autoplay, FreeMode, Pagination]}
+								spaceBetween={8}
+								slidesPerView="auto"
+								// freeMode={true}
+								loop={true}
+								pagination={{ clickable: true }}
+								autoplay={{
+									delay: isDesktop ? 4000 : 2800,
+									disableOnInteraction: false,
+									pauseOnMouseEnter: isDesktop,
+								}}
+								breakpoints={{
+									640: { spaceBetween: 12 }
+								}}
+								className="overflow-visible! mb-8"
+							>
+								{campaignItems.map((program, idx) => {
+									const style = getProgramStyle(program, idx);
+									const Watermark = style.Icon as any;
+
+									return (
+										<SwiperSlide key={program.id} className="w-auto! h-auto! flex">
+											<div className={`relative min-w-[120px] sm:min-w-[200px] max-w-[140px] sm:max-w-[220px] rounded-lg border p-3 sm:p-3 flex flex-col shrink-0 overflow-hidden shadow-md w-full h-full ${style.bg}`}>
+												{/* Watermark icon - Ẩn trên mobile để đỡ rối */}
+												<Watermark
+													className={`absolute -right-3 -bottom-3 hidden sm:block w-14 h-14 sm:w-20 sm:h-20 rotate-12 ${style.watermarkColor}`}
+													strokeWidth={1.5}
+												/>
+
+												{/* Badge top-left */}
+												<div className={`${style.badgeLightBg} ${style.badgeTextColor} text-[7px] sm:text-[9px] font-bold uppercase px-1.5 sm:px-2 py-0.5 rounded w-max mb-1.5 sm:mb-2 tracking-widest relative z-10 hidden sm:block`}>
+													{style.badgeText}
+												</div>
+
+												{/* Tag giá giảm góc phải - Đồng nhất với Combo */}
+												<div className={`absolute top-0 right-0 ${style.badgeBg} text-white font-bold text-[10px] sm:text-sm px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-bl-xl rounded-tr-lg shadow-sm z-10`}>
+													{getProgramDiscountLabel(program)}
+												</div>
+
+												<h4 className="font-bold text-stone-800 text-xs sm:text-[15px] mb-0.5 sm:mb-1.5 line-clamp-1 relative z-10 pr-10 sm:pr-12">
+													{program.name}
+												</h4>
+
+												<p className="text-[9px] sm:text-[10px] text-stone-500 font-medium relative z-10 line-clamp-2 leading-relaxed opacity-80">
+													{getProgramDescription(program)}
+												</p>
+
+											</div>
+										</SwiperSlide>
+									);
+								})}
+							</Swiper>
+						</div>
 					</div>
-				</div>
-			)}
-		</motion.div>
+				)}
+			</motion.div>
+		</>
 	);
 }
