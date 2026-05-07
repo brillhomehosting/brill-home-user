@@ -109,7 +109,7 @@ export default function RootLayout({
 			<head>
 				<ColorSchemeScript defaultColorScheme="light" />
 			</head>
-			<body className={`${inter.variable} ${notoSerif.variable}`}>
+			<body suppressHydrationWarning className={`${inter.variable} ${notoSerif.variable}`}>
 				<Providers>
 					<Header />
 					{children}
