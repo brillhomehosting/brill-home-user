@@ -455,7 +455,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 											const isActive = isApiActive && !isEndPast;
 											const canInteract = !isPastDateRow && isActive;
 											const isBooked = !isApiActive;
-												const dateStr = formatDate(date);
+											const dateStr = formatDate(date);
 											const isDiscount = isInDiscountProgram(dateStr);
 											const isWeeklyDiscount = isEligibleForWeeklyDiscount(dateStr);
 											const isHoliday = isHolidayDate(dateStr);
@@ -476,28 +476,28 @@ export default function BookingWidget({ room }: { room: Room }) {
 														backgroundColor: isTodayRow ? '#FAFAF8' : '#FFFFFF',
 													}}
 												>
-														<button
-															onClick={() => canInteract && handleSlotClick(date, slot.id, slot.price)}
-															disabled={!canInteract}
-															className={`
+													<button
+														onClick={() => canInteract && handleSlotClick(date, slot.id, slot.price)}
+														disabled={!canInteract}
+														className={`
 																w-full h-[32px] rounded font-medium text-xs transition-all duration-200 flex flex-col items-center justify-center gap-0.5 shadow-sm
 																${isSelected
-																	? 'bg-[#D97D48] text-white shadow-md border border-[#D97D48]'
-																	: isBooked
-																		? 'bg-[#CF5B51] text-white border border-transparent cursor-not-allowed shadow-none'
-																		: canInteract
-																			? 'bg-white text-teal-700 border border-teal-200 hover:border-teal-500 hover:shadow-md'
-																			: 'bg-white text-teal-700 border border-teal-200 cursor-not-allowed shadow-none'
-																}
+																? 'bg-[#D97D48] text-white shadow-md border border-[#D97D48]'
+																: isBooked
+																	? 'bg-[#CF5B51] text-white border border-transparent cursor-not-allowed shadow-none'
+																	: canInteract
+																		? 'bg-white text-teal-700 border border-teal-200 hover:border-teal-500 hover:shadow-md'
+																		: 'bg-white text-teal-700 border border-teal-200 cursor-not-allowed shadow-none'
+															}
 															`}
 														style={isTodayRow ? {
 															boxShadow: TODAY_SLOT_BOX_SHADOW,
 														} : undefined}
-														>
+													>
 														{!isBooked ? (
 															<span className="font-bold">{priceInK}k</span>
 														) : null}
-														</button>
+													</button>
 												</Table.Td>
 											);
 										})}
@@ -624,8 +624,8 @@ export default function BookingWidget({ room }: { room: Room }) {
 						<Image src={messengerIcon} alt="Messenger" width={24} height={24} />
 						Đặt phòng ngay
 					</button>
-					</motion.div>
-				)}
+				</motion.div>
+			)}
 
 			{/* Empty State */}
 			{selectedSlots.size === 0 && !isLoading && timeSlots && Array.isArray(timeSlots) && timeSlots.length > 0 && (

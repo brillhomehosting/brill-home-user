@@ -88,12 +88,13 @@ export default function AllRoomsBookingSection() {
 		const availabilityData = roomAvailabilityMap.get(roomId);
 		const linearList: { key: string; price: number; isActive: boolean; date: Date; slotId: string }[] = [];
 
-		pagedDates.forEach(date => {
+		allDates.forEach(date => {
 			const dateStr = formatDate(date);
 			const dayData = availabilityData?.find(d => d.date === dateStr);
 
 			timeSlots.forEach(slot => {
 				const slotStatus = dayData?.timeSlots?.find(s => s?.timeSlot?.id === slot.id);
+				// For dates outside the current API window, fall back to base price / active=true
 				const isActive = slotStatus?.isActive ?? true;
 				const dynamicPrice = slotStatus?.timeSlot?.price ?? slot.price;
 
