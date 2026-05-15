@@ -302,8 +302,6 @@ export default function BookingCalendarTable({
 															{/* Slot content based on status */}
 															{slotStatus === 'HOLDING' ? (
 																<span className="text-[10px] font-semibold text-stone-500">Đang giữ</span>
-															) : slotStatus === 'BOOKED' && !isPastDateRow ? (
-																<span className="text-[10px] font-semibold text-stone-500">Đã đặt</span>
 															) : null}
 															{badgeText && (
 																<div className={`absolute -top-1 -right-1 sm:-top-1.5 sm:-right-1.5 px-1 py-0.5 rounded shadow-sm z-10 whitespace-nowrap text-[6px] sm:text-[7px] font-bold ${
