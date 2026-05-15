@@ -1,7 +1,7 @@
 'use client';
 
 import messengerIcon from '@/assets/icon-messenger.png';
-import { getSavingsBadgeLabel, toKDisplay } from '@/lib/pricingUtils';
+import { getHolidaySurchargeLabel, getSavingsBadgeLabel, toKDisplay } from '@/lib/pricingUtils';
 import type { PricingPreviewBreakdown } from '@/types/pricing';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
@@ -22,6 +22,7 @@ export default function MobileBookingBar({
 	if (selectedSlots.size === 0) return null;
 
 	const savingsBadgeLabel = getSavingsBadgeLabel(pricing);
+	const holidaySurchargeLabel = getHolidaySurchargeLabel(pricing);
 
 	return (
 		<motion.div
@@ -54,7 +55,7 @@ export default function MobileBookingBar({
 					</div>
 					{pricing.holidaySurchargeAmount > 0 && (
 						<div className="px-3 py-1.5 flex justify-between items-center">
-							<span className="text-xs text-amber-700">Phụ thu ngày lễ</span>
+							<span className="text-xs text-amber-700">{holidaySurchargeLabel}</span>
 							<span className="text-xs text-amber-700">+{toKDisplay(pricing.holidaySurchargeAmount)}</span>
 						</div>
 					)}

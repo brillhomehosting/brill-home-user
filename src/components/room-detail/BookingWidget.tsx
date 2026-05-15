@@ -8,7 +8,7 @@ import { useHolidaySurchargeByDates } from '@/hooks/useHolidaySurchargeByDates';
 import { useSSEAvailability } from '@/hooks/useSSEAvailability';
 import { useTimeSlotAvailability } from '@/hooks/useTimeSlotAvailability';
 import { buildBookingMessage } from '@/lib/buildBookingMessage';
-import { calculatePricing, getSavingsBadgeLabel, resolveBestProgramForDate, toKDisplay, toPercentValue } from '@/lib/pricingUtils';
+import { calculatePricing, getHolidaySurchargeLabel, getSavingsBadgeLabel, resolveBestProgramForDate, toKDisplay, toPercentValue } from '@/lib/pricingUtils';
 import { applySlotSelection, LinearSelectableSlot, parseSlotKey } from '@/lib/slotSelection';
 import { useAvailabilityStore } from '@/store/availabilityStore';
 import { PricingSelectedSlot } from '@/types/pricing';
@@ -333,6 +333,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 	};
 
 	const savingsBadgeLabel = getSavingsBadgeLabel(pricing);
+	const holidaySurchargeLabel = getHolidaySurchargeLabel(pricing);
 
 	const isLoading = isLoadingAvailability;
 
@@ -547,7 +548,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 						</div>
 						{pricing.holidaySurchargeAmount > 0 && (
 							<div className="px-3 py-1.5 flex justify-between items-center">
-								<span className="text-xs text-amber-700">Phụ thu ngày lễ</span>
+								<span className="text-xs text-amber-700">{holidaySurchargeLabel}</span>
 								<span className="text-xs text-amber-700">+{toKDisplay(pricing.holidaySurchargeAmount)}</span>
 							</div>
 						)}
