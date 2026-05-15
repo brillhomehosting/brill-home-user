@@ -386,3 +386,18 @@ export function getSavingsBadgeLabel(pricing: PricingPreviewBreakdown): string |
 	if (hasCombo) return comboBadgeLabel(pricing.comboPercent) ?? "Giảm giá combo";
 	return null;
 }
+
+export function getHolidaySurchargeLabel(pricing: PricingPreviewBreakdown): string {
+	const holidayNames = Array.from(
+		new Set(
+			pricing.dailyBreakdown
+				.filter((day) => day.holidaySurchargeAmount > 0)
+				.map((day) => day.holidayName?.trim())
+				.filter((name): name is string => Boolean(name)),
+		),
+	);
+
+	return holidayNames.length > 0
+		? `Phụ thu ${holidayNames.join(', ')}`
+		: 'Phụ thu ngày lễ';
+}
