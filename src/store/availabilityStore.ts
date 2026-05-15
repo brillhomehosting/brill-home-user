@@ -1,4 +1,4 @@
-import type { RoomAvailability, SlotStatus, SSEAvailabilityEvent } from '@/types/timeslot';
+import type { ApiSlotStatus, RoomAvailability, SlotStatus, SSEAvailabilityEvent } from '@/types/timeslot';
 import { create } from 'zustand';
 
 /**
@@ -22,6 +22,11 @@ interface AvailabilityState {
 	clearAll: () => void;
 }
 
+const normalizeSlotStatus = (status: ApiSlotStatus | undefined): SlotStatus | undefined => {
+	if (!status) return undefined;
+	return status === 'BOOKED' ? 'BOOKED' : 'AVAILABLE';
+};
+
 export const useAvailabilityStore = create<AvailabilityState>((set, get) => ({
 	statusMap: {},
 
@@ -35,9 +40,8 @@ export const useAvailabilityStore = create<AvailabilityState>((set, get) => ({
 				const dayMap: Record<string, SlotStatus> = {};
 
 				for (const slotWithStatus of day.timeSlots) {
-					// The backend returns `status` as 'AVAILABLE', 'BOOKED', 'HOLDING' directly
-					// Fallback to legacy `isActive` if status is somehow missing
-					let status: SlotStatus = slotWithStatus.status as SlotStatus;
+					// Fallback to legacy `isActive` if status is somehow missing.
+					let status = normalizeSlotStatus(slotWithStatus.status);
 					
 					if (!status) {
 						const isAvail = slotWithStatus.isAvailable ?? (slotWithStatus as any).isActive;
@@ -58,7 +62,9 @@ export const useAvailabilityStore = create<AvailabilityState>((set, get) => ({
 
 	updateSlot: (event: SSEAvailabilityEvent) => {
 		set((state) => {
-			const { roomId, date, timeSlotId, status } = event;
+			const { roomId, date, timeSlotId } = event;
+			const status = normalizeSlotStatus(event.status);
+			if (!status) return state;
 
 			// Deep clone only the affected path to avoid unnecessary re-renders
 			const newMap = { ...state.statusMap };

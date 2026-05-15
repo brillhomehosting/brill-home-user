@@ -445,7 +445,6 @@ export default function BookingWidget({ room }: { room: Room }) {
 											const isAvailable = slotStatus === 'AVAILABLE' && !isEndPast;
 											const canInteract = !isPastDateRow && isAvailable;
 											const isBooked = slotStatus === 'BOOKED';
-											const isHolding = slotStatus === 'HOLDING';
 											const badgeText = canInteract ? getSlotBadgeText(date, slot) : null;
 
 											// const dayData = availabilityData?.find(day => day.date === formatDate(date));
@@ -466,22 +465,18 @@ export default function BookingWidget({ room }: { room: Room }) {
 															w-full h-[22px] sm:h-[32px] rounded font-medium text-[10px] sm:text-xs transition-all duration-200 flex flex-col items-center justify-center shadow-sm relative
 															${isSelected
 																? 'bg-[#D97D48] text-white shadow-md border border-[#D97D48]'
-																: isHolding
-																	? 'bg-amber-50 text-amber-700 border border-amber-300 cursor-not-allowed shadow-none'
-																	: isBooked
-																		? 'bg-[#CF5B51] text-white border border-transparent cursor-not-allowed shadow-none'
-																		: canInteract
-																			? 'bg-white text-teal-700 border border-teal-200 hover:border-teal-500 hover:shadow-md'
-																			: 'bg-white text-teal-700 border border-teal-200 cursor-not-allowed shadow-none'
+																: isBooked
+																	? 'bg-[#CF5B51] text-white border border-transparent cursor-not-allowed shadow-none'
+																	: canInteract
+																		? 'bg-white text-teal-700 border border-teal-200 hover:border-teal-500 hover:shadow-md'
+																		: 'bg-white text-teal-700 border border-teal-200 cursor-not-allowed shadow-none'
 															}
 														`}
 														style={isTodayRow ? {
 															boxShadow: TODAY_SLOT_BOX_SHADOW,
 														} : undefined}
 													>
-														{/* {isHolding ? (
-															<span className="text-[10px] font-semibold">Đang giữ</span>
-														) : isBooked && !isPastDateRow ? (
+														{/* {isBooked && !isPastDateRow ? (
 															<span className="text-[10px] font-semibold">Đã đặt</span>
 														) : !isPastDateRow && isAvailable ? (
 															<span className="font-bold">{toKDisplay(dynamicPrice)}</span>
@@ -514,10 +509,6 @@ export default function BookingWidget({ room }: { room: Room }) {
 				<div className="flex items-center gap-1.5">
 					<div className="w-3 h-3 rounded-full bg-[#D97D48]"></div>
 					<span className="text-[10px] text-stone-600">Đang chọn</span>
-				</div>
-				<div className="flex items-center gap-1.5">
-					<div className="w-3 h-3 rounded-full bg-amber-400"></div>
-					<span className="text-[10px] text-stone-600">Đang giữ</span>
 				</div>
 				<div className="flex items-center gap-1.5">
 					<div className="w-3 h-3 rounded-full bg-red-400"></div>
@@ -649,4 +640,3 @@ export default function BookingWidget({ room }: { room: Room }) {
 		</Card>
 	);
 }
-
