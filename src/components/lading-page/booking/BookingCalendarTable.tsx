@@ -47,10 +47,6 @@ function getSlotClasses(status: SlotStatus, isSelected: boolean, canInteract: bo
 	}
 
 	switch (status) {
-		case 'HOLDING':
-			return {
-				className: 'bg-amber-50 text-amber-700 border border-amber-300 cursor-not-allowed shadow-none',
-			};
 		case 'BOOKED':
 			return {
 				className: 'bg-[#CF5B51] text-white border border-transparent cursor-not-allowed shadow-none',
@@ -299,10 +295,6 @@ export default function BookingCalendarTable({
 															`}
 															style={slotStyle}
 														>
-															{/* Slot content based on status */}
-															{slotStatus === 'HOLDING' ? (
-																<span className="text-[10px] font-semibold text-stone-500">Đang giữ</span>
-															) : null}
 															{badgeText && (
 																<div className={`absolute -top-1 -right-1 sm:-top-1.5 sm:-right-1.5 px-1 py-0.5 rounded shadow-sm z-10 whitespace-nowrap text-[6px] sm:text-[7px] font-bold ${
 																	isSelected 
