@@ -5,6 +5,26 @@ import type {
 } from "@/types/pricing";
 import type { AvailabilityApiResponse } from "@/types/timeslot";
 
+export type EBookingStatus = "CONFIRMED" | "CANCELLED";
+
+export interface PublicBookingSearchResult {
+	bookingId: string;
+	bookingCode: string;
+	status: EBookingStatus;
+	guestName: string;
+	roomName: string;
+	bookingDate: string;
+	checkInAt: string;
+	checkOutAt: string;
+	finalAmount: number;
+}
+
+export interface SearchBookingsParams {
+	phone?: string;
+	email?: string;
+	bookingDate?: string;
+}
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export interface FetchAvailabilityParams {
@@ -48,6 +68,18 @@ export const bookingApi = {
 			);
 			return response.json();
 		},
+	searchBookings: async (
+		params: SearchBookingsParams,
+	): Promise<{ success: boolean; data: PublicBookingSearchResult[]; message: string }> => {
+		const searchParams = new URLSearchParams();
+		if (params.phone) searchParams.set("phone", params.phone);
+		if (params.email) searchParams.set("email", params.email);
+		if (params.bookingDate) searchParams.set("bookingDate", params.bookingDate);
+		const response = await fetch(
+			`${API_BASE_URL}/api/v1/bookings/search?${searchParams.toString()}`,
+		);
+		return response.json();
+	},
 	fetchHolidaySurcharge: async (
 		params: FetchHolidaySurchargeParams,
 	): Promise<HolidaySurchargeApiResponse> => {

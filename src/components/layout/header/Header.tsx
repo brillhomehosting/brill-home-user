@@ -14,6 +14,7 @@ const navLinks = [
 	{ name: 'Tiện ích', href: '#amenities' },
 	{ name: 'Địa điểm', href: '#place' },
 	{ name: 'Liên Hệ', href: '#contact' },
+	{ name: 'Tra Cứu Booking', href: '/my-booking' },
 ];
 
 export function Header() {
