@@ -145,7 +145,7 @@ export function Footer() {
 
 			{/* Bottom Bar - Giữ nguyên */}
 			<Group mt={36} justify='center' style={{ borderTop: '1px solid #737272', paddingTop: 'var(--mantine-spacing-md)' }}>
-				<Text size="sm" c="dimmed">© 2026 Brill Home Nature Resort. Bảo lưu mọi quyền.</Text>
+				<Text size="sm" c="dimmed">© 2026 Brill Home. Bảo lưu mọi quyền.</Text>
 			</Group>
 		</footer>
 	);

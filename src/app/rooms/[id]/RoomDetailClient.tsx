@@ -9,7 +9,7 @@ import { useActiveDiscountCampaigns } from '@/hooks/useActiveDiscountCampaigns';
 import { useComboDiscounts } from '@/hooks/useComboDiscounts';
 import { useRoom } from '@/hooks/useRoom';
 import { Center, Container, Skeleton, Stack, Text } from '@mantine/core';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
 export default function RoomDetailClient({ roomId }: { roomId: string }) {
 	const { data: room, isLoading, error } = useRoom(roomId);
@@ -18,6 +18,23 @@ export default function RoomDetailClient({ roomId }: { roomId: string }) {
 
 	const { data: comboDiscounts = [], isLoading: isLoadingComboDiscounts } = useComboDiscounts();
 	const { data: activeDiscountCampaigns = [], isLoading: isLoadingActiveDiscountCampaigns } = useActiveDiscountCampaigns();
+
+	// Filter programs that apply to this specific room
+	const applicablePrograms = useMemo(() => {
+		if (!room || !activeDiscountCampaigns) return [];
+		return activeDiscountCampaigns.filter((program) => {
+			if (program.type === "ALL" || program.type === "SLOT_TYPE" || program.type === "WEEK_DAY") {
+				return true;
+			}
+			if (program.type === "ROOM" && program.targetRoomId === room.id) {
+				return true;
+			}
+			if (program.type === "ROOM_TYPE" && program.targetRoomType === room.roomType) {
+				return true;
+			}
+			return false;
+		});
+	}, [activeDiscountCampaigns, room]);
 
 	// Loading state
 	if (isLoading) {
@@ -89,7 +106,7 @@ export default function RoomDetailClient({ roomId }: { roomId: string }) {
 						<div className="lg:col-span-2 flex flex-col gap-6 mt-1 lg:mt-0">
 							<BookingInfoBanner 
 								comboDiscounts={comboDiscounts}
-								activeDiscountPrograms={activeDiscountCampaigns}
+								activeDiscountPrograms={applicablePrograms}
 								isLoading={isLoadingComboDiscounts}
 								isLoadingActiveDiscountPrograms={isLoadingActiveDiscountCampaigns}
 							/>
