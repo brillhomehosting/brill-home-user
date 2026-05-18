@@ -3,9 +3,11 @@
 import bctImage from '@/assets/bct.png';
 import zaloIcon from '@/assets/icon-zalo.png';
 import { socialLinks } from '@/data/contact-data';
+import { contactData } from '@/data';
 import { ActionIcon, Anchor, Container, Grid, Group, Stack, Text, Title } from '@mantine/core';
 import Image from 'next/image';
 import Link from 'next/link'; // Import Link của Next.js để điều hướng nhanh hơn
+import { Phone, Mail, MapPin } from 'lucide-react';
 
 const footerLinks = {
 	explore: [
@@ -13,12 +15,6 @@ const footerLinks = {
 		{ name: 'Địa Điểm', href: '/#place' },
 		{ name: 'Trải Nghiệm', href: '/#amenities' },
 		{ name: 'Liên Hệ', href: '/#contact' },
-	],
-	blogs: [
-		{ name: 'Seoul Thu Nhỏ', href: '/blogs/1' },
-		{ name: 'Bếp Đầy Đủ Tiện Nghi', href: '/blogs/2' },
-		{ name: 'Date Night Hoàn Hảo', href: '/blogs/3' },
-		{ name: 'Blogs', href: '/blogs' },
 	],
 	// --- PHẦN QUAN TRỌNG CẦN SỬA ---
 	policy: [
@@ -97,7 +93,6 @@ export function Footer() {
 						</div>
 					</Grid.Col>
 
-					{/* Links Sections */}
 					<Grid.Col span={{ base: 6, md: 4, lg: 2 }}>
 						<Text size="lg" fw={500} mb="sm" style={{ fontFamily: 'serif' }}>Khám Phá</Text>
 						<Stack gap="xs">
@@ -109,18 +104,7 @@ export function Footer() {
 						</Stack>
 					</Grid.Col>
 
-					<Grid.Col span={{ base: 6, md: 4, lg: 2 }}>
-						<Text size="lg" fw={500} mb="sm" style={{ fontFamily: 'serif' }}>Blog</Text>
-						<Stack gap="xs">
-							{footerLinks.blogs.map((link) => (
-								<Anchor key={link.name} component={Link} href={link.href} underline="never" c="dimmed" size="sm">
-									{link.name}
-								</Anchor>
-							))}
-						</Stack>
-					</Grid.Col>
-
-					<Grid.Col span={{ base: 6, md: 4, lg: 3 }}>
+					<Grid.Col span={{ base: 6, md: 3, lg: 2 }}>
 						<Text size="lg" fw={500} mb="sm" style={{ fontFamily: 'serif' }}>Chính Sách</Text>
 						<Stack gap="xs">
 							{footerLinks.policy.map((link) => (
@@ -138,12 +122,30 @@ export function Footer() {
 							))}
 						</Stack>
 					</Grid.Col>
+
+					<Grid.Col span={{ base: 12, md: 5, lg: 3 }}>
+						<Text size="lg" fw={500} mb="sm" style={{ fontFamily: 'serif' }}>Liên Hệ</Text>
+						<Stack gap="xs">
+							<Text size="sm" c="dimmed" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+								<Phone size={16} />
+								<span>{contactData.contactInfo.phone}</span>
+							</Text>
+							<Text size="sm" c="dimmed" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+								<Mail size={16} />
+								<span>{contactData.contactInfo.email}</span>
+							</Text>
+							<Text size="sm" c="dimmed" style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+								<MapPin size={16} style={{ marginTop: '2px', flexShrink: 0 }} />
+								<span>{contactData.contactInfo.address}</span>
+							</Text>
+						</Stack>
+					</Grid.Col>
 				</Grid>
 			</Container>
 
 			{/* Bottom Bar - Giữ nguyên */}
 			<Group mt={36} justify='center' style={{ borderTop: '1px solid #737272', paddingTop: 'var(--mantine-spacing-md)' }}>
-				<Text size="sm" c="dimmed">© 2026 Brill Home Nature Resort. Bảo lưu mọi quyền.</Text>
+				<Text size="sm" c="dimmed">© 2026 Brill Home. Bảo lưu mọi quyền.</Text>
 			</Group>
 		</footer>
 	);
