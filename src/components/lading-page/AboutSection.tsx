@@ -4,8 +4,6 @@ import { Button, Card, Container, Group, Stack, Text } from "@mantine/core";
 import { motion } from "framer-motion";
 import { Cctv, Leaf, LucideIcon, QrCode, TreePine } from "lucide-react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-
 const iconMap: Record<string, LucideIcon> = {
 	TreePine,
 	Leaf,
@@ -14,7 +12,6 @@ const iconMap: Record<string, LucideIcon> = {
 };
 
 export function AboutSection() {
-	const router = useRouter();
 	return (
 		<section id="about" className="py-20 md:py-28 lg:py-32 bg-background overflow-hidden relative">
 			<Container size="xl">
@@ -92,7 +89,6 @@ export function AboutSection() {
 						</p>
 
 						<Button
-							onClick={() => router.push('/blogs/line-store')}
 							styles={{
 								root: {
 									backgroundColor: '#D97D48',
