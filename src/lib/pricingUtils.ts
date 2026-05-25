@@ -206,7 +206,6 @@ function resolveComboTier(slotCount: number, tiers: ComboDiscountTier[]): ComboD
 function buildDailyBreakdown({
 	date,
 	daySlots,
-	comboDiscounts,
 	holidayInfo,
 	dayPrograms,
 	roomId,
@@ -214,7 +213,6 @@ function buildDailyBreakdown({
 }: {
 	date: string;
 	daySlots: PricingSelectedSlot[];
-	comboDiscounts: ComboDiscountTier[];
 	holidayInfo: HolidaySurchargeInfo | undefined;
 	dayPrograms: ActiveDiscountProgram[];
 	roomId: string;
@@ -242,18 +240,7 @@ function buildDailyBreakdown({
 	const programDiscountAmount = Math.min(priceAfterSurcharge, appliedProgram?.discountAmount ?? 0);
 	const priceAfterDiscount = Math.max(0, priceAfterSurcharge - programDiscountAmount);
 
-	const slotCount = daySlots.length;
-	const comboTier = resolveComboTier(slotCount, comboDiscounts);
-	const comboPercent = comboTier ? toPercentValue(comboTier.discountPercent) : 0;
-	const comboFlatDiscount = comboTier?.flatDiscount ?? 0;
-	// Backend tính combo dựa trên basePrice (giá gốc, trước holiday surcharge và discount program)
-	const comboPercentAmount = Math.round(basePrice * toPercentRate(comboPercent));
-	const comboDiscountAmount = Math.min(
-		priceAfterDiscount,
-		Math.max(0, comboPercentAmount + comboFlatDiscount),
-	);
-	const dailyTotal = Math.max(0, priceAfterDiscount - comboDiscountAmount);
-
+	// Combo is calculated at booking level (total slots), not per-day
 	return {
 		date,
 		basePrice,
@@ -264,13 +251,13 @@ function buildDailyBreakdown({
 		appliedProgram,
 		programDiscountAmount,
 		priceAfterDiscount,
-		slotCount,
-		comboPercent,
-		comboPercentAmount,
-		comboFlatDiscount,
-		comboDiscountAmount,
-		appliedComboTier: comboTier ?? null,
-		dailyTotal,
+		slotCount: daySlots.length,
+		comboPercent: 0,
+		comboPercentAmount: 0,
+		comboFlatDiscount: 0,
+		comboDiscountAmount: 0,
+		appliedComboTier: null,
+		dailyTotal: priceAfterDiscount,
 	};
 }
 
@@ -314,7 +301,6 @@ export function calculatePricing({
 			buildDailyBreakdown({
 				date,
 				daySlots,
-				comboDiscounts,
 				holidayInfo: resolvedHolidayByDate.get(date),
 				dayPrograms: activePrograms,
 				roomId,
@@ -325,20 +311,22 @@ export function calculatePricing({
 	const basePrice = dailyBreakdown.reduce((sum, day) => sum + day.basePrice, 0);
 	const holidaySurchargeAmount = dailyBreakdown.reduce((sum, day) => sum + day.holidaySurchargeAmount, 0);
 	const programDiscountAmount = dailyBreakdown.reduce((sum, day) => sum + day.programDiscountAmount, 0);
-	const comboPercentAmount = dailyBreakdown.reduce((sum, day) => sum + day.comboPercentAmount, 0);
-	const comboFlatDiscount = dailyBreakdown.reduce((sum, day) => sum + day.comboFlatDiscount, 0);
-	const comboDiscountAmount = dailyBreakdown.reduce((sum, day) => sum + day.comboDiscountAmount, 0);
-	const totalAmount = dailyBreakdown.reduce((sum, day) => sum + day.dailyTotal, 0);
+	const totalBeforeCombo = dailyBreakdown.reduce((sum, day) => sum + day.dailyTotal, 0);
+
+	// Combo: tính 1 lần dựa trên tổng số slot toàn booking
+	const totalSlotCount = selectedSlots.length;
+	const comboTier = resolveComboTier(totalSlotCount, comboDiscounts);
+	const comboPercent = comboTier ? toPercentValue(comboTier.discountPercent) : 0;
+	const comboFlatDiscount = comboTier?.flatDiscount ?? 0;
+	const comboPercentAmount = Math.round(basePrice * toPercentRate(comboPercent));
+	const comboDiscountAmount = Math.min(
+		totalBeforeCombo,
+		Math.max(0, comboPercentAmount + comboFlatDiscount),
+	);
+	const totalAmount = Math.max(0, totalBeforeCombo - comboDiscountAmount);
 	const savings = programDiscountAmount + comboDiscountAmount;
 
 	const firstProgramDay = dailyBreakdown.find((day) => day.appliedProgram);
-	const comboDays = dailyBreakdown.filter((day) => day.comboPercent > 0 || day.comboFlatDiscount > 0);
-	const firstComboDay = comboDays[0];
-	
-	// Show minimum combo percentage across all days (most conservative)
-	const displayComboPercent = comboDays.length > 0
-		? Math.min(...comboDays.map((day) => day.comboPercent))
-		: 0;
 
 	// Nếu nhiều ngày áp dụng các program khác nhau → không hiển thị tên cụ thể
 	const uniqueProgramIds = new Set(
@@ -354,14 +342,14 @@ export function calculatePricing({
 		basePrice,
 		holidaySurchargeAmount,
 		programDiscountAmount,
-		comboPercent: displayComboPercent,
+		comboPercent,
 		comboPercentAmount,
 		comboFlatDiscount,
 		comboDiscountAmount,
 		totalAmount,
 		savings,
 		appliedProgram: displayAppliedProgram,
-		appliedComboTier: firstComboDay?.appliedComboTier ?? null,
+		appliedComboTier: comboTier ?? null,
 		dailyBreakdown,
 	};
 }
