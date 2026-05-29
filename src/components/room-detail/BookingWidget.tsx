@@ -18,7 +18,7 @@ import { Card, Table } from '@mantine/core';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 type IndexedPricingSlot = PricingSelectedSlot & { index: number };
 
@@ -286,11 +286,6 @@ export default function BookingWidget({ room }: { room: Room }) {
 		return null;
 	}, [activeDiscountCampaigns, room.id, room.roomType]);
 
-	useEffect(() => {
-		setSelectedSlots(new Set());
-		setSlotPrices(new Map());
-	}, [currentDatePage]);
-
 	const handleSlotClick = (date: Date, slotId: string) => {
 		const slotKey = `${room.id}::${formatDate(date)}::${slotId}`;
 		const linearSlots = getLinearSlots();
@@ -298,6 +293,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 			linearSlots,
 			selectedSlots,
 			clickedKey: slotKey,
+			existingSlotPrices: slotPrices,
 		});
 
 		setSelectedSlots(result.selectedSlots);

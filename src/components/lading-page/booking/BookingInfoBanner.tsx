@@ -17,7 +17,7 @@ const customSwiperStyles = `
     background-color: #78716c !important;
     opacity: 1 !important;
   }
-  .swiper-pagination {
+  .swiper-pagination { 
     bottom: -24px !important;
   }
   @media (max-width: 640px) {
@@ -44,6 +44,22 @@ function getProgramDiscountLabel(program: ActiveDiscountProgram): string {
 		return `-${Math.round(toPercentValue(program.discountValue))}%`;
 	}
 	return `-${toKDisplay(program.discountValue)}`;
+}
+
+function getComboTierDiscountLabel(tier: ComboDiscountTier): string {
+	const percentValue = Math.round(toPercentValue(tier.discountPercent));
+	const flatValue = Math.max(0, Math.round(tier.flatDiscount || 0));
+
+	if (percentValue > 0 && flatValue > 0) {
+		return `${percentValue}% + ${toKDisplay(flatValue)}`;
+	}
+	if (percentValue > 0) {
+		return `${percentValue}%`;
+	}
+	if (flatValue > 0) {
+		return toKDisplay(flatValue);
+	}
+	return "0%";
 }
 
 export default function BookingInfoBanner({
@@ -180,7 +196,7 @@ export default function BookingInfoBanner({
 							{sortedTiers.map((tier, idx) => (
 								<>
 									<span className="text-green-600 font-semibold">
-										{tier.minSlots} khung  → {Math.round(toPercentValue(tier.discountPercent))}%
+										{tier.minSlots} khung  → {getComboTierDiscountLabel(tier)}
 									</span>
 									{idx < sortedTiers.length - 1 && (
 										<span >|</span>
@@ -225,7 +241,7 @@ export default function BookingInfoBanner({
 
 									return (
 										<SwiperSlide key={program.id} className="w-auto! h-auto! flex">
-											<div className={`relative min-w-[120px] sm:min-w-[200px] max-w-[140px] sm:max-w-[220px] rounded-lg border p-3 sm:p-3 flex flex-col shrink-0 overflow-hidden shadow-md w-full h-full ${style.bg}`}>
+											<div className={`relative min-w-30 sm:min-w-50 max-w-35 sm:max-w-55 rounded-lg border p-3 sm:p-3 flex flex-col shrink-0 overflow-hidden shadow-md w-full h-full ${style.bg}`}>
 												{/* Watermark icon - Ẩn trên mobile để đỡ rối */}
 												<Watermark
 													className={`absolute -right-3 -bottom-3 hidden sm:block w-14 h-14 sm:w-20 sm:h-20 rotate-12 ${style.watermarkColor}`}
