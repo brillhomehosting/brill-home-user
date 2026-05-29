@@ -200,11 +200,6 @@ export default function AllRoomsBookingSection() {
 		],
 	);
 
-	useEffect(() => {
-		setSelectedSlots(new Set());
-		setSlotPrices(new Map());
-	}, [currentDatePage]);
-
 	const handleSlotClick = (roomId: string, date: Date, slotId: string) => {
 		const linearSlots = getLinearSlots(roomId);
 		const clickedKey = `${roomId}::${formatDate(date)}::${slotId}`;
@@ -212,6 +207,7 @@ export default function AllRoomsBookingSection() {
 			linearSlots,
 			selectedSlots,
 			clickedKey,
+			existingSlotPrices: slotPrices,
 		});
 
 		setSelectedSlots(result.selectedSlots);
