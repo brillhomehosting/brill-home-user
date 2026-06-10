@@ -26,14 +26,6 @@ interface BookingCalendarTableProps {
 const TODAY_ROW_BOX_SHADOW = '0 0 18px rgba(154,52,18,0.24), 0 0 30px rgba(251,146,60,0.18)';
 const TODAY_SLOT_BOX_SHADOW = '0 6px 12px rgba(15,118,110,0.88), 0 -2px 5px rgba(13,148,136,0.40)';
 
-const isDateBeforeToday = (date: Date) => {
-	const today = new Date();
-	today.setHours(0, 0, 0, 0);
-	const compareDate = new Date(date);
-	compareDate.setHours(0, 0, 0, 0);
-	return compareDate < today;
-};
-
 /** Get slot style classes based on status */
 function getSlotClasses(status: SlotStatus, isSelected: boolean, canInteract: boolean, isTodayRow: boolean): {
 	className: string;
@@ -258,14 +250,12 @@ export default function BookingCalendarTable({
 												const slotKey = `${room.id}::${formatDate(date)}::${slot.id}`;
 												const isSelected = selectedSlots.has(slotKey);
 												const dateStr = formatDate(date);
-												const isPastDateRow = isDateBeforeToday(date);
-
 												// Use Zustand store for realtime status
 												const slotStatus = getStoreSlotStatus(room.id, dateStr, slot.id);
 
 												const isEndPast = isEndPastSlot(date, slot.endTime, slot.isOvernight);
 												const isAvailable = slotStatus === 'AVAILABLE';
-												const canInteract = !isPastDateRow && isAvailable && !isEndPast;
+												const canInteract = isAvailable && !isEndPast;
 
 												const baseSlotPrice = roomTimeSlotsApiMap.get(room.id)?.find(s => s.id === slot.id)?.price ?? slot.price;
 												const dynamicPrice = baseSlotPrice;
