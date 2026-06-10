@@ -55,24 +55,18 @@ const getTimeSlotIcon = (startTime: string, isOvernight: boolean): string => {
 	return '🌙';
 };
 
+// Check if slot's end time has passed. For overnight slots, the end time
+// falls on the day after `date`, so it can still be valid after `date` is
+// no longer "today".
 const isEndPastSlot = (date: Date, endTime: string, isOvernight: boolean): boolean => {
-	if (!isToday(date)) return false;
 	const now = new Date();
 	const timeParts = endTime.split(':');
 	const hours = parseInt(timeParts[0] || '0', 10);
 	const minutes = parseInt(timeParts[1] || '0', 10);
-	const endDate = new Date();
+	const endDate = new Date(date);
 	endDate.setHours(hours, minutes, 0, 0);
 	if (isOvernight) endDate.setDate(endDate.getDate() + 1);
 	return now > endDate;
-};
-
-const isDateBeforeToday = (date: Date) => {
-	const today = new Date();
-	today.setHours(0, 0, 0, 0);
-	const compareDate = new Date(date);
-	compareDate.setHours(0, 0, 0, 0);
-	return compareDate < today;
 };
 
 const TODAY_ROW_BOX_SHADOW = '0 0 18px rgba(154,52,18,0.24), 0 0 30px rgba(251,146,60,0.18)';
@@ -164,7 +158,6 @@ export default function BookingWidget({ room }: { room: Room }) {
 				const slotStatus = getSlotStatusForDate(date, slot.id);
 				const dynamicPrice = slotFromDay?.timeSlot?.price ?? slot.price;
 				const isAvailable = slotStatus === 'AVAILABLE'
-					&& !isDateBeforeToday(date)
 					&& !isEndPastSlot(date, slot.endTime, slot.isOvernight);
 
 				linearList.push({
@@ -437,10 +430,9 @@ export default function BookingWidget({ room }: { room: Room }) {
 											const slotKey = `${room.id}::${formatDate(date)}::${slot.id}`;
 											const isSelected = selectedSlots.has(slotKey);
 											const slotStatus = getSlotStatusForDate(date, slot.id);
-											const isPastDateRow = isDateBeforeToday(date);
 											const isEndPast = isEndPastSlot(date, slot.endTime, slot.isOvernight);
 											const isAvailable = slotStatus === 'AVAILABLE' && !isEndPast;
-											const canInteract = !isPastDateRow && isAvailable;
+											const canInteract = isAvailable;
 											const isBooked = slotStatus === 'BOOKED';
 											const badgeText = canInteract ? getSlotBadgeText(date, slot) : null;
 
