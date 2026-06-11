@@ -1,10 +1,10 @@
 'use client';
 
 import { resolveBestProgramForDate, toKDisplay, toPercentValue } from '@/lib/pricingUtils';
-import { useAvailabilityStore } from '@/store/availabilityStore';
+import { getSlotStatusFromAvailability } from '@/store/availabilityStore';
 import { ActiveDiscountProgram, PricingSelectedSlot } from '@/types/pricing';
 import { Room, TimeSlot } from '@/types/room';
-import type { SlotStatus } from '@/types/timeslot';
+import type { DayAvailability, SlotStatus } from '@/types/timeslot';
 import { Card, Table } from '@mantine/core';
 import Image from 'next/image';
 import { useCallback } from 'react';
@@ -15,6 +15,7 @@ interface BookingCalendarTableProps {
 	dates: Date[];
 	sortedRooms: Room[];
 	roomTimeSlotsMap: Map<string, TimeSlot[]>;
+	roomAvailabilityMap: Map<string, DayAvailability[]>;
 	roomTimeSlotsApiMap: Map<string, TimeSlot[]>;
 	selectedSlots: Set<string>;
 	onSlotClick: (roomId: string, date: Date, slotId: string, price: number) => void;
@@ -27,7 +28,7 @@ const TODAY_ROW_BOX_SHADOW = '0 0 18px rgba(154,52,18,0.24), 0 0 30px rgba(251,1
 const TODAY_SLOT_BOX_SHADOW = '0 6px 12px rgba(15,118,110,0.88), 0 -2px 5px rgba(13,148,136,0.40)';
 
 /** Get slot style classes based on status */
-function getSlotClasses(status: SlotStatus, isSelected: boolean, canInteract: boolean, isTodayRow: boolean): {
+function getSlotClasses(status: SlotStatus | undefined, isSelected: boolean, canInteract: boolean, isTodayRow: boolean): {
 	className: string;
 	style?: React.CSSProperties;
 } {
@@ -46,7 +47,7 @@ function getSlotClasses(status: SlotStatus, isSelected: boolean, canInteract: bo
 		case 'AVAILABLE':
 		default:
 			return {
-				className: canInteract
+				className: canInteract && status === 'AVAILABLE'
 					? 'bg-white text-teal-700 border border-teal-200 hover:border-teal-500 hover:shadow-md'
 					: 'bg-white text-teal-700 border border-teal-200 cursor-not-allowed shadow-none',
 				style: isTodayRow ? { boxShadow: TODAY_SLOT_BOX_SHADOW } : undefined,
@@ -58,6 +59,7 @@ export default function BookingCalendarTable({
 	dates,
 	sortedRooms,
 	roomTimeSlotsMap,
+	roomAvailabilityMap,
 	roomTimeSlotsApiMap,
 	selectedSlots,
 	onSlotClick,
@@ -65,9 +67,6 @@ export default function BookingCalendarTable({
 	isLoadingAvailability,
 	activeDiscountCampaigns = [],
 }: BookingCalendarTableProps) {
-	// Read slot status from Zustand store for realtime updates
-	const getStoreSlotStatus = useAvailabilityStore(s => s.getSlotStatus);
-
 	const getSlotBadgeText = useCallback((roomId: string, roomType: string | undefined | null, date: Date, slotId: string, slotPrice: number): string | null => {
 		if (!activeDiscountCampaigns || activeDiscountCampaigns.length === 0) return null;
 		const dateStr = formatDate(date);
@@ -250,8 +249,9 @@ export default function BookingCalendarTable({
 												const slotKey = `${room.id}::${formatDate(date)}::${slot.id}`;
 												const isSelected = selectedSlots.has(slotKey);
 												const dateStr = formatDate(date);
-												// Use Zustand store for realtime status
-												const slotStatus = getStoreSlotStatus(room.id, dateStr, slot.id);
+												const dayData = roomAvailabilityMap.get(room.id)?.find(day => day.date === dateStr);
+												const slotWithStatus = dayData?.timeSlots.find(s => s.timeSlot.id === slot.id);
+												const slotStatus = getSlotStatusFromAvailability(slotWithStatus);
 
 												const isEndPast = isEndPastSlot(date, slot.endTime, slot.isOvernight);
 												const isAvailable = slotStatus === 'AVAILABLE';

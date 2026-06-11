@@ -1,8 +1,9 @@
 import { bookingApi } from "@/api/bookingApiService";
+import { selectCachedAvailabilityRange } from "@/lib/availabilityCache";
 import { useAvailabilityStore } from "@/store/availabilityStore";
 import type { DayAvailability, RoomAvailability } from "@/types/timeslot";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 
 /**
  * Refactored hook: now uses the centralized GET /api/v1/bookings/availability
@@ -13,9 +14,22 @@ import { useMemo } from "react";
 export function useRoomsAvailability(
 	startDate: string,
 	endDate: string,
-	roomId?: string,
+	options: { roomId?: string; roomIds?: string[] } = {},
 ) {
-	const setInitialData = useAvailabilityStore((s) => s.setInitialData);
+	const { roomId, roomIds } = options;
+	const availabilityByRoom = useAvailabilityStore((s) => s.availabilityByRoom);
+	const mergeAvailabilitySnapshot = useAvailabilityStore((s) => s.mergeAvailabilitySnapshot);
+
+	const cachedRange = useMemo(
+		() => selectCachedAvailabilityRange({
+			availabilityByRoom,
+			startDate,
+			endDate,
+			roomId,
+			roomIds,
+		}),
+		[availabilityByRoom, startDate, endDate, roomId, roomIds],
+	);
 
 	const query = useQuery({
 		queryKey: ["availability", startDate, endDate, roomId ?? "all"],
@@ -31,33 +45,43 @@ export function useRoomsAvailability(
 				throw new Error(response.message || "Failed to fetch availability");
 			}
 
-			// Populate the Zustand store with initial snapshot
-			setInitialData(response.data);
 			return response.data;
 		},
 		enabled: !!startDate && !!endDate,
-		staleTime: 1000 * 60 * 2, // 2 minutes
+		staleTime: 0,
+		refetchOnMount: "always",
 	});
+
+	useEffect(() => {
+		if (query.data) {
+			mergeAvailabilitySnapshot(query.data);
+		}
+	}, [query.data, mergeAvailabilitySnapshot]);
 
 	// Convert RoomAvailability[] to Map<roomId, DayAvailability[]> for backward compat
 	const availabilityMap = useMemo(() => {
 		const map = new Map<string, DayAvailability[]>();
-		if (!query.data) return map;
+		const sourceData = cachedRange.data.length > 0 ? cachedRange.data : query.data;
+		if (!sourceData) return map;
 
-		for (const roomAvail of query.data) {
+		for (const roomAvail of sourceData) {
 			map.set(roomAvail.roomId, roomAvail.timeslots);
 		}
 		return map;
-	}, [query.data]);
+	}, [cachedRange.data, query.data]);
 
 	// Also provide the raw response for components that want the new shape
-	const rawData: RoomAvailability[] | undefined = query.data;
+	const rawData: RoomAvailability[] | undefined = cachedRange.data.length > 0
+		? cachedRange.data
+		: query.data;
+	const hasCachedData = cachedRange.data.length > 0;
 
 	return {
 		data: availabilityMap,
 		rawData,
-		isLoading: query.isLoading,
-		error: query.error,
+		isLoading: !hasCachedData && query.isLoading,
+		isFetching: query.isFetching,
+		error: hasCachedData ? null : query.error,
 		refetch: query.refetch,
 	};
 }

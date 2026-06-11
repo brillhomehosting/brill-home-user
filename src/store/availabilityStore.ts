@@ -1,63 +1,79 @@
-import type { ApiSlotStatus, RoomAvailability, SlotStatus, SSEAvailabilityEvent } from '@/types/timeslot';
+import type {
+	ApiSlotStatus,
+	DayAvailability,
+	RoomAvailability,
+	SlotStatus,
+	SSEAvailabilityEvent,
+	TimeSlotWithStatus,
+} from '@/types/timeslot';
 import { create } from 'zustand';
 
 /**
- * Zustand store for realtime slot availability.
+ * Memory-only availability cache.
  *
- * Structure: statusMap[roomId][date][timeSlotId] = SlotStatus
+ * Structure: availabilityByRoom[roomId][date] = DayAvailability
  *
- * - setInitialData: called after REST GET /api/v1/bookings/availability
+ * - mergeAvailabilitySnapshot: called after REST GET /api/v1/bookings/availability
  * - updateSlot: called on each SSE delta event
- * - getSlotStatus: read status for a specific slot
+ * - cache clears naturally on browser reload because this store is not persisted
  */
 
-interface AvailabilityState {
-	// Map: roomId -> date -> timeSlotId -> SlotStatus
-	statusMap: Record<string, Record<string, Record<string, SlotStatus>>>;
+type AvailabilityByRoom = Record<string, Record<string, DayAvailability>>;
 
-	// Actions
+interface AvailabilityState {
+	availabilityByRoom: AvailabilityByRoom;
+	mergeAvailabilitySnapshot: (data: RoomAvailability[]) => void;
 	setInitialData: (data: RoomAvailability[]) => void;
 	updateSlot: (event: SSEAvailabilityEvent) => void;
-	getSlotStatus: (roomId: string, date: string, timeSlotId: string) => SlotStatus;
+	getSlotStatus: (roomId: string, date: string, timeSlotId: string) => SlotStatus | undefined;
 	clearAll: () => void;
 }
 
-const normalizeSlotStatus = (status: ApiSlotStatus | undefined): SlotStatus | undefined => {
+export const normalizeSlotStatus = (status: ApiSlotStatus | undefined): SlotStatus | undefined => {
 	if (!status) return undefined;
 	return status === 'BOOKED' ? 'BOOKED' : 'AVAILABLE';
 };
 
+export const getSlotStatusFromAvailability = (
+	slotWithStatus: TimeSlotWithStatus | undefined,
+): SlotStatus | undefined => {
+	if (!slotWithStatus) return undefined;
+
+	const status = normalizeSlotStatus(slotWithStatus.status);
+	if (status) return status;
+
+	const isAvail = slotWithStatus.isAvailable ?? (slotWithStatus as any).isActive;
+	if (typeof isAvail === 'boolean') return isAvail ? 'AVAILABLE' : 'BOOKED';
+
+	return undefined;
+};
+
 export const useAvailabilityStore = create<AvailabilityState>((set, get) => ({
-	statusMap: {},
+	availabilityByRoom: {},
 
-	setInitialData: (data: RoomAvailability[]) => {
-		const newMap: Record<string, Record<string, Record<string, SlotStatus>>> = {};
+	mergeAvailabilitySnapshot: (data: RoomAvailability[]) => {
+		set((state) => {
+			const availabilityByRoom: AvailabilityByRoom = { ...state.availabilityByRoom };
 
-		for (const roomAvail of data) {
-			const roomMap: Record<string, Record<string, SlotStatus>> = {};
+			for (const roomAvail of data) {
+				const roomMap = { ...(availabilityByRoom[roomAvail.roomId] || {}) };
 
-			for (const day of roomAvail.timeslots) {
-				const dayMap: Record<string, SlotStatus> = {};
-
-				for (const slotWithStatus of day.timeSlots) {
-					// Fallback to legacy `isActive` if status is somehow missing.
-					let status = normalizeSlotStatus(slotWithStatus.status);
-					
-					if (!status) {
-						const isAvail = slotWithStatus.isAvailable ?? (slotWithStatus as any).isActive;
-						status = isAvail ? 'AVAILABLE' : 'BOOKED';
-					}
-					
-					dayMap[slotWithStatus.timeSlot.id] = status;
+				for (const day of roomAvail.timeslots) {
+					roomMap[day.date] = {
+						...day,
+						timeSlots: [...day.timeSlots],
+					};
 				}
 
-				roomMap[day.date] = dayMap;
+				availabilityByRoom[roomAvail.roomId] = roomMap;
 			}
 
-			newMap[roomAvail.roomId] = roomMap;
-		}
+			return { availabilityByRoom };
+		});
+	},
 
-		set({ statusMap: newMap });
+	setInitialData: (data: RoomAvailability[]) => {
+		get().mergeAvailabilitySnapshot(data);
 	},
 
 	updateSlot: (event: SSEAvailabilityEvent) => {
@@ -66,25 +82,43 @@ export const useAvailabilityStore = create<AvailabilityState>((set, get) => ({
 			const status = normalizeSlotStatus(event.status);
 			if (!status) return state;
 
-			// Deep clone only the affected path to avoid unnecessary re-renders
-			const newMap = { ...state.statusMap };
-			const roomMap = { ...(newMap[roomId] || {}) };
-			const dayMap = { ...(roomMap[date] || {}) };
+			const existingDay = state.availabilityByRoom[roomId]?.[date];
+			if (!existingDay) return state;
 
-			dayMap[timeSlotId] = status;
-			roomMap[date] = dayMap;
-			newMap[roomId] = roomMap;
+			const nextTimeSlots = existingDay.timeSlots.map((slotWithStatus) => {
+				if (slotWithStatus.timeSlot.id !== timeSlotId) return slotWithStatus;
 
-			return { statusMap: newMap };
+				return {
+					...slotWithStatus,
+					status,
+					isAvailable: status === 'AVAILABLE',
+					bookingId: status === 'AVAILABLE' ? null : slotWithStatus.bookingId,
+				};
+			});
+
+			const availabilityByRoom: AvailabilityByRoom = {
+				...state.availabilityByRoom,
+				[roomId]: {
+					...state.availabilityByRoom[roomId],
+					[date]: {
+						...existingDay,
+						timeSlots: nextTimeSlots,
+					},
+				},
+			};
+
+			return { availabilityByRoom };
 		});
 	},
 
-	getSlotStatus: (roomId: string, date: string, timeSlotId: string): SlotStatus => {
-		const state = get();
-		return state.statusMap[roomId]?.[date]?.[timeSlotId] ?? 'AVAILABLE';
+	getSlotStatus: (roomId: string, date: string, timeSlotId: string): SlotStatus | undefined => {
+		const slot = get().availabilityByRoom[roomId]?.[date]?.timeSlots.find(
+			(slotWithStatus) => slotWithStatus.timeSlot.id === timeSlotId,
+		);
+		return getSlotStatusFromAvailability(slot);
 	},
 
 	clearAll: () => {
-		set({ statusMap: {} });
+		set({ availabilityByRoom: {} });
 	},
 }));
