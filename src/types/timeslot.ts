@@ -15,10 +15,17 @@ export interface TimeSlot extends BaseEntity {
 
 export interface TimeSlotWithStatus {
 	timeSlot: TimeSlot;
-	isAvailable: boolean;
+	isAvailable?: boolean;
 	bookingId: string | null;
 	// Derived status: AVAILABLE when isAvailable=true, BOOKED when false.
 	status?: ApiSlotStatus;
+	discountType?: string | null;
+	discountValue?: number | null;
+	isHoliday?: boolean;
+	basePrice?: number;
+	holidaySurcharge?: number | null;
+	finalPrice?: number;
+	holidayName?: string | null;
 }
 
 export interface DayAvailability {

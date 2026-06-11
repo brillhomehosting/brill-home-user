@@ -54,6 +54,7 @@ export const bookingApi = {
 		}
 		const response = await fetch(
 			`${API_BASE_URL}/api/v1/bookings/availability?${searchParams.toString()}`,
+			{ cache: "no-store" },
 		);
 		return response.json();
 	},

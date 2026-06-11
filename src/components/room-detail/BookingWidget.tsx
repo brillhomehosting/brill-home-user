@@ -10,7 +10,7 @@ import { useTimeSlotAvailability } from '@/hooks/useTimeSlotAvailability';
 import { buildBookingMessage } from '@/lib/buildBookingMessage';
 import { calculatePricing, getHolidaySurchargeLabel, getSavingsBadgeLabel, resolveBestProgramForDate, toKDisplay, toPercentValue } from '@/lib/pricingUtils';
 import { applySlotSelection, LinearSelectableSlot, parseSlotKey } from '@/lib/slotSelection';
-import { useAvailabilityStore } from '@/store/availabilityStore';
+import { getSlotStatusFromAvailability } from '@/store/availabilityStore';
 import { PricingSelectedSlot } from '@/types/pricing';
 import { Room, TimeSlot } from '@/types/room';
 import type { SlotStatus } from '@/types/timeslot';
@@ -123,8 +123,6 @@ export default function BookingWidget({ room }: { room: Room }) {
 
 	useSSEAvailability([room.id]);
 
-	const getStoreSlotStatus = useAvailabilityStore(s => s.getSlotStatus);
-
 	const timeSlots = useMemo(() => {
 		if (!availabilityData || !Array.isArray(availabilityData) || availabilityData.length === 0) return [];
 		const firstDay = availabilityData.find(day => day?.timeSlots?.length);
@@ -140,9 +138,11 @@ export default function BookingWidget({ room }: { room: Room }) {
 			});
 	}, [availabilityData]);
 
-	const getSlotStatusForDate = (date: Date, slotId: string): SlotStatus => {
+	const getSlotStatusForDate = (date: Date, slotId: string): SlotStatus | undefined => {
 		const dateStr = formatDate(date);
-		return getStoreSlotStatus(room.id, dateStr, slotId);
+		const dayData = availabilityData?.find(day => day.date === dateStr);
+		const slotWithStatus = dayData?.timeSlots.find(s => s.timeSlot.id === slotId);
+		return getSlotStatusFromAvailability(slotWithStatus);
 	};
 
 	const getLinearSlots = (): LinearSelectableSlot[] => {
