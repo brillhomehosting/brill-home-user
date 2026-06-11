@@ -10,7 +10,7 @@ import { useSSEAvailability } from '@/hooks/useSSEAvailability';
 import { buildBookingMessage } from '@/lib/buildBookingMessage';
 import { calculatePricing } from '@/lib/pricingUtils';
 import { applySlotSelection, getSelectionContext, LinearSelectableSlot, parseSlotKey } from '@/lib/slotSelection';
-import { useAvailabilityStore } from '@/store/availabilityStore';
+import { getSlotStatusFromAvailability } from '@/store/availabilityStore';
 import { useBookingUIStore } from '@/store/bookingUIStore';
 import { PricingSelectedSlot } from '@/types/pricing';
 import { TimeSlot } from '@/types/room';
@@ -56,13 +56,15 @@ export default function AllRoomsBookingSection() {
 	const startDate = formatDate(dates[0] || new Date());
 	const endDate = formatDate(dates[dates.length - 1] || new Date());
 
-	const { data: roomAvailabilityMap, isLoading: isLoadingAvailability } = useRoomsAvailability(startDate, endDate);
+	const allRoomIds = useMemo(() => (rooms || []).map(r => r.id), [rooms]);
+	const { data: roomAvailabilityMap, isLoading: isLoadingAvailability } = useRoomsAvailability(
+		startDate,
+		endDate,
+		{ roomIds: allRoomIds },
+	);
 	const { data: roomTimeSlotsApiMap } = useRoomsTimeSlots(rooms);
 
-	const allRoomIds = useMemo(() => (rooms || []).map(r => r.id), [rooms]);
 	useSSEAvailability(allRoomIds);
-
-	const getSlotStatus = useAvailabilityStore(s => s.getSlotStatus);
 
 	const roomTimeSlotsMap = useMemo(() => {
 		const map = new Map<string, TimeSlot[]>();
@@ -103,7 +105,7 @@ export default function AllRoomsBookingSection() {
 
 			timeSlots.forEach(slot => {
 				const slotStatus = dayData?.timeSlots?.find(s => s?.timeSlot?.id === slot.id);
-				const storeStatus = getSlotStatus(roomId, dateStr, slot.id);
+				const status = getSlotStatusFromAvailability(slotStatus);
 				const dynamicPrice = slotStatus?.timeSlot?.price ?? slot.price;
 
 				linearList.push({
@@ -112,7 +114,7 @@ export default function AllRoomsBookingSection() {
 					date: dateStr,
 					slotId: slot.id,
 					price: dynamicPrice,
-					isAvailable: storeStatus === 'AVAILABLE',
+					isAvailable: status === 'AVAILABLE',
 				});
 			});
 		});
@@ -287,6 +289,7 @@ export default function AllRoomsBookingSection() {
 						dates={dates}
 						sortedRooms={sortedRooms}
 						roomTimeSlotsMap={roomTimeSlotsMap}
+						roomAvailabilityMap={roomAvailabilityMap}
 						roomTimeSlotsApiMap={roomTimeSlotsApiMap}
 						selectedSlots={selectedSlots}
 						onSlotClick={handleSlotClick}
@@ -336,4 +339,3 @@ export default function AllRoomsBookingSection() {
 		</section>
 	);
 }
-
