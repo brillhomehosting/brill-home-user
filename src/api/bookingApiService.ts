@@ -101,4 +101,12 @@ export const bookingApi = {
 		);
 		return fallbackResponse.json();
 	},
+	/**
+	 * Fetch a public system config by key
+	 * GET /api/v1/system-configs/key/{configKey}
+	 */
+	fetchSystemConfigByKey: async (configKey: string): Promise<any> => {
+		const response = await fetch(`${API_BASE_URL}/api/v1/system-configs/key/${configKey}`);
+		return response.json();
+	},
 };

@@ -18,7 +18,8 @@ import { Card, Table } from '@mantine/core';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, useEffect } from 'react';
+import { useMaxAdvanceBookingDays } from '@/hooks/useMaxAdvanceBookingDays';
 
 type IndexedPricingSlot = PricingSelectedSlot & { index: number };
 
@@ -104,9 +105,16 @@ export default function BookingWidget({ room }: { room: Room }) {
 	const [isSendModalOpen, setIsSendModalOpen] = useState(false);
 	const [bookingMessage, setBookingMessage] = useState('');
 
-	const allDates = generateDates(30);
+	const { data: maxAdvanceBookingDays = 30 } = useMaxAdvanceBookingDays();
+	const allDates = generateDates((Number(maxAdvanceBookingDays) || 30) + 1);
 	const DATES_PER_PAGE = 7;
 	const totalPages = Math.ceil(allDates.length / DATES_PER_PAGE);
+	// Clamp current page if config changes
+	useEffect(() => {
+		if (currentDatePage > Math.max(0, totalPages - 1)) {
+			setCurrentDatePage(Math.max(0, totalPages - 1));
+		}
+	}, [totalPages, currentDatePage]);
 	const pagedDates = allDates.slice(
 		currentDatePage * DATES_PER_PAGE,
 		(currentDatePage + 1) * DATES_PER_PAGE

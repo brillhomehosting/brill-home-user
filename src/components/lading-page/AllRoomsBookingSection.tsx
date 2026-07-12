@@ -16,6 +16,7 @@ import { PricingSelectedSlot } from '@/types/pricing';
 import { TimeSlot } from '@/types/room';
 import { motion } from 'framer-motion';
 import { useEffect, useMemo, useState } from 'react';
+import { useMaxAdvanceBookingDays } from '@/hooks/useMaxAdvanceBookingDays';
 import BookingMessengerModal from '../ui/BookingMessengerModal';
 import BookingCalendarTable from './booking/BookingCalendarTable';
 import BookingInfoBanner from './booking/BookingInfoBanner';
@@ -42,12 +43,20 @@ export default function AllRoomsBookingSection() {
 	}, [selectedSlots.size, setMobileBookingBarVisible]);
 
 	const DATES_PER_PAGE = 7;
-	const allDates = generateDates(30);
+	const { data: maxAdvanceBookingDays = 30 } = useMaxAdvanceBookingDays();
+	const allDates = generateDates((Number(maxAdvanceBookingDays) || 30) + 1);
 	const totalPages = Math.ceil(allDates.length / DATES_PER_PAGE);
 	const pagedDates = allDates.slice(
 		currentDatePage * DATES_PER_PAGE,
 		(currentDatePage + 1) * DATES_PER_PAGE
 	);
+
+	// Clamp current page if config changes
+	useEffect(() => {
+		if (currentDatePage > Math.max(0, totalPages - 1)) {
+			setCurrentDatePage(Math.max(0, totalPages - 1));
+		}
+	}, [totalPages, currentDatePage]);
 	const shouldShowYesterdayRow = new Date().getHours() < 19;
 	const yesterday = new Date();
 	yesterday.setDate(yesterday.getDate() - 1);
