@@ -8,7 +8,7 @@ import { useHolidaySurchargeByDates } from '@/hooks/useHolidaySurchargeByDates';
 import { useSSEAvailability } from '@/hooks/useSSEAvailability';
 import { useTimeSlotAvailability } from '@/hooks/useTimeSlotAvailability';
 import { buildBookingMessage } from '@/lib/buildBookingMessage';
-import { calculatePricing, getHolidaySurchargeLabel, getSavingsBadgeLabel, resolveBestProgramForDate, toKDisplay, toPercentValue } from '@/lib/pricingUtils';
+import { calculatePricing, getCampaignDiscountBadge, getHolidaySurchargeLabel, getSavingsBadgeLabel, resolveBestProgramForSlot, toKDisplay, toPercentValue } from '@/lib/pricingUtils';
 import { applySlotSelection, LinearSelectableSlot, parseSlotKey } from '@/lib/slotSelection';
 import { getSlotStatusFromAvailability } from '@/store/availabilityStore';
 import { PricingSelectedSlot } from '@/types/pricing';
@@ -266,13 +266,12 @@ export default function BookingWidget({ room }: { room: Room }) {
 			endTime: slot.endTime,
 		};
 
-		const bestProgram = resolveBestProgramForDate(
-			[singleSlot],
+		const bestProgram = resolveBestProgramForSlot(
+			singleSlot,
 			dateStr,
 			room.id,
 			room.roomType,
 			activeDiscountCampaigns,
-			0,
 			slot.price,
 		);
 
@@ -437,12 +436,17 @@ export default function BookingWidget({ room }: { room: Room }) {
 										{timeSlots.map((slot: TimeSlot) => {
 											const slotKey = `${room.id}::${formatDate(date)}::${slot.id}`;
 											const isSelected = selectedSlots.has(slotKey);
+											const dayData = availabilityData?.find(day => day.date === formatDate(date));
+											const slotWithStatus = dayData?.timeSlots.find(item => item.timeSlot.id === slot.id);
 											const slotStatus = getSlotStatusForDate(date, slot.id);
 											const isEndPast = isEndPastSlot(date, slot.endTime, slot.isOvernight);
 											const isAvailable = slotStatus === 'AVAILABLE' && !isEndPast;
 											const canInteract = isAvailable;
 											const isBooked = slotStatus === 'BOOKED';
-											const badgeText = canInteract ? getSlotBadgeText(date, slot) : null;
+											const badgeText = canInteract
+												? getCampaignDiscountBadge(slotWithStatus?.discountType, slotWithStatus?.discountValue)
+													?? getSlotBadgeText(date, slot)
+												: null;
 
 											// const dayData = availabilityData?.find(day => day.date === formatDate(date));
 											// const dynamicPrice = dayData?.timeSlots?.find(s => s.timeSlot.id === slot.id)?.timeSlot?.price ?? slot.price;
@@ -551,16 +555,16 @@ export default function BookingWidget({ room }: { room: Room }) {
 						{pricing.programDiscountAmount > 0 && (() => {
 							// Group discount by program ID → hiển thị từng campaign riêng
 							const programGroups = new Map<string, { name: string; amount: number }>();
-							pricing.dailyBreakdown.forEach(day => {
-								if (day.appliedProgram && day.programDiscountAmount > 0) {
-									const id = day.appliedProgram.program.id;
+							pricing.dailyBreakdown.flatMap(day => day.appliedPrograms).forEach(applied => {
+								if (applied.discountAmount > 0) {
+									const id = applied.program.id;
 									const existing = programGroups.get(id);
 									if (existing) {
-										existing.amount += day.programDiscountAmount;
+										existing.amount += applied.discountAmount;
 									} else {
 										programGroups.set(id, {
-											name: day.appliedProgram.program.name,
-											amount: day.programDiscountAmount,
+											name: applied.program.name,
+											amount: applied.discountAmount,
 										});
 									}
 								}
