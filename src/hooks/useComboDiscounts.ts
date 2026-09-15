@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 
 function toPercentValue(value: number): number {
 	if (!Number.isFinite(value)) return 0;
-	return value <= 1 ? value * 100 : value;
+	return Number.isFinite(value) ? value : 0;
 }
 
 export function useComboDiscounts() {

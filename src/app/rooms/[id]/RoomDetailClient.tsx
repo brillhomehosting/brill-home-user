@@ -26,7 +26,7 @@ export default function RoomDetailClient({ roomId }: { roomId: string }) {
 			if (program.type === "ALL" || program.type === "SLOT_TYPE" || program.type === "WEEK_DAY") {
 				return true;
 			}
-			if (program.type === "ROOM" && program.targetRoomId === room.id) {
+			if ((program.type === "ROOM" || program.type === "ROOM_WEEK_DAY") && program.targetRoomId === room.id) {
 				return true;
 			}
 			if (program.type === "ROOM_TYPE" && program.targetRoomType === room.roomType) {

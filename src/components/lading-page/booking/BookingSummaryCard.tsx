@@ -64,16 +64,16 @@ export default function BookingSummaryCard({
 						{pricing.programDiscountAmount > 0 && (() => {
 							// Group discount by program ID -> hiển thị từng campaign riêng
 							const programGroups = new Map<string, { name: string; amount: number }>();
-							pricing.dailyBreakdown.forEach(day => {
-								if (day.appliedProgram && day.programDiscountAmount > 0) {
-									const id = day.appliedProgram.program.id;
+							pricing.dailyBreakdown.flatMap(day => day.appliedPrograms).forEach(applied => {
+								if (applied.discountAmount > 0) {
+									const id = applied.program.id;
 									const existing = programGroups.get(id);
 									if (existing) {
-										existing.amount += day.programDiscountAmount;
+										existing.amount += applied.discountAmount;
 									} else {
 										programGroups.set(id, {
-											name: day.appliedProgram.program.name,
-											amount: day.programDiscountAmount,
+											name: applied.program.name,
+											amount: applied.discountAmount,
 										});
 									}
 								}
