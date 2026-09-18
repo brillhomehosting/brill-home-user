@@ -1,6 +1,6 @@
 'use client';
 
-import { resolveBestProgramForDate, toKDisplay, toPercentValue } from '@/lib/pricingUtils';
+import { getCampaignDiscountBadge, resolveBestProgramForSlot, toKDisplay, toPercentValue } from '@/lib/pricingUtils';
 import { getSlotStatusFromAvailability } from '@/store/availabilityStore';
 import { ActiveDiscountProgram, PricingSelectedSlot } from '@/types/pricing';
 import { Room, TimeSlot } from '@/types/room';
@@ -70,24 +70,25 @@ export default function BookingCalendarTable({
 	const getSlotBadgeText = useCallback((roomId: string, roomType: string | undefined | null, date: Date, slotId: string, slotPrice: number): string | null => {
 		if (!activeDiscountCampaigns || activeDiscountCampaigns.length === 0) return null;
 		const dateStr = formatDate(date);
+		const roomSlot = roomTimeSlotsMap.get(roomId)?.find(slot => slot.id === slotId);
+		if (!roomSlot) return null;
 		const singleSlot: PricingSelectedSlot = {
 			key: 'temp',
 			roomId: roomId,
 			date: dateStr,
 			slotId: slotId,
 			price: slotPrice,
-			isOvernight: false, // It doesn't affect program matching in most cases, or we can get it from roomTimeSlotsMap
+			isOvernight: roomSlot.isOvernight,
 			startTime: '00:00',
 			endTime: '00:00',
 		};
 
-		const bestProgram = resolveBestProgramForDate(
-			[singleSlot],
+		const bestProgram = resolveBestProgramForSlot(
+			singleSlot,
 			dateStr,
 			roomId,
 			roomType,
 			activeDiscountCampaigns,
-			0,
 			slotPrice,
 		);
 
@@ -100,7 +101,7 @@ export default function BookingCalendarTable({
 			}
 		}
 		return null;
-	}, [activeDiscountCampaigns]);
+	}, [activeDiscountCampaigns, roomTimeSlotsMap]);
 
 	return (
 		<Card
@@ -259,7 +260,10 @@ export default function BookingCalendarTable({
 
 												const baseSlotPrice = roomTimeSlotsApiMap.get(room.id)?.find(s => s.id === slot.id)?.price ?? slot.price;
 												const dynamicPrice = baseSlotPrice;
-												const badgeText = canInteract ? getSlotBadgeText(room.id, room.roomType, date, slot.id, dynamicPrice) : null;
+												const badgeText = canInteract
+													? getCampaignDiscountBadge(slotWithStatus?.discountType, slotWithStatus?.discountValue)
+														?? getSlotBadgeText(room.id, room.roomType, date, slot.id, dynamicPrice)
+													: null;
 
 												const { className: slotClasses, style: slotStyle } = getSlotClasses(
 													slotStatus,

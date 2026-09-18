@@ -1,6 +1,7 @@
 import type { ApiResponse } from ".";
 
 export type DiscountProgramType =
+	| "ROOM_WEEK_DAY"
 	| "ALL"
 	| "ROOM"
 	| "ROOM_TYPE"
@@ -69,6 +70,7 @@ export interface AppliedProgramDiscount {
 }
 
 export interface PricingDailyBreakdown {
+	appliedPrograms: AppliedProgramDiscount[];
 	date: string;
 	basePrice: number;
 	isHoliday: boolean;

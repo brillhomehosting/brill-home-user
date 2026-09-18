@@ -36,7 +36,7 @@ interface BookingInfoBannerProps {
 }
 
 function toPercentValue(value: number): number {
-	return value <= 1 ? value * 100 : value;
+	return Number.isFinite(value) ? value : 0;
 }
 
 function getProgramDiscountLabel(program: ActiveDiscountProgram): string {
@@ -106,7 +106,8 @@ export default function BookingInfoBanner({
 	// Hàm tạo style cho từng loại program
 	const getProgramStyle = (program: ActiveDiscountProgram, index: number) => {
 		let typeText = 'ƯU ĐÃI';
-		if (program.type === 'WEEK_DAY') typeText = 'THEO NGÀY';
+		if (program.type === 'ROOM_WEEK_DAY') typeText = 'PHÒNG + NGÀY';
+		else if (program.type === 'WEEK_DAY') typeText = 'THEO NGÀY';
 		else if (program.type === 'ROOM' || program.type === 'ROOM_TYPE') typeText = 'PHÒNG';
 		else if (program.type === 'SLOT_TYPE') typeText = 'GIỜ VÀNG';
 		else if (program.type === 'ALL') typeText = 'ĐẶC BIỆT';
@@ -146,6 +147,10 @@ export default function BookingInfoBanner({
 	// Hàm tạo mô tả cho từng loại program
 	// Hàm tạo mô tả cho từng loại program
 	const getProgramDescription = (program: ActiveDiscountProgram) => {
+		if (program.type === 'ROOM_WEEK_DAY') {
+			return `${program.targetRoomName || 'Phòng áp dụng'} · ${program.targetWeekDay ? 'Ngày thường (Thứ 2–Thứ 6)' : 'Cuối tuần (Thứ 7, CN)'}`;
+		}
+
 		if (program.type === 'ROOM' && program.targetRoomName) {
 			return `Áp dụng riêng cho ${program.targetRoomName}`;
 		}
