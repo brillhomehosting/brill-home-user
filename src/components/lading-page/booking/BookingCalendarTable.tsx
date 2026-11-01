@@ -1,312 +1,254 @@
 'use client';
 
-import { getCampaignDiscountBadge, resolveBestProgramForSlot, toKDisplay, toPercentValue } from '@/lib/pricingUtils';
-import { getSlotStatusFromAvailability } from '@/store/availabilityStore';
-import { ActiveDiscountProgram, PricingSelectedSlot } from '@/types/pricing';
-import { Room, TimeSlot } from '@/types/room';
-import type { DayAvailability, SlotStatus } from '@/types/timeslot';
+import { useCalendarVirtualRows } from '@/hooks/useCalendarVirtualRows';
+import { parseDateKey } from '@/lib/bookingDates';
+import { toKDisplay } from '@/lib/pricingUtils';
+import { ActiveDiscountProgram } from '@/types/pricing';
 import { Card, Table } from '@mantine/core';
 import Image from 'next/image';
-import { useCallback } from 'react';
-import { formatDate, getDayLabel, getTimeSlotIcon, isToday } from './bookingUtils';
+import { memo, useRef } from 'react';
+import BookingCalendarRow, { RoomColumn } from './BookingCalendarRow';
+import { CALENDAR_CELL_BORDER_CLASS, getTimeSlotIcon } from './bookingUtils';
 import LoadingSkeleton from './LoadingSkeleton';
 
 interface BookingCalendarTableProps {
-	dates: Date[];
-	sortedRooms: Room[];
-	roomTimeSlotsMap: Map<string, TimeSlot[]>;
-	roomAvailabilityMap: Map<string, DayAvailability[]>;
-	roomTimeSlotsApiMap: Map<string, TimeSlot[]>;
-	selectedSlots: Set<string>;
-	onSlotClick: (roomId: string, date: Date, slotId: string, price: number) => void;
+	dateKeys: string[];
+	lastDateKey: string | undefined;
+	todayKey: string;
+	columns: RoomColumn[];
+	selectedByDate: Map<string, string>;
+	onSlotClick: (roomId: string, dateKey: string, slotId: string) => void;
 	isLoading: boolean;
-	isLoadingAvailability: boolean;
+	isFetching: boolean;
+	hasMore: boolean;
+	hasFailed: boolean;
+	onLoadMore: () => void;
+	onRetry: () => void;
 	activeDiscountCampaigns?: ActiveDiscountProgram[];
 }
 
-const TODAY_ROW_BOX_SHADOW = '0 0 18px rgba(154,52,18,0.24), 0 0 30px rgba(251,146,60,0.18)';
-const TODAY_SLOT_BOX_SHADOW = '0 6px 12px rgba(15,118,110,0.88), 0 -2px 5px rgba(13,148,136,0.40)';
+const EMPTY_SELECTION = '';
+const NO_CAMPAIGNS: ActiveDiscountProgram[] = [];
+const BACK_TO_TODAY_MIN_ROW = 7;
 
-/** Get slot style classes based on status */
-function getSlotClasses(status: SlotStatus | undefined, isSelected: boolean, canInteract: boolean, isTodayRow: boolean): {
-	className: string;
-	style?: React.CSSProperties;
-} {
-	if (isSelected) {
-		return {
-			className: 'bg-[#D97D48] text-white shadow-lg border border-[#D97D48]',
-			style: isTodayRow ? { boxShadow: TODAY_SLOT_BOX_SHADOW } : undefined,
-		};
-	}
+const CalendarHeader = memo(function CalendarHeader({ columns }: { columns: RoomColumn[] }) {
+	return (
+		<>
+			<Table.Tr>
+				<Table.Th
+					rowSpan={2}
+					className={`${CALENDAR_CELL_BORDER_CLASS} sticky left-0 z-30 p-0! min-w-[54px] sm:min-w-[80px]`}
+					style={{ backgroundColor: '#FAF9F6', borderRight: '1px solid #E7E5E4' }}
+				>
+					<div className="flex items-center justify-center h-full w-full py-2 sm:py-4 bg-[#FAF9F6]">
+						<span className="text-[9px] sm:text-[10px] md:text-xs font-bold text-stone-500 uppercase tracking-widest">
+							Ngày
+						</span>
+					</div>
+				</Table.Th>
+				{columns.map(({ room, slots, background }) => (
+					<Table.Th
+						key={room.id}
+						colSpan={slots.length || 1}
+						className={`${CALENDAR_CELL_BORDER_CLASS} text-center p-0!`}
+						style={{ backgroundColor: background }}
+					>
+						<div className="relative h-20 sm:h-32 w-full border-b border-stone-200 overflow-hidden group">
+							{room.images?.[0]?.url && (
+								<>
+									<Image
+										src={room.images[0].url}
+										alt={room.name}
+										fill
+										className="object-cover transition-transform duration-700 group-hover:scale-110"
+										sizes="(max-width: 768px) 100vw, 200px"
+									/>
+									<div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors" />
+								</>
+							)}
+							<div className="absolute inset-0 flex items-center justify-center p-2 z-10">
+								<span className="text-white font-bold text-base md:text-lg text-center drop-shadow-md px-2 py-1 bg-black/20 rounded">
+									{room.name}
+								</span>
+							</div>
+						</div>
+					</Table.Th>
+				))}
+			</Table.Tr>
 
-	switch (status) {
-		case 'BOOKED':
-			return {
-				className: 'bg-[#CF5B51] text-white border border-transparent cursor-not-allowed shadow-none',
-			};
-		case 'AVAILABLE':
-		default:
-			return {
-				className: canInteract && status === 'AVAILABLE'
-					? 'bg-white text-teal-700 border border-teal-200 hover:border-teal-500 hover:shadow-md'
-					: 'bg-white text-teal-700 border border-teal-200 cursor-not-allowed shadow-none',
-				style: isTodayRow ? { boxShadow: TODAY_SLOT_BOX_SHADOW } : undefined,
-			};
-	}
-}
+			<Table.Tr>
+				{columns.map(({ room, slots, background }) => {
+					if (slots.length === 0) {
+						return (
+							<Table.Th key={room.id} className={`${CALENDAR_CELL_BORDER_CLASS} text-center`} style={{ backgroundColor: background }}>
+								<span className="text-xs text-stone-400 font-normal italic">Trống</span>
+							</Table.Th>
+						);
+					}
+					return slots.map((slot) => (
+						<Table.Th
+							key={slot.id}
+							className={`${CALENDAR_CELL_BORDER_CLASS} text-center min-w-[60px] sm:min-w-[90px] p-1 sm:p-2`}
+							style={{ backgroundColor: background }}
+						>
+							<div className="flex flex-col items-center gap-0.5 sm:gap-1">
+								<span className="text-[9px] sm:text-xs font-semibold text-stone-600 bg-white/50 px-1 sm:px-1.5 py-0.5 rounded leading-tight">
+									{slot.startTime}-{slot.endTime}
+								</span>
+								<span className="text-[9px] sm:text-[10px] opacity-70">
+									{getTimeSlotIcon(slot.startTime, slot.isOvernight)} {toKDisplay(slot.price)}
+								</span>
+							</div>
+						</Table.Th>
+					));
+				})}
+			</Table.Tr>
+		</>
+	);
+});
+
+const formatMonth = (dateKey: string | undefined): string => {
+	if (!dateKey) return '';
+	const date = parseDateKey(dateKey);
+	return `Tháng ${date.getMonth() + 1}/${date.getFullYear()}`;
+};
+
+const formatFullDate = (dateKey: string | undefined): string => {
+	if (!dateKey) return '';
+	const date = parseDateKey(dateKey);
+	return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
+};
 
 export default function BookingCalendarTable({
-	dates,
-	sortedRooms,
-	roomTimeSlotsMap,
-	roomAvailabilityMap,
-	roomTimeSlotsApiMap,
-	selectedSlots,
+	dateKeys,
+	lastDateKey,
+	todayKey,
+	columns,
+	selectedByDate,
 	onSlotClick,
 	isLoading,
-	isLoadingAvailability,
-	activeDiscountCampaigns = [],
+	isFetching,
+	hasMore,
+	hasFailed,
+	onLoadMore,
+	onRetry,
+	activeDiscountCampaigns = NO_CAMPAIGNS,
 }: BookingCalendarTableProps) {
-	const getSlotBadgeText = useCallback((roomId: string, roomType: string | undefined | null, date: Date, slotId: string, slotPrice: number): string | null => {
-		if (!activeDiscountCampaigns || activeDiscountCampaigns.length === 0) return null;
-		const dateStr = formatDate(date);
-		const roomSlot = roomTimeSlotsMap.get(roomId)?.find(slot => slot.id === slotId);
-		if (!roomSlot) return null;
-		const singleSlot: PricingSelectedSlot = {
-			key: 'temp',
-			roomId: roomId,
-			date: dateStr,
-			slotId: slotId,
-			price: slotPrice,
-			isOvernight: roomSlot.isOvernight,
-			startTime: '00:00',
-			endTime: '00:00',
-		};
+	const scrollRef = useRef<HTMLDivElement>(null);
+	const headerRef = useRef<HTMLTableSectionElement>(null);
+	const columnCount = 1 + columns.reduce((total, column) => total + (column.slots.length || 1), 0);
+	const currentYear = todayKey.slice(0, 4);
 
-		const bestProgram = resolveBestProgramForSlot(
-			singleSlot,
-			dateStr,
-			roomId,
-			roomType,
-			activeDiscountCampaigns,
-			slotPrice,
-		);
-
-		if (bestProgram && bestProgram.program) {
-			const prog = bestProgram.program;
-			if (prog.discountType === 'PERCENTAGE') {
-				return `-${Math.round(toPercentValue(prog.discountValue))}%`;
-			} else {
-				return `-${toKDisplay(prog.discountValue)}`;
-			}
-		}
-		return null;
-	}, [activeDiscountCampaigns, roomTimeSlotsMap]);
+	const { items, paddingTop, paddingBottom, firstVisibleIndex, scrollToStart } = useCalendarVirtualRows({
+		scrollRef,
+		headerRef,
+		rowCount: dateKeys.length,
+		footerRows: 1,
+		defaultRowHeight: 64,
+		canLoadMore: hasMore && !isFetching && !hasFailed,
+		onNearEnd: onLoadMore,
+	});
 
 	return (
-		<Card
-			shadow="sm"
-			radius="md"
-			className="bg-white border border-stone-200 overflow-hidden p-0!"
-		>
-			{(isLoading || isLoadingAvailability) ? (
+		<Card shadow="sm" radius="md" className="bg-white border border-stone-200 overflow-hidden p-0!">
+			{isLoading ? (
 				<LoadingSkeleton />
 			) : (
-				<div className="max-h-[650px] overflow-auto scrollbar-thin scrollbar-thumb-stone-200 scrollbar-track-transparent">
-					<Table
-						striped
-						highlightOnHover
-						withTableBorder
-						withColumnBorders
-						stickyHeader
-						className="min-w-max"
+				<>
+					<div className="flex items-center justify-between gap-3 px-3 py-2 border-b border-stone-200 bg-stone-50">
+						<span className="text-xs sm:text-sm font-semibold text-stone-700" data-testid="visible-month" suppressHydrationWarning>
+							{formatMonth(dateKeys[firstVisibleIndex])}
+						</span>
+						<div className="flex items-center gap-3 text-xs font-semibold text-[#D97D48]">
+							{firstVisibleIndex > BACK_TO_TODAY_MIN_ROW && (
+								<button onClick={scrollToStart} className="cursor-pointer hover:underline">
+									Về hôm nay
+								</button>
+							)}
+							<button
+								onClick={() => document.getElementById('rooms')?.scrollIntoView({ behavior: 'smooth' })}
+								className="cursor-pointer hover:underline"
+							>
+								Xem các phòng
+							</button>
+						</div>
+					</div>
+
+					<div
+						ref={scrollRef}
+						className="max-h-[min(650px,62dvh)] overflow-auto scrollbar-thin scrollbar-thumb-stone-200 scrollbar-track-transparent"
 					>
-						<Table.Thead>
-							{/* Row 1: Header Rooms */}
-							<Table.Tr>
-								<Table.Th
-									rowSpan={2}
-									className="sticky left-0 z-30 p-0! min-w-[54px] sm:min-w-[80px]"
-									style={{ backgroundColor: '#FAF9F6', borderRight: '1px solid #E7E5E4' }}
-								>
-									<div className="flex items-center justify-center h-full w-full py-2 sm:py-4 bg-[#FAF9F6]">
-										<span className="text-[9px] sm:text-[10px] md:text-xs font-bold text-stone-500 uppercase tracking-widest">
-											Ngày
-										</span>
-									</div>
-								</Table.Th>
-								{sortedRooms?.map((room, roomIdx) => {
-									const timeSlots = roomTimeSlotsMap.get(room.id) || [];
-									const roomBg = roomIdx % 2 === 0 ? '#F5F0E8' : '#FFFFFF';
+						{/* Fixed layout stops every inserted row from re-measuring all columns while scrolling. */}
+						<Table
+							withTableBorder
+							stickyHeader
+							layout="fixed"
+							className="[--date-col:54px] sm:[--date-col:80px] [--slot-col:80px] sm:[--slot-col:104px]"
+							style={{
+								minWidth: `calc(var(--date-col) + ${columnCount - 1} * var(--slot-col))`,
+								borderCollapse: 'separate',
+								borderSpacing: 0,
+							}}
+						>
+							<colgroup>
+								<col style={{ width: 'var(--date-col)' }} />
+								{Array.from({ length: columnCount - 1 }, (_, index) => (
+									<col key={index} style={{ width: 'var(--slot-col)' }} />
+								))}
+							</colgroup>
+							<Table.Thead ref={headerRef} className="z-40!">
+								<CalendarHeader columns={columns} />
+							</Table.Thead>
 
-									return (
-										<Table.Th
-											key={room.id}
-											colSpan={timeSlots.length || 1}
-											className="text-center p-0!"
-											style={{ backgroundColor: roomBg }}
-										>
-											<div className="relative h-20 sm:h-32 w-full border-b border-stone-200 overflow-hidden group">
-												{room.images?.[0]?.url && (
-													<>
-														<Image
-															src={room.images[0].url}
-															alt={room.name}
-															fill
-															className="object-cover transition-transform duration-700 group-hover:scale-110"
-															sizes="(max-width: 768px) 100vw, 200px"
-														/>
-														<div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors" />
-													</>
-												)}
-												<div className="absolute inset-0 flex items-center justify-center p-2 z-10">
-													<span className="text-white font-bold text-base md:text-lg text-center drop-shadow-md px-2 py-1 bg-black/20 rounded backdrop-blur-[2px]">
-														{room.name}
-													</span>
-												</div>
-											</div>
-										</Table.Th>
-									);
-								})}
-							</Table.Tr>
-
-							{/* Row 2: Header Time Slots */}
-							<Table.Tr>
-								{sortedRooms?.map((room, roomIdx) => {
-									const timeSlots = roomTimeSlotsMap.get(room.id) || [];
-									const roomBg = roomIdx % 2 === 0 ? '#F5F0E8' : '#FFFFFF';
-
-									if (timeSlots.length === 0) {
+							<Table.Tbody>
+								{paddingTop > 0 && (
+									<tr aria-hidden style={{ height: paddingTop }}>
+										<td colSpan={columnCount} />
+									</tr>
+								)}
+								{items.map((item) => {
+									const dateKey = dateKeys[item.index];
+									if (!dateKey) {
 										return (
-											<Table.Th key={room.id} className="text-center" style={{ backgroundColor: roomBg }}>
-												<span className="text-xs text-stone-400 font-normal italic">Trống</span>
-											</Table.Th>
+											<tr key="calendar-footer" data-testid="calendar-footer">
+												<td colSpan={columnCount} className="py-3 text-xs text-stone-500">
+													<div className="sticky left-3 w-max">
+														{hasFailed ? (
+															<button onClick={onRetry} className="font-semibold text-[#D97D48] cursor-pointer">
+																Không tải được, bấm để thử lại
+															</button>
+														) : hasMore ? (
+															'Đang tải thêm…'
+														) : (
+															`Đặt xa nhất đến ${formatFullDate(lastDateKey)}`
+														)}
+													</div>
+												</td>
+											</tr>
 										);
 									}
-									return timeSlots.map((slot) => {
-										const displayPrice = roomTimeSlotsApiMap.get(room.id)?.find(s => s.id === slot.id)?.price ?? slot.price;
-										return (
-											<Table.Th
-												key={slot.id}
-												className="text-center min-w-[60px] sm:min-w-[90px] p-1 sm:p-2"
-												style={{ backgroundColor: roomBg }}
-											>
-												<div className="flex flex-col items-center gap-0.5 sm:gap-1">
-													<span className="text-[9px] sm:text-xs font-semibold text-stone-600 bg-white/50 px-1 sm:px-1.5 py-0.5 rounded leading-tight">
-														{slot.startTime}-{slot.endTime}
-													</span>
-													<span className="text-[9px] sm:text-[10px] opacity-70">
-														{getTimeSlotIcon(slot.startTime, slot.isOvernight)} {toKDisplay(displayPrice)}
-													</span>
-												</div>
-											</Table.Th>
-										);
-									});
+									return (
+										<BookingCalendarRow
+											key={dateKey}
+											dateKey={dateKey}
+											isTodayRow={dateKey === todayKey}
+											showYear={!dateKey.startsWith(currentYear)}
+											columns={columns}
+											selectedSlotIds={selectedByDate.get(dateKey) ?? EMPTY_SELECTION}
+											activeDiscountCampaigns={activeDiscountCampaigns}
+											onSlotClick={onSlotClick}
+										/>
+									);
 								})}
-							</Table.Tr>
-						</Table.Thead>
-
-						<Table.Tbody>
-							{dates.map((date, dateIdx) => {
-								const isTodayRow = isToday(date);
-								return (
-									<Table.Tr
-										key={dateIdx}
-										className="group transition-colors"
-									>
-										{/* Sticky Date Column */}
-											<Table.Td
-												className="sticky left-0 z-20 p-0!"
-												style={{
-													backgroundColor: isTodayRow ? '#FAFAF8' : '#FFFFFF',
-													borderRight: '1px solid #E7E5E4',
-												}}
-											>
-												<div className={`
-	                                                flex flex-col items-center justify-center py-1 px-1 sm:py-3 sm:px-2 h-full
-	                                                ${isTodayRow ? 'border-l-2 sm:border-l-4 border-l-[#D97D48]' : 'border-l-2 sm:border-l-4 border-l-transparent'}
-	                                            `}
-													style={isTodayRow ? { boxShadow: TODAY_ROW_BOX_SHADOW } : undefined}
-												>
-													<span className={`text-[9px] sm:text-xs font-bold uppercase tracking-wide mb-0 sm:mb-0.5 ${isTodayRow ? 'text-[#D97D48]' : 'text-stone-500'}`} suppressHydrationWarning>
-														{isTodayRow ? 'Nay' : getDayLabel(date)}
-													</span>
-													<span className={`text-[10px] sm:text-sm font-semibold ${isTodayRow ? 'text-[#D97D48]' : 'text-stone-600'}`} suppressHydrationWarning>
-														{date.getDate()}/{date.getMonth() + 1}
-													</span>
-												</div>
-										</Table.Td>
-
-										{/* Room Slots */}
-										{sortedRooms?.map((room, roomIdx) => {
-											const timeSlots = roomTimeSlotsMap.get(room.id) || [];
-											const cellBg = roomIdx % 2 === 0 ? '#F5F0E8' : '#FFFFFF';
-
-											if (timeSlots.length === 0) {
-												return <Table.Td key={room.id} style={{ backgroundColor: cellBg }} />;
-											}
-
-											return timeSlots.map((slot) => {
-												const slotKey = `${room.id}::${formatDate(date)}::${slot.id}`;
-												const isSelected = selectedSlots.has(slotKey);
-												const dateStr = formatDate(date);
-												const dayData = roomAvailabilityMap.get(room.id)?.find(day => day.date === dateStr);
-												const slotWithStatus = dayData?.timeSlots.find(s => s.timeSlot.id === slot.id);
-												const slotStatus = getSlotStatusFromAvailability(slotWithStatus);
-
-												const canInteract = slotStatus === 'AVAILABLE';
-
-												const baseSlotPrice = roomTimeSlotsApiMap.get(room.id)?.find(s => s.id === slot.id)?.price ?? slot.price;
-												const dynamicPrice = baseSlotPrice;
-												const badgeText = canInteract
-													? getCampaignDiscountBadge(slotWithStatus?.discountType, slotWithStatus?.discountValue)
-														?? getSlotBadgeText(room.id, room.roomType, date, slot.id, dynamicPrice)
-													: null;
-
-												const { className: slotClasses, style: slotStyle } = getSlotClasses(
-													slotStatus,
-													isSelected,
-													canInteract,
-													isTodayRow,
-												);
-
-												return (
-													<Table.Td
-														key={slot.id}
-														className="text-center p-0.5 sm:p-2 align-middle"
-														style={{
-															backgroundColor: isTodayRow ? '#FAFAF8' : cellBg,
-														}}
-													>
-														<button
-															onClick={() => canInteract && onSlotClick(room.id, date, slot.id, dynamicPrice)}
-															disabled={!canInteract}
-															className={`
-																relative w-full h-[24px] sm:h-[36px] rounded font-medium text-xs sm:text-sm transition-all duration-200 flex flex-col items-center justify-center shadow-sm
-																${slotClasses}
-															`}
-															style={slotStyle}
-														>
-															{badgeText && (
-																<div className={`absolute -top-1 -right-1 sm:-top-1.5 sm:-right-1.5 px-1 py-0.5 rounded shadow-sm z-10 whitespace-nowrap text-[6px] sm:text-[7px] font-bold ${
-																	isSelected 
-																		? 'bg-white text-[#D97D48]' 
-																		: 'bg-[#046B5A] text-white'
-																}`}>
-																	{badgeText}
-																</div>
-															)}
-														</button>
-													</Table.Td>
-												);
-											});
-										})}
-									</Table.Tr>
-								);
-							})}
-						</Table.Tbody>
-					</Table>
-				</div>
+								{paddingBottom > 0 && (
+									<tr aria-hidden style={{ height: paddingBottom }}>
+										<td colSpan={columnCount} />
+									</tr>
+								)}
+							</Table.Tbody>
+						</Table>
+					</div>
+				</>
 			)}
 		</Card>
 	);

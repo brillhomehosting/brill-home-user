@@ -9,10 +9,12 @@ import { useActiveDiscountCampaigns } from '@/hooks/useActiveDiscountCampaigns';
 import { useComboDiscounts } from '@/hooks/useComboDiscounts';
 import { useRoom } from '@/hooks/useRoom';
 import { Center, Container, Skeleton, Stack, Text } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import { useState, useMemo } from 'react';
 
 export default function RoomDetailClient({ roomId }: { roomId: string }) {
 	const { data: room, isLoading, error } = useRoom(roomId);
+	const isDesktop = useMediaQuery('(min-width: 1024px)');
 	const [imageModalOpened, setImageModalOpened] = useState(false);
 	const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
@@ -99,7 +101,7 @@ export default function RoomDetailClient({ roomId }: { roomId: string }) {
 					<div className="grid grid-cols-1 lg:grid-cols-3 gap-2 md:gap-8">
 						{/* Mobile: Booking Widget First */}
 						<div id="booking-widget" className="lg:hidden order-first">
-							<BookingWidget room={room} />
+							{isDesktop === false && <BookingWidget room={room} />}
 						</div>
 
 						{/* Left Column - Main Content (65%) */}
@@ -115,7 +117,7 @@ export default function RoomDetailClient({ roomId }: { roomId: string }) {
 
 						{/* Right Column - Sticky Sidebar (35%) */}
 						<div className="lg:col-span-1 lg:block hidden">
-							<BookingWidget room={room} />
+							{isDesktop === true && <BookingWidget room={room} />}
 						</div>
 					</div>
 				</Container>
