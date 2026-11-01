@@ -8,7 +8,7 @@ import type { DayAvailability, SlotStatus } from '@/types/timeslot';
 import { Card, Table } from '@mantine/core';
 import Image from 'next/image';
 import { useCallback } from 'react';
-import { formatDate, getDayLabel, getTimeSlotIcon, isEndPastSlot, isToday } from './bookingUtils';
+import { formatDate, getDayLabel, getTimeSlotIcon, isToday } from './bookingUtils';
 import LoadingSkeleton from './LoadingSkeleton';
 
 interface BookingCalendarTableProps {
@@ -254,9 +254,7 @@ export default function BookingCalendarTable({
 												const slotWithStatus = dayData?.timeSlots.find(s => s.timeSlot.id === slot.id);
 												const slotStatus = getSlotStatusFromAvailability(slotWithStatus);
 
-												const isEndPast = isEndPastSlot(date, slot.endTime, slot.isOvernight);
-												const isAvailable = slotStatus === 'AVAILABLE';
-												const canInteract = isAvailable && !isEndPast;
+												const canInteract = slotStatus === 'AVAILABLE';
 
 												const baseSlotPrice = roomTimeSlotsApiMap.get(room.id)?.find(s => s.id === slot.id)?.price ?? slot.price;
 												const dynamicPrice = baseSlotPrice;

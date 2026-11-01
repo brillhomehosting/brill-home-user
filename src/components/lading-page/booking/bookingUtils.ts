@@ -36,30 +36,3 @@ export const getTimeSlotIcon = (startTime: string, isOvernight: boolean): string
 	if (hour >= 17 && hour < 21) return '🌅'; // Chiều tối
 	return '🌙'; // Đêm
 };
-
-// Check if slot's start time has passed
-export const isPastSlot = (date: Date, startTime: string): boolean => {
-	const now = new Date();
-	const timeParts = startTime.split(':');
-	const hours = parseInt(timeParts[0] || '0', 10);
-	const minutes = parseInt(timeParts[1] || '0', 10);
-	const slotTime = new Date(date);
-	slotTime.setHours(hours, minutes, 0, 0);
-
-	return now > slotTime;
-};
-
-// Check if slot's end time has passed. For overnight slots, the end time
-// falls on the day after `date`, so it can still be valid after `date` is
-// no longer "today".
-export const isEndPastSlot = (date: Date, endTime: string, isOvernight: boolean): boolean => {
-	const now = new Date();
-	const timeParts = endTime.split(':');
-	const hours = parseInt(timeParts[0] || '0', 10);
-	const minutes = parseInt(timeParts[1] || '0', 10);
-	const endDate = new Date(date);
-	endDate.setHours(hours, minutes, 0, 0);
-	if (isOvernight) endDate.setDate(endDate.getDate() + 1);
-
-	return now > endDate;
-};
