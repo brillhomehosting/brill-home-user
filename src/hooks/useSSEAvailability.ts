@@ -37,7 +37,7 @@ export function useSSEAvailability(roomIds: string[]) {
 			const es = new EventSource(url);
 			eventSourceRef.current = es;
 
-			es.onmessage = (event) => {
+			es.addEventListener('SLOT_STATUS_UPDATE', (event) => {
 				try {
 					const data: SSEAvailabilityEvent = JSON.parse(event.data);
 
@@ -49,7 +49,7 @@ export function useSSEAvailability(roomIds: string[]) {
 					// Silently ignore malformed events
 					console.warn("[SSE] Failed to parse event:", event.data);
 				}
-			};
+			});
 
 			es.onerror = () => {
 				// EventSource automatically reconnects on error

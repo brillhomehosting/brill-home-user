@@ -44,6 +44,7 @@ export const bookingApi = {
 	 */
 	fetchAvailability: async (
 		params: FetchAvailabilityParams,
+		signal?: AbortSignal,
 	): Promise<AvailabilityApiResponse> => {
 		const searchParams = new URLSearchParams({
 			startDate: params.startDate,
@@ -54,7 +55,7 @@ export const bookingApi = {
 		}
 		const response = await fetch(
 			`${API_BASE_URL}/api/v1/bookings/availability?${searchParams.toString()}`,
-			{ cache: "no-store" },
+			{ cache: "no-store", signal },
 		);
 		return response.json();
 	},

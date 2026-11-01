@@ -1,21 +1,20 @@
 'use client';
 
 import { useActiveDiscountCampaigns } from '@/hooks/useActiveDiscountCampaigns';
+import { useAvailabilityWindows } from '@/hooks/useAvailabilityWindows';
 import { useComboDiscounts } from '@/hooks/useComboDiscounts';
 import { useHolidaySurchargeByDates } from '@/hooks/useHolidaySurchargeByDates';
 import { useRooms } from '@/hooks/useRooms';
-import { useRoomsAvailability } from '@/hooks/useRoomsAvailability';
-import { useRoomsTimeSlots } from '@/hooks/useRoomsTimeSlots';
+import { useRoomSlotColumns } from '@/hooks/useRoomSlotColumns';
 import { useSSEAvailability } from '@/hooks/useSSEAvailability';
 import { buildBookingMessage } from '@/lib/buildBookingMessage';
 import { calculatePricing } from '@/lib/pricingUtils';
 import { applySlotSelection, getSelectionContext, LinearSelectableSlot, parseSlotKey } from '@/lib/slotSelection';
-import { getSlotStatusFromAvailability } from '@/store/availabilityStore';
+import { getSlotStatusFromAvailability, useAvailabilityStore } from '@/store/availabilityStore';
 import { useBookingUIStore } from '@/store/bookingUIStore';
 import { PricingSelectedSlot } from '@/types/pricing';
-import { TimeSlot } from '@/types/room';
 import { motion } from 'framer-motion';
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useMaxAdvanceBookingDays } from '@/hooks/useMaxAdvanceBookingDays';
 import BookingMessengerModal from '../ui/BookingMessengerModal';
 import BookingCalendarTable from './booking/BookingCalendarTable';
@@ -24,13 +23,12 @@ import BookingLegend from './booking/BookingLegend';
 import BookingSummaryCard from './booking/BookingSummaryCard';
 import BookingTableHeader from './booking/BookingTableHeader';
 import MobileBookingBar from './booking/MobileBookingBar';
-import { formatDate, generateDates } from './booking/bookingUtils';
 
-type IndexedPricingSlot = PricingSelectedSlot & { index: number };
+const MemoBookingInfoBanner = memo(BookingInfoBanner);
+const MemoBookingLegend = memo(BookingLegend);
 
 export default function AllRoomsBookingSection() {
 	const { data: rooms, isLoading } = useRooms();
-	const [currentDatePage, setCurrentDatePage] = useState(0);
 	const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set());
 	const [slotPrices, setSlotPrices] = useState<Map<string, number>>(new Map());
 	const [isSendModalOpen, setIsSendModalOpen] = useState(false);
@@ -42,94 +40,16 @@ export default function AllRoomsBookingSection() {
 		return () => setMobileBookingBarVisible(false);
 	}, [selectedSlots.size, setMobileBookingBarVisible]);
 
-	const DATES_PER_PAGE = 7;
 	const { data: maxAdvanceBookingDays = 30 } = useMaxAdvanceBookingDays();
-	const allDates = generateDates((Number(maxAdvanceBookingDays) || 30) + 1);
-	const totalPages = Math.ceil(allDates.length / DATES_PER_PAGE);
-	const pagedDates = allDates.slice(
-		currentDatePage * DATES_PER_PAGE,
-		(currentDatePage + 1) * DATES_PER_PAGE
-	);
-
-	// Clamp current page if config changes
-	useEffect(() => {
-		if (currentDatePage > Math.max(0, totalPages - 1)) {
-			setCurrentDatePage(Math.max(0, totalPages - 1));
-		}
-	}, [totalPages, currentDatePage]);
-	const shouldShowYesterdayRow = new Date().getHours() < 19;
-	const yesterday = new Date();
-	yesterday.setDate(yesterday.getDate() - 1);
-	const dates = currentDatePage === 0 && shouldShowYesterdayRow ? [yesterday, ...pagedDates] : pagedDates;
-
-	const startDate = formatDate(dates[0] || new Date());
-	const endDate = formatDate(dates[dates.length - 1] || new Date());
-
 	const allRoomIds = useMemo(() => (rooms || []).map(r => r.id), [rooms]);
-	const { data: roomAvailabilityMap, isLoading: isLoadingAvailability } = useRoomsAvailability(
-		startDate,
-		endDate,
-		{ roomIds: allRoomIds },
-	);
-	const { data: roomTimeSlotsApiMap } = useRoomsTimeSlots(rooms);
+	const availability = useAvailabilityWindows({
+		roomIds: allRoomIds,
+		maxAdvanceDays: Number(maxAdvanceBookingDays) || 30,
+	});
 
 	useSSEAvailability(allRoomIds);
 
-	const roomTimeSlotsMap = useMemo(() => {
-		const map = new Map<string, TimeSlot[]>();
-		if (!rooms) return map;
-
-		rooms.forEach(room => {
-			const availabilityData = roomAvailabilityMap.get(room.id);
-			if (!availabilityData || availabilityData.length === 0) return;
-
-			const firstDay = availabilityData.find(day => day?.timeSlots?.length);
-			if (!firstDay?.timeSlots) return;
-
-			const slots = firstDay.timeSlots
-				.map(ts => ts.timeSlot)
-				.filter(Boolean)
-				.sort((a, b) => {
-					const timeA = parseInt(a.startTime.replace(':', ''), 10);
-					const timeB = parseInt(b.startTime.replace(':', ''), 10);
-					return timeA - timeB;
-				});
-
-			map.set(room.id, slots);
-		});
-
-		return map;
-	}, [rooms, roomAvailabilityMap]);
-
-	const getLinearSlots = (roomId: string): LinearSelectableSlot[] => {
-		const timeSlots = roomTimeSlotsMap.get(roomId) || [];
-		if (!timeSlots.length) return [];
-
-		const availabilityData = roomAvailabilityMap.get(roomId);
-		const linearList: LinearSelectableSlot[] = [];
-
-		dates.forEach(date => {
-			const dateStr = formatDate(date);
-			const dayData = availabilityData?.find(d => d.date === dateStr);
-
-			timeSlots.forEach(slot => {
-				const slotStatus = dayData?.timeSlots?.find(s => s?.timeSlot?.id === slot.id);
-				const status = getSlotStatusFromAvailability(slotStatus);
-				const dynamicPrice = slotStatus?.timeSlot?.price ?? slot.price;
-
-				linearList.push({
-					key: `${roomId}::${dateStr}::${slot.id}`,
-					roomId,
-					date: dateStr,
-					slotId: slot.id,
-					price: dynamicPrice,
-					isAvailable: status === 'AVAILABLE',
-				});
-			});
-		});
-
-		return linearList;
-	};
+	const roomTimeSlotsMap = useRoomSlotColumns(allRoomIds, availability.loadedDateKeys);
 
 	const selectionContext = useMemo(() => getSelectionContext(selectedSlots), [selectedSlots]);
 	const selectedRoomId = selectionContext?.roomId ?? null;
@@ -148,37 +68,38 @@ export default function AllRoomsBookingSection() {
 	const selectedPricingSlots = useMemo((): PricingSelectedSlot[] => {
 		if (!selectedRoomId || selectedSlots.size === 0) return [];
 
-		const linearSlots = getLinearSlots(selectedRoomId);
-		const indexByKey = new Map(linearSlots.map((slot, index) => [slot.key, index]));
-		const priceByKey = new Map(linearSlots.map((slot) => [slot.key, slot.price]));
-		const slotMap = new Map((roomTimeSlotsMap.get(selectedRoomId) || []).map((slot) => [slot.id, slot]));
+		const roomSlots = roomTimeSlotsMap.get(selectedRoomId) || [];
+		const slotIndexById = new Map(roomSlots.map((slot, index) => [slot.id, index]));
 
 		return Array.from(selectedSlots)
 			.map((slotKey) => {
 				const parsed = parseSlotKey(slotKey);
 				if (!parsed) return null;
-
-				const slot = slotMap.get(parsed.slotId);
+				const slot = roomSlots[slotIndexById.get(parsed.slotId) ?? -1];
 				if (!slot) return null;
-
-				const indexedSlot: IndexedPricingSlot = {
+				return {
 					key: slotKey,
 					roomId: parsed.roomId,
 					date: parsed.date,
 					slotId: parsed.slotId,
 					startTime: slot.startTime,
 					endTime: slot.endTime,
-					price: slotPrices.get(slotKey) ?? priceByKey.get(slotKey) ?? slot.price,
+					price: slotPrices.get(slotKey) ?? slot.price,
 					isOvernight: slot.isOvernight,
-					index: indexByKey.get(slotKey) ?? Number.MAX_SAFE_INTEGER,
 				};
-
-				return indexedSlot;
 			})
-			.filter((slot): slot is IndexedPricingSlot => Boolean(slot))
-			.sort((a, b) => a.index - b.index)
-			.map(({ index, ...slot }) => slot);
-	}, [selectedRoomId, selectedSlots, slotPrices, roomTimeSlotsMap, roomAvailabilityMap, dates]); // eslint-disable-line react-hooks/exhaustive-deps
+			.filter((slot): slot is PricingSelectedSlot => Boolean(slot))
+			.sort((a, b) => a.date.localeCompare(b.date) || (slotIndexById.get(a.slotId) ?? 0) - (slotIndexById.get(b.slotId) ?? 0));
+	}, [selectedRoomId, selectedSlots, slotPrices, roomTimeSlotsMap]);
+
+	const selectedByDate = useMemo(() => {
+		const byDate = new Map<string, string>();
+		selectedSlots.forEach((slotKey) => {
+			const parsed = parseSlotKey(slotKey);
+			if (parsed) byDate.set(parsed.date, `${byDate.get(parsed.date) ?? '|'}${parsed.slotId}|`);
+		});
+		return byDate;
+	}, [selectedSlots]);
 
 	const selectedDates = useMemo(
 		() => Array.from(new Set(selectedPricingSlots.map((slot) => slot.date))),
@@ -211,19 +132,47 @@ export default function AllRoomsBookingSection() {
 		],
 	);
 
-	const handleSlotClick = (roomId: string, date: Date, slotId: string) => {
-		const linearSlots = getLinearSlots(roomId);
-		const clickedKey = `${roomId}::${formatDate(date)}::${slotId}`;
+	const selectionRef = useRef({ selectedSlots, slotPrices });
+	selectionRef.current = { selectedSlots, slotPrices };
+
+	const handleSlotClick = useCallback((roomId: string, dateKey: string, slotId: string) => {
+		const { selectedSlots: currentSlots, slotPrices: currentPrices } = selectionRef.current;
+		const roomDays = useAvailabilityStore.getState().availabilityByRoom[roomId];
+		const roomSlots = roomTimeSlotsMap.get(roomId) || [];
+
+		// Selection only reads the clicked day and days already selected.
+		const relevantDates = new Set([dateKey]);
+		currentSlots.forEach((key) => {
+			const parsed = parseSlotKey(key);
+			if (parsed) relevantDates.add(parsed.date);
+		});
+
+		const linearSlots: LinearSelectableSlot[] = [];
+		Array.from(relevantDates).sort().forEach((date) => {
+			const day = roomDays?.[date];
+			roomSlots.forEach((slot) => {
+				const slotWithStatus = day?.timeSlots.find((s) => s.timeSlot.id === slot.id);
+				linearSlots.push({
+					key: `${roomId}::${date}::${slot.id}`,
+					roomId,
+					date,
+					slotId: slot.id,
+					price: slotWithStatus?.timeSlot?.price ?? slot.price,
+					isAvailable: getSlotStatusFromAvailability(slotWithStatus) === 'AVAILABLE',
+				});
+			});
+		});
+
 		const result = applySlotSelection({
 			linearSlots,
-			selectedSlots,
-			clickedKey,
-			existingSlotPrices: slotPrices,
+			selectedSlots: currentSlots,
+			clickedKey: `${roomId}::${dateKey}::${slotId}`,
+			existingSlotPrices: currentPrices,
 		});
 
 		setSelectedSlots(result.selectedSlots);
 		setSlotPrices(result.slotPrices);
-	};
+	}, [roomTimeSlotsMap]);
 
 	const buildMessengerMessage = () => {
 		if (!selectedRoom || selectedPricingSlots.length === 0) return '';
@@ -253,36 +202,25 @@ export default function AllRoomsBookingSection() {
 		setIsSendModalOpen(true);
 	};
 
-	const sortedRooms = useMemo(() => {
+	const columns = useMemo(() => {
 		if (!rooms) return [];
-
-		return [...rooms].sort((a, b) => {
-			const slotsA = roomTimeSlotsMap.get(a.id) || [];
-			const slotsB = roomTimeSlotsMap.get(b.id) || [];
-
-			const getEarliestTime = (slots: typeof slotsA) => {
-				if (!slots.length) return Infinity;
-				return Math.min(...slots.map(s => parseInt(s.startTime.replace(':', ''), 10)));
-			};
-
-			const timeA = getEarliestTime(slotsA);
-			const timeB = getEarliestTime(slotsB);
-
-			if (timeA !== timeB) return timeA - timeB;
-			return a.name.localeCompare(b.name);
-		});
+		const earliest = (roomId: string) => {
+			const slots = roomTimeSlotsMap.get(roomId) || [];
+			return slots.length ? Math.min(...slots.map(s => parseInt(s.startTime.replace(':', ''), 10))) : Infinity;
+		};
+		return [...rooms]
+			.sort((a, b) => earliest(a.id) - earliest(b.id) || a.name.localeCompare(b.name))
+			.map((room, index) => ({
+				room,
+				slots: roomTimeSlotsMap.get(room.id) || [],
+				background: index % 2 === 0 ? '#F5F0E8' : '#FFFFFF',
+			}));
 	}, [rooms, roomTimeSlotsMap]);
 
 	return (
 		<section id="booking-table" className="py-12 md:py-20">
 			<div className="container mx-auto px-4 max-w-[1400px]">
-				<BookingTableHeader
-					dates={dates}
-					currentDatePage={currentDatePage}
-					totalPages={totalPages}
-					onPrevPage={() => setCurrentDatePage(prev => Math.max(0, prev - 1))}
-					onNextPage={() => setCurrentDatePage(prev => Math.min(totalPages - 1, prev + 1))}
-				/>
+				<BookingTableHeader />
 
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
@@ -291,26 +229,29 @@ export default function AllRoomsBookingSection() {
 					transition={{ delay: 0.1 }}
 				>
 					<div className="mb-4">
-						<BookingLegend />
+						<MemoBookingLegend />
 					</div>
 
 					<BookingCalendarTable
-						dates={dates}
-						sortedRooms={sortedRooms}
-						roomTimeSlotsMap={roomTimeSlotsMap}
-						roomAvailabilityMap={roomAvailabilityMap}
-						roomTimeSlotsApiMap={roomTimeSlotsApiMap}
-						selectedSlots={selectedSlots}
+						dateKeys={availability.loadedDateKeys}
+						lastDateKey={availability.lastDateKey}
+						todayKey={availability.todayKey}
+						columns={columns}
+						selectedByDate={selectedByDate}
 						onSlotClick={handleSlotClick}
-						isLoading={isLoading}
-						isLoadingAvailability={isLoadingAvailability}
+						isLoading={isLoading || availability.isLoadingFirst}
+						isFetching={availability.isFetching}
+						hasMore={availability.hasMore}
+						hasFailed={availability.hasFailed}
+						onLoadMore={availability.loadMore}
+						onRetry={availability.retryFailed}
 						activeDiscountCampaigns={activeDiscountCampaigns}
 					/>
 
 					<div className="mt-6 grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 lg:gap-8 items-start">
 						{/* Promo banner on the left */}
 						<div className="w-full min-w-0 overflow-hidden">
-							<BookingInfoBanner
+							<MemoBookingInfoBanner
 								comboDiscounts={comboDiscounts}
 								isLoading={isLoadingComboDiscounts}
 								activeDiscountPrograms={activeDiscountCampaigns}

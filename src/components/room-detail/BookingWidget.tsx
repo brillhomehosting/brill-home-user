@@ -6,47 +6,23 @@ import { useActiveDiscountCampaigns } from '@/hooks/useActiveDiscountCampaigns';
 import { useComboDiscounts } from '@/hooks/useComboDiscounts';
 import { useHolidaySurchargeByDates } from '@/hooks/useHolidaySurchargeByDates';
 import { useSSEAvailability } from '@/hooks/useSSEAvailability';
-import { useTimeSlotAvailability } from '@/hooks/useTimeSlotAvailability';
+import { useAvailabilityWindows } from '@/hooks/useAvailabilityWindows';
+import { useCalendarVirtualRows } from '@/hooks/useCalendarVirtualRows';
+import { useRoomSlotColumns } from '@/hooks/useRoomSlotColumns';
+import { CALENDAR_CELL_BORDER_CLASS } from '@/components/lading-page/booking/bookingUtils';
+import { parseDateKey } from '@/lib/bookingDates';
 import { buildBookingMessage } from '@/lib/buildBookingMessage';
-import { calculatePricing, getCampaignDiscountBadge, getHolidaySurchargeLabel, getSavingsBadgeLabel, resolveBestProgramForSlot, toKDisplay, toPercentValue } from '@/lib/pricingUtils';
+import { calculatePricing, getHolidaySurchargeLabel, getSavingsBadgeLabel, toKDisplay } from '@/lib/pricingUtils';
 import { applySlotSelection, LinearSelectableSlot, parseSlotKey } from '@/lib/slotSelection';
-import { getSlotStatusFromAvailability } from '@/store/availabilityStore';
+import { getSlotStatusFromAvailability, useAvailabilityStore } from '@/store/availabilityStore';
 import { PricingSelectedSlot } from '@/types/pricing';
 import { Room, TimeSlot } from '@/types/room';
-import type { SlotStatus } from '@/types/timeslot';
 import { Card, Table } from '@mantine/core';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
-import { useCallback, useMemo, useState, useEffect } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import BookingWidgetRow from './BookingWidgetRow';
 import { useMaxAdvanceBookingDays } from '@/hooks/useMaxAdvanceBookingDays';
-
-type IndexedPricingSlot = PricingSelectedSlot & { index: number };
-
-const generateDates = (count: number) => {
-	return Array.from({ length: count }, (_, i) => {
-		const date = new Date();
-		date.setDate(date.getDate() + i);
-		return date;
-	});
-};
-
-const getDayLabel = (date: Date) => {
-	const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-	return days[date.getDay()];
-};
-
-const formatDate = (date: Date): string => {
-	const year = date.getFullYear();
-	const month = String(date.getMonth() + 1).padStart(2, '0');
-	const day = String(date.getDate()).padStart(2, '0');
-	return `${year}-${month}-${day}`;
-};
-
-const isToday = (date: Date) => {
-	const today = new Date();
-	return date.toDateString() === today.toDateString();
-};
 
 const getTimeSlotIcon = (startTime: string, isOvernight: boolean): string => {
 	if (isOvernight) return '🌙';
@@ -56,8 +32,7 @@ const getTimeSlotIcon = (startTime: string, isOvernight: boolean): string => {
 	return '🌙';
 };
 
-const TODAY_ROW_BOX_SHADOW = '0 0 18px rgba(154,52,18,0.24), 0 0 30px rgba(251,146,60,0.18)';
-const TODAY_SLOT_BOX_SHADOW = '0 6px 12px rgba(15,118,110,0.88), 0 -2px 5px rgba(13,148,136,0.40)';
+const EMPTY_SELECTION = '';
 
 function LoadingSkeleton() {
 	return (
@@ -86,86 +61,18 @@ function LoadingSkeleton() {
 
 export default function BookingWidget({ room }: { room: Room }) {
 	const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set());
-	const [currentDatePage, setCurrentDatePage] = useState(0);
 	const [slotPrices, setSlotPrices] = useState<Map<string, number>>(new Map());
 	const [isSendModalOpen, setIsSendModalOpen] = useState(false);
 	const [bookingMessage, setBookingMessage] = useState('');
 
 	const { data: maxAdvanceBookingDays = 30 } = useMaxAdvanceBookingDays();
-	const allDates = generateDates((Number(maxAdvanceBookingDays) || 30) + 1);
-	const DATES_PER_PAGE = 7;
-	const totalPages = Math.ceil(allDates.length / DATES_PER_PAGE);
-	// Clamp current page if config changes
-	useEffect(() => {
-		if (currentDatePage > Math.max(0, totalPages - 1)) {
-			setCurrentDatePage(Math.max(0, totalPages - 1));
-		}
-	}, [totalPages, currentDatePage]);
-	const pagedDates = allDates.slice(
-		currentDatePage * DATES_PER_PAGE,
-		(currentDatePage + 1) * DATES_PER_PAGE
-	);
-	const shouldShowYesterdayRow = new Date().getHours() < 19;
-	const yesterday = new Date();
-	yesterday.setDate(yesterday.getDate() - 1);
-	const dates = currentDatePage === 0 && shouldShowYesterdayRow ? [yesterday, ...pagedDates] : pagedDates;
+	const availability = useAvailabilityWindows({ roomId: room.id, maxAdvanceDays: Number(maxAdvanceBookingDays) || 30 });
 
-	const startDate = formatDate(dates[0] || new Date());
-	const endDate = formatDate(dates[dates.length - 1] || new Date());
+	const roomIds = useMemo(() => [room.id], [room.id]);
+	useSSEAvailability(roomIds);
 
-	const { data: availabilityData, isLoading: isLoadingAvailability } = useTimeSlotAvailability(room.id, startDate, endDate);
-
-	useSSEAvailability([room.id]);
-
-	const timeSlots = useMemo(() => {
-		if (!availabilityData || !Array.isArray(availabilityData) || availabilityData.length === 0) return [];
-		const firstDay = availabilityData.find(day => day?.timeSlots?.length);
-		if (!firstDay?.timeSlots) return [];
-
-		return firstDay.timeSlots
-			.map(ts => ts.timeSlot)
-			.filter(Boolean)
-			.sort((a, b) => {
-				const timeA = parseInt(a.startTime.replace(':', ''), 10);
-				const timeB = parseInt(b.startTime.replace(':', ''), 10);
-				return timeA - timeB;
-			});
-	}, [availabilityData]);
-
-	const getSlotStatusForDate = (date: Date, slotId: string): SlotStatus | undefined => {
-		const dateStr = formatDate(date);
-		const dayData = availabilityData?.find(day => day.date === dateStr);
-		const slotWithStatus = dayData?.timeSlots.find(s => s.timeSlot.id === slotId);
-		return getSlotStatusFromAvailability(slotWithStatus);
-	};
-
-	const getLinearSlots = (): LinearSelectableSlot[] => {
-		if (!timeSlots.length) return [];
-		const linearList: LinearSelectableSlot[] = [];
-
-		dates.forEach(date => {
-			const dateStr = formatDate(date);
-			const dayData = availabilityData?.find(day => day.date === dateStr);
-
-			timeSlots.forEach(slot => {
-				const slotFromDay = dayData?.timeSlots?.find(s => s.timeSlot.id === slot.id);
-				const slotStatus = getSlotStatusForDate(date, slot.id);
-				const dynamicPrice = slotFromDay?.timeSlot?.price ?? slot.price;
-				const isAvailable = slotStatus === 'AVAILABLE';
-
-				linearList.push({
-					key: `${room.id}::${dateStr}::${slot.id}`,
-					roomId: room.id,
-					date: dateStr,
-					slotId: slot.id,
-					price: dynamicPrice,
-					isAvailable,
-				});
-			});
-		});
-
-		return linearList;
-	};
+	const roomSlotColumns = useRoomSlotColumns(roomIds, availability.loadedDateKeys);
+	const timeSlots = useMemo(() => roomSlotColumns.get(room.id) ?? [], [roomSlotColumns, room.id]);
 
 	const { data: comboDiscounts = [], isLoading: isLoadingComboDiscounts } = useComboDiscounts();
 	const {
@@ -176,36 +83,37 @@ export default function BookingWidget({ room }: { room: Room }) {
 	const selectedPricingSlots = useMemo((): PricingSelectedSlot[] => {
 		if (selectedSlots.size === 0) return [];
 
-		const linearSlots = getLinearSlots();
-		const indexByKey = new Map(linearSlots.map((slot, index) => [slot.key, index]));
-		const priceByKey = new Map(linearSlots.map((slot) => [slot.key, slot.price]));
-		const slotMap = new Map(timeSlots.map((slot) => [slot.id, slot]));
+		const slotIndexById = new Map(timeSlots.map((slot, index) => [slot.id, index]));
 
 		return Array.from(selectedSlots)
 			.map((slotKey) => {
 				const parsed = parseSlotKey(slotKey);
 				if (!parsed) return null;
-
-				const slot = slotMap.get(parsed.slotId);
+				const slot = timeSlots[slotIndexById.get(parsed.slotId) ?? -1];
 				if (!slot) return null;
-
-				const indexedSlot: IndexedPricingSlot = {
+				return {
 					key: slotKey,
 					roomId: parsed.roomId,
 					date: parsed.date,
 					slotId: parsed.slotId,
 					startTime: slot.startTime,
 					endTime: slot.endTime,
-					price: slotPrices.get(slotKey) ?? priceByKey.get(slotKey) ?? slot.price,
+					price: slotPrices.get(slotKey) ?? slot.price,
 					isOvernight: slot.isOvernight,
-					index: indexByKey.get(slotKey) ?? Number.MAX_SAFE_INTEGER,
 				};
-				return indexedSlot;
 			})
-			.filter((slot): slot is IndexedPricingSlot => Boolean(slot))
-			.sort((a, b) => a.index - b.index)
-			.map(({ index, ...slot }) => slot);
-	}, [selectedSlots, slotPrices, timeSlots, availabilityData, dates]); // eslint-disable-line react-hooks/exhaustive-deps
+			.filter((slot): slot is PricingSelectedSlot => Boolean(slot))
+			.sort((a, b) => a.date.localeCompare(b.date) || (slotIndexById.get(a.slotId) ?? 0) - (slotIndexById.get(b.slotId) ?? 0));
+	}, [selectedSlots, slotPrices, timeSlots]);
+
+	const selectedByDate = useMemo(() => {
+		const byDate = new Map<string, string>();
+		selectedSlots.forEach((slotKey) => {
+			const parsed = parseSlotKey(slotKey);
+			if (parsed) byDate.set(parsed.date, `${byDate.get(parsed.date) ?? '|'}${parsed.slotId}|`);
+		});
+		return byDate;
+	}, [selectedSlots]);
 
 	const selectedDates = useMemo(
 		() => Array.from(new Set(selectedPricingSlots.map((slot) => slot.date))),
@@ -237,53 +145,46 @@ export default function BookingWidget({ room }: { room: Room }) {
 		],
 	);
 
-	const getSlotBadgeText = useCallback((date: Date, slot: TimeSlot): string | null => {
-		if (!activeDiscountCampaigns || activeDiscountCampaigns.length === 0) return null;
-		const dateStr = formatDate(date);
-		const singleSlot: PricingSelectedSlot = {
-			key: 'temp',
-			roomId: room.id,
-			date: dateStr,
-			slotId: slot.id,
-			price: slot.price,
-			isOvernight: slot.isOvernight,
-			startTime: slot.startTime,
-			endTime: slot.endTime,
-		};
+	const selectionRef = useRef({ selectedSlots, slotPrices });
+	selectionRef.current = { selectedSlots, slotPrices };
 
-		const bestProgram = resolveBestProgramForSlot(
-			singleSlot,
-			dateStr,
-			room.id,
-			room.roomType,
-			activeDiscountCampaigns,
-			slot.price,
-		);
+	const handleSlotClick = useCallback((dateKey: string, slotId: string) => {
+		const { selectedSlots: currentSlots, slotPrices: currentPrices } = selectionRef.current;
+		const roomDays = useAvailabilityStore.getState().availabilityByRoom[room.id];
 
-		if (bestProgram && bestProgram.program) {
-			const prog = bestProgram.program;
-			if (prog.discountType === 'PERCENTAGE') {
-				return `-${Math.round(toPercentValue(prog.discountValue))}%`;
-			} else {
-				return `-${toKDisplay(prog.discountValue)}`;
-			}
-		}
-		return null;
-	}, [activeDiscountCampaigns, room.id, room.roomType]);
+		// Selection only reads the clicked day and days already selected.
+		const relevantDates = new Set([dateKey]);
+		currentSlots.forEach((key) => {
+			const parsed = parseSlotKey(key);
+			if (parsed) relevantDates.add(parsed.date);
+		});
 
-	const handleSlotClick = (date: Date, slotId: string) => {
-		const slotKey = `${room.id}::${formatDate(date)}::${slotId}`;
-		const linearSlots = getLinearSlots();
+		const linearSlots: LinearSelectableSlot[] = [];
+		Array.from(relevantDates).sort().forEach((date) => {
+			const day = roomDays?.[date];
+			timeSlots.forEach((slot) => {
+				const slotWithStatus = day?.timeSlots.find((s) => s.timeSlot.id === slot.id);
+				linearSlots.push({
+					key: `${room.id}::${date}::${slot.id}`,
+					roomId: room.id,
+					date,
+					slotId: slot.id,
+					price: slotWithStatus?.timeSlot?.price ?? slot.price,
+					isAvailable: getSlotStatusFromAvailability(slotWithStatus) === 'AVAILABLE',
+				});
+			});
+		});
+
 		const result = applySlotSelection({
 			linearSlots,
-			selectedSlots,
-			clickedKey: slotKey,
-			existingSlotPrices: slotPrices,
+			selectedSlots: currentSlots,
+			clickedKey: `${room.id}::${dateKey}::${slotId}`,
+			existingSlotPrices: currentPrices,
 		});
 
 		setSelectedSlots(result.selectedSlots);
 		setSlotPrices(result.slotPrices);
-	};
+	}, [room.id, timeSlots]);
 
 	const buildMessengerMessage = () => {
 		if (selectedPricingSlots.length === 0) return '';
@@ -316,7 +217,26 @@ export default function BookingWidget({ room }: { room: Room }) {
 	const savingsBadgeLabel = getSavingsBadgeLabel(pricing);
 	const holidaySurchargeLabel = getHolidaySurchargeLabel(pricing);
 
-	const isLoading = isLoadingAvailability;
+	const isLoading = availability.isLoadingFirst;
+
+	const scrollRef = useRef<HTMLDivElement>(null);
+	const headerRef = useRef<HTMLTableSectionElement>(null);
+	const dateKeys = availability.loadedDateKeys;
+	const currentYear = availability.todayKey.slice(0, 4);
+	const columnCount = timeSlots.length + 1;
+
+	const { items, paddingTop, paddingBottom, firstVisibleIndex, scrollToStart } = useCalendarVirtualRows({
+		scrollRef,
+		headerRef,
+		rowCount: dateKeys.length,
+		footerRows: 1,
+		defaultRowHeight: 48,
+		canLoadMore: availability.hasMore && !availability.isFetching && !availability.hasFailed,
+		onNearEnd: availability.loadMore,
+	});
+
+	const visibleDate = dateKeys[firstVisibleIndex] ? parseDateKey(dateKeys[firstVisibleIndex]!) : null;
+	const lastDate = availability.lastDateKey ? parseDateKey(availability.lastDateKey) : null;
 
 	return (
 		<Card
@@ -324,46 +244,39 @@ export default function BookingWidget({ room }: { room: Room }) {
 			className="overflow-hidden border border-stone-200 bg-white rounded-xl"
 			p={0}
 		>
-			<div className="flex items-center justify-between p-3 border-b border-stone-200 bg-stone-50">
-				<button
-					onClick={() => setCurrentDatePage(prev => Math.max(0, prev - 1))}
-					disabled={currentDatePage === 0}
-					className="p-1.5 rounded hover:bg-stone-200 disabled:opacity-30 disabled:hover:bg-transparent text-stone-600 transition-colors"
-				>
-					<ChevronLeft className="w-4 h-4" />
-				</button>
+			<div className="flex items-center justify-between px-3 py-2 border-b border-stone-200 bg-stone-50">
 				<span className="text-xs font-semibold text-stone-700" suppressHydrationWarning>
-					{dates[0]?.getDate()}/{dates[0]?.getMonth()! + 1} - {dates[dates.length - 1]?.getDate()}/{dates[dates.length - 1]?.getMonth()! + 1}
+					{visibleDate ? `Tháng ${visibleDate.getMonth() + 1}/${visibleDate.getFullYear()}` : ''}
 				</span>
-				<button
-					onClick={() => setCurrentDatePage(prev => Math.min(totalPages - 1, prev + 1))}
-					disabled={currentDatePage >= totalPages - 1}
-					className="p-1.5 rounded hover:bg-stone-200 disabled:opacity-30 disabled:hover:bg-transparent text-stone-600 transition-colors"
-				>
-					<ChevronRight className="w-4 h-4" />
-				</button>
+				{firstVisibleIndex > 7 && (
+					<button onClick={scrollToStart} className="text-xs font-semibold text-[#D97D48] cursor-pointer">Về hôm nay</button>
+				)}
 			</div>
 
 			{isLoading ? (
 				<LoadingSkeleton />
+			) : availability.hasFailed && dateKeys.length === 0 ? (
+				<div className="text-center py-8 text-xs">
+					<button onClick={availability.retryFailed} className="font-semibold text-[#D97D48] cursor-pointer">
+						Không tải được, bấm để thử lại
+					</button>
+				</div>
 			) : !timeSlots || !Array.isArray(timeSlots) || timeSlots.length === 0 ? (
 				<div className="text-center py-8 text-stone-400">
 					Chưa có khung giờ nào được cấu hình cho phòng này
 				</div>
 			) : (
-				<div className="max-h-[400px] overflow-auto">
+				<div ref={scrollRef} className="max-h-[400px] overflow-auto">
 					<Table
-						striped
-						highlightOnHover
 						withTableBorder
-						withColumnBorders
 						stickyHeader
 						className="min-w-max"
+						style={{ borderCollapse: 'separate', borderSpacing: 0 }}
 					>
-						<Table.Thead>
+						<Table.Thead ref={headerRef} className="z-40!">
 							<Table.Tr>
 								<Table.Th
-									className="sticky left-0 z-30 p-0! min-w-[46px] sm:min-w-[60px]"
+									className={`${CALENDAR_CELL_BORDER_CLASS} sticky left-0 z-30 p-0! min-w-[46px] sm:min-w-[60px]`}
 									style={{ backgroundColor: '#FAF9F6', borderRight: '1px solid #E7E5E4' }}
 								>
 									<div className="flex items-center justify-center h-full w-full py-1.5 sm:py-2 bg-[#FAF9F6]">
@@ -375,7 +288,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 								{timeSlots.map((slot: TimeSlot) => (
 									<Table.Th
 										key={slot.id}
-										className="text-center min-w-[54px] sm:min-w-[70px] p-1 sm:p-1.5"
+										className={`${CALENDAR_CELL_BORDER_CLASS} text-center min-w-[54px] sm:min-w-[70px] p-1 sm:p-1.5`}
 										style={{ backgroundColor: '#FAF9F6' }}
 									>
 										<div className="flex flex-col items-center gap-0.5">
@@ -392,94 +305,39 @@ export default function BookingWidget({ room }: { room: Room }) {
 						</Table.Thead>
 
 						<Table.Tbody>
-							{dates.map((date, dateIdx) => {
-								const isTodayRow = isToday(date);
+							{paddingTop > 0 && <tr aria-hidden style={{ height: paddingTop }}><td colSpan={columnCount} /></tr>}
+							{items.map((item) => {
+								const dateKey = dateKeys[item.index];
+								if (!dateKey) {
+									return (
+										<tr key="calendar-footer" data-testid="calendar-footer">
+											<td colSpan={columnCount} className="text-center text-[11px] text-stone-500 py-2">
+												{availability.hasFailed ? (
+													<button onClick={availability.retryFailed} className="font-semibold text-[#D97D48] cursor-pointer">Không tải được, bấm để thử lại</button>
+												) : availability.hasMore ? (
+													'Đang tải thêm…'
+												) : lastDate ? (
+													`Đặt xa nhất đến ${lastDate.getDate()}/${lastDate.getMonth() + 1}/${lastDate.getFullYear()}`
+												) : null}
+											</td>
+										</tr>
+									);
+								}
 								return (
-									<Table.Tr key={dateIdx} className="group transition-colors">
-										<Table.Td
-											className="sticky left-0 z-20 p-0!"
-											style={{
-												backgroundColor: isTodayRow ? '#FAFAF8' : '#FFFFFF',
-												borderRight: '1px solid #E7E5E4',
-											}}
-										>
-											<div className={`
-												flex flex-col items-center justify-center py-1 px-0.5 sm:py-2 sm:px-1 h-full
-												${isTodayRow ? 'border-l-2 sm:border-l-3 border-l-[#D97D48]' : 'border-l-2 sm:border-l-3 border-l-transparent'}
-											`}
-												style={isTodayRow ? { boxShadow: TODAY_ROW_BOX_SHADOW } : undefined}
-											>
-												<span className={`text-[8px] sm:text-[10px] font-bold uppercase tracking-wide ${isTodayRow ? 'text-[#D97D48]' : 'text-stone-500'}`} suppressHydrationWarning>
-													{isTodayRow ? 'Nay' : getDayLabel(date)}
-												</span>
-												<span className={`text-[9px] sm:text-xs font-semibold ${isTodayRow ? 'text-[#D97D48]' : 'text-stone-600'}`} suppressHydrationWarning>
-													{date.getDate()}/{date.getMonth() + 1}
-												</span>
-											</div>
-										</Table.Td>
-
-										{timeSlots.map((slot: TimeSlot) => {
-											const slotKey = `${room.id}::${formatDate(date)}::${slot.id}`;
-											const isSelected = selectedSlots.has(slotKey);
-											const dayData = availabilityData?.find(day => day.date === formatDate(date));
-											const slotWithStatus = dayData?.timeSlots.find(item => item.timeSlot.id === slot.id);
-											const slotStatus = getSlotStatusForDate(date, slot.id);
-											const canInteract = slotStatus === 'AVAILABLE';
-											const isBooked = slotStatus === 'BOOKED';
-											const badgeText = canInteract
-												? getCampaignDiscountBadge(slotWithStatus?.discountType, slotWithStatus?.discountValue)
-													?? getSlotBadgeText(date, slot)
-												: null;
-
-											// const dayData = availabilityData?.find(day => day.date === formatDate(date));
-											// const dynamicPrice = dayData?.timeSlots?.find(s => s.timeSlot.id === slot.id)?.timeSlot?.price ?? slot.price;
-
-											return (
-												<Table.Td
-													key={slot.id}
-													className="text-center p-0.5 sm:p-1.5 align-middle relative"
-													style={{
-														backgroundColor: isTodayRow ? '#FAFAF8' : '#FFFFFF',
-													}}
-												>
-													<button
-														onClick={() => canInteract && handleSlotClick(date, slot.id)}
-														disabled={!canInteract}
-														className={`
-															w-full h-[22px] sm:h-[32px] rounded font-medium text-[10px] sm:text-xs transition-all duration-200 flex flex-col items-center justify-center shadow-sm relative
-															${isSelected
-																? 'bg-[#D97D48] text-white shadow-md border border-[#D97D48]'
-																: isBooked
-																	? 'bg-[#CF5B51] text-white border border-transparent cursor-not-allowed shadow-none'
-																	: canInteract
-																		? 'bg-white text-teal-700 border border-teal-200 hover:border-teal-500 hover:shadow-md'
-																		: 'bg-white text-teal-700 border border-teal-200 cursor-not-allowed shadow-none'
-															}
-														`}
-														style={isTodayRow ? {
-															boxShadow: TODAY_SLOT_BOX_SHADOW,
-														} : undefined}
-													>
-														{/* {isBooked && !isPastDateRow ? (
-															<span className="text-[10px] font-semibold">Đã đặt</span>
-														) : !isPastDateRow && isAvailable ? (
-															<span className="font-bold">{toKDisplay(dynamicPrice)}</span>
-														) : null} */}
-														{badgeText && (
-															<div className={`absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 px-1 py-0.5 rounded shadow-sm z-10 whitespace-nowrap text-[6px] sm:text-[8px] font-bold ${isSelected
-																	? 'bg-white text-[#D97D48]'
-																	: 'bg-[#046B5A] text-white'
-																}`}>
-																{badgeText}
-															</div>
-														)}
-													</button>
-												</Table.Td>
-											);
-										})}
-									</Table.Tr>
+									<BookingWidgetRow
+										key={dateKey}
+										room={room}
+										dateKey={dateKey}
+										isTodayRow={dateKey === availability.todayKey}
+										showYear={!dateKey.startsWith(currentYear)}
+										timeSlots={timeSlots}
+										selectedSlotIds={selectedByDate.get(dateKey) ?? EMPTY_SELECTION}
+										activeDiscountCampaigns={activeDiscountCampaigns}
+										onSlotClick={handleSlotClick}
+									/>
 								);
 							})}
+							{paddingBottom > 0 && <tr aria-hidden style={{ height: paddingBottom }}><td colSpan={columnCount} /></tr>}
 						</Table.Tbody>
 					</Table>
 				</div>

@@ -1,30 +1,11 @@
-// Generate dates for next N days
-export const generateDates = (count: number) => {
-	return Array.from({ length: count }, (_, i) => {
-		const date = new Date();
-		date.setDate(date.getDate() + i);
-		return date;
-	});
-};
+// Borders for calendar cells. The tables use separate borders because collapsed
+// borders stay behind while a sticky header scrolls, letting rows show through.
+export const CALENDAR_CELL_BORDER_CLASS = 'border-b border-e last:border-e-0 border-[var(--table-border-color)]';
 
 // Vietnamese day labels - short version for mobile
 export const getDayLabel = (date: Date) => {
 	const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 	return days[date.getDay()];
-};
-
-// Format date as YYYY-MM-DD
-export const formatDate = (date: Date): string => {
-	const year = date.getFullYear();
-	const month = String(date.getMonth() + 1).padStart(2, '0');
-	const day = String(date.getDate()).padStart(2, '0');
-	return `${year}-${month}-${day}`;
-};
-
-// Check if date is today
-export const isToday = (date: Date) => {
-	const today = new Date();
-	return date.toDateString() === today.toDateString();
 };
 
 // Get icon for time slot based on time
