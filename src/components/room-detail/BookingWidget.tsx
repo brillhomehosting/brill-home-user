@@ -56,20 +56,6 @@ const getTimeSlotIcon = (startTime: string, isOvernight: boolean): string => {
 	return '🌙';
 };
 
-// Check if slot's end time has passed. For overnight slots, the end time
-// falls on the day after `date`, so it can still be valid after `date` is
-// no longer "today".
-const isEndPastSlot = (date: Date, endTime: string, isOvernight: boolean): boolean => {
-	const now = new Date();
-	const timeParts = endTime.split(':');
-	const hours = parseInt(timeParts[0] || '0', 10);
-	const minutes = parseInt(timeParts[1] || '0', 10);
-	const endDate = new Date(date);
-	endDate.setHours(hours, minutes, 0, 0);
-	if (isOvernight) endDate.setDate(endDate.getDate() + 1);
-	return now > endDate;
-};
-
 const TODAY_ROW_BOX_SHADOW = '0 0 18px rgba(154,52,18,0.24), 0 0 30px rgba(251,146,60,0.18)';
 const TODAY_SLOT_BOX_SHADOW = '0 6px 12px rgba(15,118,110,0.88), 0 -2px 5px rgba(13,148,136,0.40)';
 
@@ -157,7 +143,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 		if (!timeSlots.length) return [];
 		const linearList: LinearSelectableSlot[] = [];
 
-		pagedDates.forEach(date => {
+		dates.forEach(date => {
 			const dateStr = formatDate(date);
 			const dayData = availabilityData?.find(day => day.date === dateStr);
 
@@ -165,8 +151,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 				const slotFromDay = dayData?.timeSlots?.find(s => s.timeSlot.id === slot.id);
 				const slotStatus = getSlotStatusForDate(date, slot.id);
 				const dynamicPrice = slotFromDay?.timeSlot?.price ?? slot.price;
-				const isAvailable = slotStatus === 'AVAILABLE'
-					&& !isEndPastSlot(date, slot.endTime, slot.isOvernight);
+				const isAvailable = slotStatus === 'AVAILABLE';
 
 				linearList.push({
 					key: `${room.id}::${dateStr}::${slot.id}`,
@@ -220,7 +205,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 			.filter((slot): slot is IndexedPricingSlot => Boolean(slot))
 			.sort((a, b) => a.index - b.index)
 			.map(({ index, ...slot }) => slot);
-	}, [selectedSlots, slotPrices, timeSlots, availabilityData, pagedDates]); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [selectedSlots, slotPrices, timeSlots, availabilityData, dates]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	const selectedDates = useMemo(
 		() => Array.from(new Set(selectedPricingSlots.map((slot) => slot.date))),
@@ -439,9 +424,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 											const dayData = availabilityData?.find(day => day.date === formatDate(date));
 											const slotWithStatus = dayData?.timeSlots.find(item => item.timeSlot.id === slot.id);
 											const slotStatus = getSlotStatusForDate(date, slot.id);
-											const isEndPast = isEndPastSlot(date, slot.endTime, slot.isOvernight);
-											const isAvailable = slotStatus === 'AVAILABLE' && !isEndPast;
-											const canInteract = isAvailable;
+											const canInteract = slotStatus === 'AVAILABLE';
 											const isBooked = slotStatus === 'BOOKED';
 											const badgeText = canInteract
 												? getCampaignDiscountBadge(slotWithStatus?.discountType, slotWithStatus?.discountValue)
