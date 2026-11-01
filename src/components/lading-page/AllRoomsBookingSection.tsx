@@ -108,7 +108,7 @@ export default function AllRoomsBookingSection() {
 		const availabilityData = roomAvailabilityMap.get(roomId);
 		const linearList: LinearSelectableSlot[] = [];
 
-		pagedDates.forEach(date => {
+		dates.forEach(date => {
 			const dateStr = formatDate(date);
 			const dayData = availabilityData?.find(d => d.date === dateStr);
 
@@ -178,7 +178,7 @@ export default function AllRoomsBookingSection() {
 			.filter((slot): slot is IndexedPricingSlot => Boolean(slot))
 			.sort((a, b) => a.index - b.index)
 			.map(({ index, ...slot }) => slot);
-	}, [selectedRoomId, selectedSlots, slotPrices, roomTimeSlotsMap, roomAvailabilityMap, pagedDates]); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [selectedRoomId, selectedSlots, slotPrices, roomTimeSlotsMap, roomAvailabilityMap, dates]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	const selectedDates = useMemo(
 		() => Array.from(new Set(selectedPricingSlots.map((slot) => slot.date))),
