@@ -321,24 +321,15 @@ export function toKDisplay(amountVND: number): string {
 	return `${Math.round(amountVND / 1000)}k`;
 }
 
-function comboCycleLabel(cycle: ComboCycleDiscount): string {
-	const parts = [
-		cycle.percent > 0 ? `-${Math.round(cycle.percent)}%` : '',
-		cycle.flatDiscount > 0 ? `-${toKDisplay(cycle.flatDiscount)}` : '',
-	].filter(Boolean);
-	return `${cycle.slotCount} khung ${parts.join(' ')}`;
-}
-
-// Discounted combo cycles, with repeats merged: "4 khung -30% ×2, 2 khung -5%".
-export function getComboDiscountDetail(pricing: Pick<PricingPreviewBreakdown, 'comboCycles'>): string {
-	const counts = new Map<string, number>();
-	pricing.comboCycles
-		.filter((cycle) => cycle.discountAmount > 0)
-		.forEach((cycle) => {
-			const label = comboCycleLabel(cycle);
-			counts.set(label, (counts.get(label) ?? 0) + 1);
-		});
-	return Array.from(counts, ([label, count]) => (count > 1 ? `${label} ×${count}` : label)).join(', ');
+// Combo line as the guest reads it: every booked slot and the share of the base price
+// the combo takes off, e.g. "5 khung -25%", not one entry per combo cycle.
+export function getComboDiscountDetail(
+	pricing: Pick<PricingPreviewBreakdown, 'basePrice' | 'comboCycles' | 'comboDiscountAmount'>,
+): string {
+	if (pricing.comboDiscountAmount <= 0 || pricing.basePrice <= 0) return '';
+	const slotCount = pricing.comboCycles.reduce((sum, cycle) => sum + cycle.slotCount, 0);
+	const percent = Math.round((pricing.comboDiscountAmount / pricing.basePrice) * 100);
+	return `${slotCount} khung -${percent}%`;
 }
 
 export function getSavingsBadgeLabel(pricing: PricingPreviewBreakdown): string | null {
@@ -349,11 +340,7 @@ export function getSavingsBadgeLabel(pricing: PricingPreviewBreakdown): string |
 	if (activeDiscountCount === 0) return null;
 	if (activeDiscountCount > 1) return `Nhiều ưu đãi - Tiết kiệm ${toKDisplay(pricing.savings)}`;
 	if (hasProgram && pricing.appliedProgram) return pricing.appliedProgram.program.name;
-	if (hasCombo) {
-		const detail = getComboDiscountDetail(pricing);
-		// Several different cycles do not fit a badge, so show the saving instead.
-		return detail && !detail.includes(',') ? `Combo ${detail}` : `Combo - Tiết kiệm ${toKDisplay(pricing.comboDiscountAmount)}`;
-	}
+	if (hasCombo) return `Combo ${getComboDiscountDetail(pricing)}`;
 	return null;
 }
 

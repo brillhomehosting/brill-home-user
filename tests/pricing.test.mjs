@@ -147,11 +147,15 @@ test('no combo tiers means no combo discount', () => {
   assert.deepEqual(result.comboCycles, []);
 });
 
-test('combo labels list each discounted cycle', () => {
-  assert.equal(getComboDiscountDetail(combo(pick(0, 1, 2, 3, 4))), '4 khung -30%');
-  assert.equal(getComboDiscountDetail(combo(pick(0, 1, 2, 3, 4, 5))), '4 khung -30%, 2 khung -5%');
-  assert.equal(getComboDiscountDetail(combo(pick(0, 1, 2, 3, 4, 5, 6, 7))), '4 khung -30% ×2');
+test('combo label shows every booked slot and the percent off the base price', () => {
+  assert.equal(getComboDiscountDetail(combo(pick(0, 1))), '2 khung -5%');
+  assert.equal(getComboDiscountDetail(combo(pick(0, 1, 2, 3))), '4 khung -30%');
+  // 265.800đ off 1.075.000đ is 24,7%.
+  assert.equal(getComboDiscountDetail(combo(pick(0, 1, 2, 3, 4))), '5 khung -25%');
+  // 284.700đ off 1.264.000đ is 22,5%.
+  assert.equal(getComboDiscountDetail(combo(pick(0, 1, 2, 3, 4, 5))), '6 khung -23%');
+  assert.equal(getComboDiscountDetail(combo(pick(0, 1, 2, 3, 4, 5, 6, 7))), '8 khung -30%');
   assert.equal(getComboDiscountDetail(combo(pick(0))), '');
-  assert.equal(getSavingsBadgeLabel(combo(pick(0, 1, 2, 3, 4))), 'Combo 4 khung -30%');
-  assert.equal(getSavingsBadgeLabel(combo(pick(0, 1, 2, 3, 4, 5))), 'Combo - Tiết kiệm 285k');
+  assert.equal(getSavingsBadgeLabel(combo(pick(0, 1, 2, 3, 4))), 'Combo 5 khung -25%');
+  assert.equal(getSavingsBadgeLabel(combo(pick(0, 1, 2, 3, 4, 5))), 'Combo 6 khung -23%');
 });
