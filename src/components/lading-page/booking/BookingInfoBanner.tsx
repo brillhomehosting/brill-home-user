@@ -83,6 +83,8 @@ export default function BookingInfoBanner({
 	const sortedTiers = [...comboDiscounts]
 		.filter((tier) => tier.minSlots > 0)
 		.sort((a, b) => a.minSlots - b.minSlots);
+	// Combo restarts after the largest tier, see buildComboCycles.
+	const comboCycleSize = sortedTiers.at(-1)?.minSlots ?? 0;
 
 	const campaignItems = [...activeDiscountPrograms]
 		.filter((program) => program.status === "ACTIVE" && !program.isDeleted)
@@ -195,7 +197,7 @@ export default function BookingInfoBanner({
 				{/* Summary Bar: Ưu đãi Combo */}
 				{sortedTiers.length > 0 && (
 					<div className="px-1 mb-3">
-						<div className="flex items-center justify-center gap-1.5 py-1.5 px-3 bg-white border border-stone-200 rounded-lg text-[10px] text-stone-500">
+						<div className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 py-1.5 px-3 bg-white border border-stone-200 rounded-lg text-[10px] text-stone-500">
 							<span className="text-stone-400 text-[10px] sm:text-[12px] font-medium whitespace-nowrap">Ưu đãi combo:</span>
 
 							{sortedTiers.map((tier, idx) => (
@@ -208,6 +210,9 @@ export default function BookingInfoBanner({
 									)}
 								</>
 							))}
+							<span className="whitespace-nowrap">
+								· tính lại từ khung thứ {comboCycleSize + 1}
+							</span>
 						</div>
 					</div>
 				)}

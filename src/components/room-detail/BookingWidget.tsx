@@ -8,7 +8,7 @@ import { useHolidaySurchargeByDates } from '@/hooks/useHolidaySurchargeByDates';
 import { useSSEAvailability } from '@/hooks/useSSEAvailability';
 import { useTimeSlotAvailability } from '@/hooks/useTimeSlotAvailability';
 import { buildBookingMessage } from '@/lib/buildBookingMessage';
-import { calculatePricing, getCampaignDiscountBadge, getHolidaySurchargeLabel, getSavingsBadgeLabel, resolveBestProgramForSlot, toKDisplay, toPercentValue } from '@/lib/pricingUtils';
+import { calculatePricing, getCampaignDiscountBadge, getHolidaySurchargeLabel, getComboDiscountDetail, getSavingsBadgeLabel, resolveBestProgramForSlot, toKDisplay, toPercentValue } from '@/lib/pricingUtils';
 import { applySlotSelection, LinearSelectableSlot, parseSlotKey } from '@/lib/slotSelection';
 import { getSlotStatusFromAvailability } from '@/store/availabilityStore';
 import { PricingSelectedSlot } from '@/types/pricing';
@@ -314,6 +314,7 @@ export default function BookingWidget({ room }: { room: Room }) {
 	};
 
 	const savingsBadgeLabel = getSavingsBadgeLabel(pricing);
+	const comboDetail = getComboDiscountDetail(pricing);
 	const holidaySurchargeLabel = getHolidaySurchargeLabel(pricing);
 
 	const isLoading = isLoadingAvailability;
@@ -574,8 +575,8 @@ export default function BookingWidget({ room }: { room: Room }) {
 						{pricing.comboDiscountAmount > 0 && (
 							<div className="px-3 py-1.5 flex justify-between items-center">
 								<span className="text-xs text-green-600">
-									{pricing.comboPercent > 0
-										? `Combo liên tiếp (-${Math.round(pricing.comboPercent)}%)`
+									{comboDetail
+										? `Combo liên tiếp (${comboDetail})`
 										: 'Giảm giá combo'}
 								</span>
 								<span className="text-xs text-green-600">-{toKDisplay(pricing.comboDiscountAmount)}</span>
