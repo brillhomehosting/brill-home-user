@@ -1,7 +1,7 @@
 'use client';
 
 import messengerIcon from '@/assets/icon-messenger.png';
-import { getHolidaySurchargeLabel, getSavingsBadgeLabel, toKDisplay } from '@/lib/pricingUtils';
+import { getHolidaySurchargeLabel, getComboDiscountDetail, getSavingsBadgeLabel, toKDisplay } from '@/lib/pricingUtils';
 import type { PricingPreviewBreakdown } from '@/types/pricing';
 import { Card } from '@mantine/core';
 import { motion } from 'framer-motion';
@@ -23,6 +23,7 @@ export default function BookingSummaryCard({
 	if (selectedSlots.size === 0) return null;
 
 	const savingsBadgeLabel = getSavingsBadgeLabel(pricing);
+	const comboDetail = getComboDiscountDetail(pricing);
 	const holidaySurchargeLabel = getHolidaySurchargeLabel(pricing);
 
 	return (
@@ -100,8 +101,8 @@ export default function BookingSummaryCard({
 						{pricing.comboDiscountAmount > 0 && (
 							<div className="px-3 py-1.5 flex justify-between items-center">
 								<span className="text-xs text-green-600">
-									{pricing.comboPercent > 0
-										? `Giảm giá combo (-${Math.round(pricing.comboPercent)}%)`
+									{comboDetail
+										? `Giảm giá combo (${comboDetail})`
 										: 'Giảm giá combo'}
 								</span>
 								<span className="text-xs text-green-600">-{toKDisplay(pricing.comboDiscountAmount)}</span>
