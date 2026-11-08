@@ -27,6 +27,17 @@ export interface ComboDiscountTier {
 	flatDiscount: number;
 }
 
+// One combo cycle of a booking: a full cycle of the largest tier, or the leftover slots.
+export interface ComboCycleDiscount {
+	slotCount: number;
+	baseAmount: number;
+	tier: ComboDiscountTier | null;
+	percent: number;
+	percentAmount: number;
+	flatDiscount: number;
+	discountAmount: number;
+}
+
 export interface ActiveDiscountProgram {
 	id: string;
 	isDeleted: boolean;
@@ -93,14 +104,11 @@ export interface PricingPreviewBreakdown {
 	basePrice: number;
 	holidaySurchargeAmount: number;
 	programDiscountAmount: number;
-	comboPercent: number;
-	comboPercentAmount: number;
-	comboFlatDiscount: number;
+	comboCycles: ComboCycleDiscount[];
 	comboDiscountAmount: number;
 	totalAmount: number;
 	savings: number;
 	appliedProgram: AppliedProgramDiscount | null;
-	appliedComboTier: ComboDiscountTier | null;
 	dailyBreakdown: PricingDailyBreakdown[];
 }
 

@@ -1,6 +1,7 @@
 import type {
 	ActiveDiscountProgram,
 	AppliedProgramDiscount,
+	ComboCycleDiscount,
 	ComboDiscountTier,
 	HolidaySurchargeInfo,
 	PricingDailyBreakdown,
@@ -152,6 +153,35 @@ function resolveComboTier(slotCount: number, tiers: ComboDiscountTier[]): ComboD
 	return sorted.find((tier) => slotCount >= tier.minSlots) ?? null;
 }
 
+// Combo restarts after every full cycle, whose length is the largest tier (4 slots today).
+// Each full cycle gets that tier and the leftover slots get the tier for their own count,
+// so 5 slots = one 4-slot combo + 1 slot at full price. Mirrors PricingService in the API.
+function buildComboCycles(slots: PricingSelectedSlot[], tiers: ComboDiscountTier[]): ComboCycleDiscount[] {
+	const cycleSize = tiers.reduce((largest, tier) => Math.max(largest, tier.minSlots), 0);
+	if (cycleSize <= 0) return [];
+	const ordered = [...slots].sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+	const cycles: ComboCycleDiscount[] = [];
+	for (let start = 0; start < ordered.length; start += cycleSize) {
+		const cycleSlots = ordered.slice(start, start + cycleSize);
+		const baseAmount = sumPrices(cycleSlots);
+		// Like the API, a single slot never gets a combo.
+		const tier = cycleSlots.length < 2 ? null : resolveComboTier(cycleSlots.length, tiers);
+		const percent = tier ? toPercentValue(tier.discountPercent) : 0;
+		const percentAmount = Math.round(baseAmount * toPercentRate(percent));
+		const flatDiscount = tier?.flatDiscount ?? 0;
+		cycles.push({
+			slotCount: cycleSlots.length,
+			baseAmount,
+			tier,
+			percent,
+			percentAmount,
+			flatDiscount,
+			discountAmount: Math.max(0, percentAmount + flatDiscount),
+		});
+	}
+	return cycles;
+}
+
 function buildDailyBreakdown({
 	date,
 	daySlots,
@@ -223,14 +253,11 @@ export function calculatePricing({
 			basePrice: 0,
 			holidaySurchargeAmount: 0,
 			programDiscountAmount: 0,
-			comboPercent: 0,
-			comboPercentAmount: 0,
-			comboFlatDiscount: 0,
+			comboCycles: [],
 			comboDiscountAmount: 0,
 			totalAmount: 0,
 			savings: 0,
 			appliedProgram: null,
-			appliedComboTier: null,
 			dailyBreakdown: [],
 		};
 	}
@@ -262,15 +289,10 @@ export function calculatePricing({
 	const programDiscountAmount = dailyBreakdown.reduce((sum, day) => sum + day.programDiscountAmount, 0);
 	const totalBeforeCombo = dailyBreakdown.reduce((sum, day) => sum + day.dailyTotal, 0);
 
-	// Combo: tính 1 lần dựa trên tổng số slot toàn booking
-	const totalSlotCount = selectedSlots.length;
-	const comboTier = resolveComboTier(totalSlotCount, comboDiscounts);
-	const comboPercent = comboTier ? toPercentValue(comboTier.discountPercent) : 0;
-	const comboFlatDiscount = comboTier?.flatDiscount ?? 0;
-	const comboPercentAmount = Math.round(basePrice * toPercentRate(comboPercent));
+	const comboCycles = buildComboCycles(selectedSlots, comboDiscounts);
 	const comboDiscountAmount = Math.min(
 		totalBeforeCombo,
-		Math.max(0, comboPercentAmount + comboFlatDiscount),
+		comboCycles.reduce((sum, cycle) => sum + cycle.discountAmount, 0),
 	);
 	const totalAmount = Math.max(0, totalBeforeCombo - comboDiscountAmount);
 	const savings = programDiscountAmount + comboDiscountAmount;
@@ -286,14 +308,11 @@ export function calculatePricing({
 		basePrice,
 		holidaySurchargeAmount,
 		programDiscountAmount,
-		comboPercent,
-		comboPercentAmount,
-		comboFlatDiscount,
+		comboCycles,
 		comboDiscountAmount,
 		totalAmount,
 		savings,
 		appliedProgram: displayAppliedProgram,
-		appliedComboTier: comboTier ?? null,
 		dailyBreakdown,
 	};
 }
@@ -302,9 +321,24 @@ export function toKDisplay(amountVND: number): string {
 	return `${Math.round(amountVND / 1000)}k`;
 }
 
-export function comboBadgeLabel(comboPercent: number): string | null {
-	if (comboPercent <= 0) return null;
-	return `Combo -${Math.round(comboPercent)}%`;
+function comboCycleLabel(cycle: ComboCycleDiscount): string {
+	const parts = [
+		cycle.percent > 0 ? `-${Math.round(cycle.percent)}%` : '',
+		cycle.flatDiscount > 0 ? `-${toKDisplay(cycle.flatDiscount)}` : '',
+	].filter(Boolean);
+	return `${cycle.slotCount} khung ${parts.join(' ')}`;
+}
+
+// Discounted combo cycles, with repeats merged: "4 khung -30% ×2, 2 khung -5%".
+export function getComboDiscountDetail(pricing: Pick<PricingPreviewBreakdown, 'comboCycles'>): string {
+	const counts = new Map<string, number>();
+	pricing.comboCycles
+		.filter((cycle) => cycle.discountAmount > 0)
+		.forEach((cycle) => {
+			const label = comboCycleLabel(cycle);
+			counts.set(label, (counts.get(label) ?? 0) + 1);
+		});
+	return Array.from(counts, ([label, count]) => (count > 1 ? `${label} ×${count}` : label)).join(', ');
 }
 
 export function getSavingsBadgeLabel(pricing: PricingPreviewBreakdown): string | null {
@@ -315,7 +349,11 @@ export function getSavingsBadgeLabel(pricing: PricingPreviewBreakdown): string |
 	if (activeDiscountCount === 0) return null;
 	if (activeDiscountCount > 1) return `Nhiều ưu đãi - Tiết kiệm ${toKDisplay(pricing.savings)}`;
 	if (hasProgram && pricing.appliedProgram) return pricing.appliedProgram.program.name;
-	if (hasCombo) return comboBadgeLabel(pricing.comboPercent) ?? "Giảm giá combo";
+	if (hasCombo) {
+		const detail = getComboDiscountDetail(pricing);
+		// Several different cycles do not fit a badge, so show the saving instead.
+		return detail && !detail.includes(',') ? `Combo ${detail}` : `Combo - Tiết kiệm ${toKDisplay(pricing.comboDiscountAmount)}`;
+	}
 	return null;
 }
 
