@@ -1,4 +1,4 @@
-import { toKDisplay } from "@/lib/pricingUtils";
+import { formatCampaignWeekDays, toKDisplay } from "@/lib/pricingUtils";
 import type { ActiveDiscountProgram, ComboDiscountTier } from "@/types/pricing";
 import { useMediaQuery } from "@mantine/hooks";
 import { motion } from "framer-motion";
@@ -108,7 +108,8 @@ export default function BookingInfoBanner({
 	// Hàm tạo style cho từng loại program
 	const getProgramStyle = (program: ActiveDiscountProgram, index: number) => {
 		let typeText = 'ƯU ĐÃI';
-		if (program.type === 'ROOM_WEEK_DAY') typeText = 'PHÒNG + NGÀY';
+		if (program.type === 'WEEKDAY_SLOT') typeText = 'THỨ + GIỜ';
+		else if (program.type === 'ROOM_WEEK_DAY') typeText = 'PHÒNG + NGÀY';
 		else if (program.type === 'WEEK_DAY') typeText = 'THEO NGÀY';
 		else if (program.type === 'ROOM' || program.type === 'ROOM_TYPE') typeText = 'PHÒNG';
 		else if (program.type === 'SLOT_TYPE') typeText = 'GIỜ VÀNG';
@@ -149,6 +150,17 @@ export default function BookingInfoBanner({
 	// Hàm tạo mô tả cho từng loại program
 	// Hàm tạo mô tả cho từng loại program
 	const getProgramDescription = (program: ActiveDiscountProgram) => {
+		if (program.type === 'WEEKDAY_SLOT') {
+			const roomNames = program.targetRoomNames ?? [];
+			const rooms = roomNames.length === 0
+				? 'Tất cả phòng'
+				: roomNames.length <= 2 ? roomNames.join(', ') : `${roomNames.length} phòng`;
+			const slots = program.targetOvernightSlot === true
+				? 'Khung qua đêm'
+				: program.targetOvernightSlot === false ? 'Khung ban ngày' : 'Mọi khung giờ';
+			return `${rooms} · ${formatCampaignWeekDays(program.targetWeekDays)} · ${slots}`;
+		}
+
 		if (program.type === 'ROOM_WEEK_DAY') {
 			return `${program.targetRoomName || 'Phòng áp dụng'} · ${program.targetWeekDay ? 'Ngày thường (Thứ 2–Thứ 6)' : 'Cuối tuần (Thứ 7, CN)'}`;
 		}

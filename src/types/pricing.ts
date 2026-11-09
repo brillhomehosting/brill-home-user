@@ -1,6 +1,7 @@
 import type { ApiResponse } from ".";
 
 export type DiscountProgramType =
+	| "WEEKDAY_SLOT"
 	| "ROOM_WEEK_DAY"
 	| "ALL"
 	| "ROOM"
@@ -55,6 +56,10 @@ export interface ActiveDiscountProgram {
 	targetRoomType: string | null;
 	targetRoomId: string | null;
 	targetRoomName: string | null;
+	// WEEKDAY_SLOT only: ISO weekdays (1 = Monday ... 7 = Sunday); no rooms means every room
+	targetWeekDays?: number[] | null;
+	targetRoomIds?: string[] | null;
+	targetRoomNames?: string[] | null;
 }
 
 export interface HolidaySurchargeInfo {

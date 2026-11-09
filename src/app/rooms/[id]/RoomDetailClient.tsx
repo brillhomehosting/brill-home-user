@@ -34,6 +34,9 @@ export default function RoomDetailClient({ roomId }: { roomId: string }) {
 			if (program.type === "ROOM_TYPE" && program.targetRoomType === room.roomType) {
 				return true;
 			}
+			if (program.type === "WEEKDAY_SLOT") {
+				return !program.targetRoomIds?.length || program.targetRoomIds.includes(room.id);
+			}
 			return false;
 		});
 	}, [activeDiscountCampaigns, room]);

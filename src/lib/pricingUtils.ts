@@ -41,6 +41,37 @@ function sumPrices(slots: PricingSelectedSlot[]): number {
 	return slots.reduce((total, slot) => total + slot.price, 0);
 }
 
+// 1 = Monday ... 7 = Sunday, as the API stores WEEKDAY_SLOT days.
+function toIsoWeekDay(dateStr: string): number {
+	const day = new Date(`${dateStr}T00:00:00`).getDay();
+	return day === 0 ? 7 : day;
+}
+
+function targetsSpecificRooms(program: ActiveDiscountProgram): boolean {
+	return (program.targetRoomIds?.length ?? 0) > 0;
+}
+
+const WEEK_DAY_NAMES = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN"];
+
+// ISO weekdays to text, joining runs: [1, 2, 3, 4] -> "Thứ 2–Thứ 5", [6, 7] -> "Thứ 7, CN".
+export function formatCampaignWeekDays(days: number[] | null | undefined): string {
+	const sorted = [...new Set(days ?? [])].filter((day) => day >= 1 && day <= 7).sort((a, b) => a - b);
+	if (sorted.length === 7) return "Cả tuần";
+	const runs: [number, number][] = [];
+	for (const day of sorted) {
+		const last = runs.at(-1);
+		if (last && day === last[1] + 1) last[1] = day;
+		else runs.push([day, day]);
+	}
+	const name = (day: number) => WEEK_DAY_NAMES[day - 1] ?? "";
+	return runs
+		.map(([start, end]) => {
+			if (start === end) return name(start);
+			return end - start >= 2 ? `${name(start)}–${name(end)}` : `${name(start)}, ${name(end)}`;
+		})
+		.join(", ");
+}
+
 function isSameWeekdayType(dateStr: string, isWeekdayTarget: boolean): boolean {
 	const date = new Date(`${dateStr}T00:00:00`);
 	const day = date.getDay();
@@ -50,6 +81,8 @@ function isSameWeekdayType(dateStr: string, isWeekdayTarget: boolean): boolean {
 
 function getProgramPriority(type: ActiveDiscountProgram["type"]): number {
 	switch (type) {
+		case "WEEKDAY_SLOT":
+			return 7;
 		case "ROOM_WEEK_DAY":
 			return 6;
 		case "ROOM":
@@ -74,6 +107,13 @@ function getMatchedSlots(
 	roomType?: string | null,
 ): PricingSelectedSlot[] {
 	switch (program.type) {
+		// Mirrors WeekdaySlotCampaignMatcher in the API: the slot's date picks the weekday,
+		// so an overnight slot counts on the day it starts.
+		case "WEEKDAY_SLOT":
+			if (targetsSpecificRooms(program) && !program.targetRoomIds?.includes(roomId)) return [];
+			if (!program.targetWeekDays?.includes(toIsoWeekDay(date))) return [];
+			if (program.targetOvernightSlot == null) return [...daySlots];
+			return daySlots.filter((slot) => slot.isOvernight === program.targetOvernightSlot);
 		case "ROOM_WEEK_DAY":
 			if (program.targetRoomId !== roomId || program.targetWeekDay == null) return [];
 			return isSameWeekdayType(date, program.targetWeekDay) ? [...daySlots] : [];
@@ -138,6 +178,8 @@ export function resolveBestProgramForSlot(
 		}));
 	candidates.sort((a, b) =>
 		getProgramPriority(b.program.type) - getProgramPriority(a.program.type)
+		// Within WEEKDAY_SLOT, a rule for chosen rooms beats one for every room
+		|| Number(targetsSpecificRooms(b.program)) - Number(targetsSpecificRooms(a.program))
 		|| b.discountAmount - a.discountAmount
 		|| a.program.createdAt.localeCompare(b.program.createdAt));
 	const winner = candidates[0];
