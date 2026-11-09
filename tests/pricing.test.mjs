@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { calculatePricing, getCampaignDiscountBadge, getComboDiscountDetail, getSavingsBadgeLabel } from '../src/lib/pricingUtils.ts';
+import { calculatePricing, formatCampaignWeekDays, getCampaignDiscountBadge, getComboDiscountDetail, getSavingsBadgeLabel } from '../src/lib/pricingUtils.ts';
 
 const campaign = (overrides = {}) => ({
   id: 'combined', name: 'Room weekends', type: 'ROOM_WEEK_DAY',
@@ -158,4 +158,53 @@ test('combo label shows every booked slot and the percent off the base price', (
   assert.equal(getComboDiscountDetail(combo(pick(0))), '');
   assert.equal(getSavingsBadgeLabel(combo(pick(0, 1, 2, 3, 4))), 'Combo 5 khung -25%');
   assert.equal(getSavingsBadgeLabel(combo(pick(0, 1, 2, 3, 4, 5))), 'Combo 6 khung -23%');
+});
+
+// WEEKDAY_SLOT: same scenario as WeekdaySlotCampaignTest in brill-home-api. Monday to
+// Thursday every slot is discounted, Friday only the day slots.
+const THURSDAY = '2026-09-17';
+const FRIDAY = '2026-09-18';
+const SATURDAY = '2026-09-19';
+const weekdaySlot = (overrides = {}) => campaign({
+  id: 'weekday-slot', name: 'Weekday slot', type: 'WEEKDAY_SLOT',
+  discountType: 'FIXED_AMOUNT', discountValue: 20000,
+  targetRoomId: null, targetWeekDay: null, targetOvernightSlot: null,
+  targetWeekDays: [5], targetRoomIds: ['room-a'],
+  ...overrides,
+});
+const ownerRules = [
+  weekdaySlot({ id: 'mon-thu', targetWeekDays: [1, 2, 3, 4] }),
+  weekdaySlot({ id: 'fri-day', targetWeekDays: [5], targetOvernightSlot: false }),
+];
+const discountOn = (programs, date, isOvernight) =>
+  price(programs, [slot({ key: `${date}-${isOvernight}`, date, isOvernight })]).programDiscountAmount;
+
+test('weekday slot rules leave the Friday overnight slot at full price', () => {
+  assert.equal(discountOn(ownerRules, THURSDAY, true), 20000);
+  assert.equal(discountOn(ownerRules, FRIDAY, false), 20000);
+  assert.equal(discountOn(ownerRules, FRIDAY, true), 0);
+  assert.equal(discountOn(ownerRules, SATURDAY, false), 0);
+});
+
+test('weekday slot rules without rooms cover every room, with rooms only those', () => {
+  assert.equal(discountOn([weekdaySlot({ targetRoomIds: ['room-b'] })], FRIDAY, false), 0);
+  assert.equal(discountOn([weekdaySlot({ targetRoomIds: [] })], FRIDAY, false), 20000);
+  assert.equal(discountOn([weekdaySlot({ targetRoomIds: null, targetOvernightSlot: true })], FRIDAY, true), 20000);
+});
+
+test('weekday slot outranks older types, and chosen rooms outrank every room', () => {
+  const older = campaign({ id: 'old', targetWeekDay: true, discountValue: 90 });
+  assert.equal(discountOn([older, weekdaySlot({ targetRoomIds: null, discountValue: 30000 })], FRIDAY, false), 30000);
+  assert.equal(discountOn([
+    weekdaySlot({ id: 'every-room', targetRoomIds: null, discountValue: 50000 }),
+    weekdaySlot({ id: 'room-a-only', discountValue: 10000 }),
+  ], FRIDAY, false), 10000);
+});
+
+test('weekday lists read as day ranges', () => {
+  assert.equal(formatCampaignWeekDays([1, 2, 3, 4]), 'Thứ 2–Thứ 5');
+  assert.equal(formatCampaignWeekDays([5]), 'Thứ 6');
+  assert.equal(formatCampaignWeekDays([7, 6]), 'Thứ 7, CN');
+  assert.equal(formatCampaignWeekDays([1, 3, 4, 5]), 'Thứ 2, Thứ 4–Thứ 6');
+  assert.equal(formatCampaignWeekDays([1, 2, 3, 4, 5, 6, 7]), 'Cả tuần');
 });
