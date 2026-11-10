@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { calculatePricing, getCampaignDiscountBadge } from '../src/lib/pricingUtils.ts';
+import { calculatePricing, getCampaignDiscountBadge, getComboDiscountDetail, getSavingsBadgeLabel } from '../src/lib/pricingUtils.ts';
 
 const campaign = (overrides = {}) => ({
   id: 'combined', name: 'Room weekends', type: 'ROOM_WEEK_DAY',
@@ -91,4 +91,71 @@ test('availability campaign values produce slot badge labels', () => {
   assert.equal(getCampaignDiscountBadge('PERCENTAGE', 15), '-15%');
   assert.equal(getCampaignDiscountBadge('FIXED_AMOUNT', 50000), '-50k');
   assert.equal(getCampaignDiscountBadge(null, null), null);
+});
+
+// Combo: same ROOM 1 prices and tiers as ComboCyclePricingTest in brill-home-api, so the
+// customer estimate and the price staff confirm in admin stay equal.
+const TIERS = [
+  { minSlots: 2, discountPercent: 5, flatDiscount: 0 },
+  { minSlots: 3, discountPercent: 10, flatDiscount: 0 },
+  { minSlots: 4, discountPercent: 30, flatDiscount: 0 },
+];
+const ROOM_1 = [['09:30', 189000], ['13:00', 189000], ['16:30', 189000], ['20:00', 319000]];
+const daySlot = (day, index) => slot({
+  key: `${day}-${index}`, slotId: `slot-${index}`, date: `2026-09-${String(19 + day).padStart(2, '0')}`,
+  startTime: ROOM_1[index][0], price: ROOM_1[index][1], isOvernight: index === 3,
+});
+// Linear positions across days: 0-3 are day one, 4-7 day two, and so on.
+const pick = (...positions) => positions.map(p => daySlot(Math.floor(p / 4), p % 4));
+const combo = (slots, tiers = TIERS) => price([], slots, { comboDiscounts: tiers });
+
+test('combo restarts after every four slots booked from the first slot', () => {
+  const totals = [189000, 359100, 510300, 620200, 809200, 979300, 1130500, 1240400];
+  totals.forEach((total, i) => {
+    assert.equal(combo(pick(...Array.from({ length: i + 1 }, (_, p) => p))).totalAmount, total, `${i + 1} slots`);
+  });
+});
+
+test('combo cycle starts at the first booked slot, not at the start of the day', () => {
+  const result = combo(pick(1, 2, 3, 4, 5));
+  assert.equal(result.comboDiscountAmount, 265800);
+  assert.equal(result.totalAmount, 809200);
+  assert.deepEqual(result.comboCycles.map(c => [c.slotCount, c.percent]), [[4, 30], [1, 0]]);
+});
+
+test('overnight slot and the next morning get the two-slot tier', () => {
+  assert.equal(combo(pick(3, 4)).totalAmount, 482600);
+});
+
+test('slots are counted in date and start-time order, not selection order', () => {
+  assert.equal(combo(pick(5, 4, 3, 2, 1)).comboDiscountAmount, 265800);
+});
+
+test('longer bookings get one combo per full cycle and a tier for the leftover', () => {
+  assert.equal(combo(pick(...Array.from({ length: 10 }, (_, p) => p))).comboDiscountAmount, 2 * 265800 + 18900);
+  assert.equal(combo(pick(...Array.from({ length: 12 }, (_, p) => p))).comboDiscountAmount, 3 * 265800);
+});
+
+test('flat combo discount is given once per cycle', () => {
+  const tiers = [TIERS[0], { minSlots: 4, discountPercent: 30, flatDiscount: 50000 }];
+  assert.equal(combo(pick(0, 1, 2, 3, 4, 5, 6, 7), tiers).comboDiscountAmount, 2 * (265800 + 50000));
+});
+
+test('no combo tiers means no combo discount', () => {
+  const result = combo(pick(0, 1, 2, 3, 4), []);
+  assert.equal(result.comboDiscountAmount, 0);
+  assert.deepEqual(result.comboCycles, []);
+});
+
+test('combo label shows every booked slot and the percent off the base price', () => {
+  assert.equal(getComboDiscountDetail(combo(pick(0, 1))), '2 khung -5%');
+  assert.equal(getComboDiscountDetail(combo(pick(0, 1, 2, 3))), '4 khung -30%');
+  // 265.800đ off 1.075.000đ is 24,7%.
+  assert.equal(getComboDiscountDetail(combo(pick(0, 1, 2, 3, 4))), '5 khung -25%');
+  // 284.700đ off 1.264.000đ is 22,5%.
+  assert.equal(getComboDiscountDetail(combo(pick(0, 1, 2, 3, 4, 5))), '6 khung -23%');
+  assert.equal(getComboDiscountDetail(combo(pick(0, 1, 2, 3, 4, 5, 6, 7))), '8 khung -30%');
+  assert.equal(getComboDiscountDetail(combo(pick(0))), '');
+  assert.equal(getSavingsBadgeLabel(combo(pick(0, 1, 2, 3, 4))), 'Combo 5 khung -25%');
+  assert.equal(getSavingsBadgeLabel(combo(pick(0, 1, 2, 3, 4, 5))), 'Combo 6 khung -23%');
 });
